@@ -11,6 +11,7 @@ import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 import Clients from "./pages/Clients";
 import Services from "./pages/Services";
+import ServicePackages from "./pages/ServicePackages";
 import ClientForm from "./pages/ClientForm";
 import ServiceForm from "./pages/ServiceForm";
 import Employees from "./pages/Employees";
@@ -37,6 +38,7 @@ const App = () => (
         <Route path="/dashboard/clients/new" element={<ClientForm />} />
         <Route path="/dashboard/clients/:id" element={<ClientForm />} />
         <Route path="/dashboard/services" element={<Services />} />
+        <Route path="/dashboard/services/packages" element={<ServicePackages />} />
         <Route path="/dashboard/services/new" element={<ServiceForm />} />
         <Route path="/dashboard/services/:id" element={<ServiceForm />} />
         <Route path="/dashboard/employees" element={<Employees />} />
