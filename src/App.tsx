@@ -13,6 +13,10 @@ import Clients from "./pages/Clients";
 import Services from "./pages/Services";
 import ClientForm from "./pages/ClientForm";
 import ServiceForm from "./pages/ServiceForm";
+import Employees from "./pages/Employees";
+import EmployeeForm from "./pages/EmployeeForm";
+import Finance from "./pages/Finance";
+import TransactionForm from "./pages/TransactionForm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -35,6 +39,12 @@ const App = () => (
         <Route path="/dashboard/services" element={<Services />} />
         <Route path="/dashboard/services/new" element={<ServiceForm />} />
         <Route path="/dashboard/services/:id" element={<ServiceForm />} />
+        <Route path="/dashboard/employees" element={<Employees />} />
+        <Route path="/dashboard/employees/new" element={<EmployeeForm />} />
+        <Route path="/dashboard/employees/:id" element={<EmployeeForm />} />
+        <Route path="/dashboard/finance" element={<Finance />} />
+        <Route path="/dashboard/finance/new" element={<TransactionForm />} />
+        <Route path="/dashboard/finance/:id" element={<TransactionForm />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>

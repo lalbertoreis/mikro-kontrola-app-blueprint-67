@@ -9,7 +9,9 @@ import {
   X, 
   Home, 
   CreditCard, 
-  Bell 
+  Bell,
+  UserPlus,
+  WalletCards
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -28,6 +30,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: "Agenda", to: "/dashboard/calendar", icon: Calendar },
     { name: "Clientes", to: "/dashboard/clients", icon: Users },
     { name: "Serviços", to: "/dashboard/services", icon: CreditCard },
+    { name: "Funcionários", to: "/dashboard/employees", icon: UserPlus },
+    { name: "Financeiro", to: "/dashboard/finance", icon: WalletCards },
     { name: "Notificações", to: "/dashboard/notifications", icon: Bell },
     { name: "Configurações", to: "/dashboard/settings", icon: Settings },
   ];
