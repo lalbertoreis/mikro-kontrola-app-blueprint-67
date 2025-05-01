@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -22,6 +21,7 @@ const mockServices: Service[] = [
     description: "Corte tradicional masculino",
     price: 50.00,
     duration: 30,
+    multipleAttendees: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -31,6 +31,7 @@ const mockServices: Service[] = [
     description: "Manicure completa com esmaltação",
     price: 45.00,
     duration: 60,
+    multipleAttendees: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },

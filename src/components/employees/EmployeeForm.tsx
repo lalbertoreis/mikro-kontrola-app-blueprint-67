@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,9 +66,10 @@ const EmployeeForm = ({ employeeId, onSuccess }: EmployeeFormProps) => {
       return;
     }
 
-    // Montar dados completos do funcionário
+    // Montar dados completos do funcionário - ensuring name and role are required
     const employeeData: EmployeeFormData = {
-      ...data,
+      name: data.name,
+      role: data.role,
       shifts,
       services: selectedServices,
     };

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -123,10 +122,13 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
       return;
     }
 
-    // Montar dados completos do pacote
+    // Ensure all required fields are explicitly set in the package data
     const packageData: ServicePackageFormData = {
-      ...values,
+      name: values.name,
+      description: values.description || "",
       services: selectedServices,
+      price: values.price,
+      discount: values.discount
     };
 
     console.log("Form submitted:", packageData);
