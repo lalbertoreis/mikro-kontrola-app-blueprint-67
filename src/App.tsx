@@ -11,6 +11,10 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
+import Clients from "./pages/Clients";
+import Services from "./pages/Services";
+import ClientForm from "./pages/ClientForm";
+import ServiceForm from "./pages/ServiceForm";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +31,12 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/features" element={<Features />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/dashboard/clients" element={<Clients />} />
+          <Route path="/dashboard/clients/new" element={<ClientForm />} />
+          <Route path="/dashboard/clients/:id" element={<ClientForm />} />
+          <Route path="/dashboard/services" element={<Services />} />
+          <Route path="/dashboard/services/new" element={<ServiceForm />} />
+          <Route path="/dashboard/services/:id" element={<ServiceForm />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
