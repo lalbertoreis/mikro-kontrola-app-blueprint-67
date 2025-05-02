@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -10,36 +11,13 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
-import { Service } from "@/types/service";
-
-// Mock data until we implement backend
-const mockServices: Service[] = [
-  {
-    id: "1",
-    name: "Corte de Cabelo",
-    description: "Corte tradicional masculino",
-    price: 50.00,
-    duration: 30,
-    multipleAttendees: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Manicure",
-    description: "Manicure completa com esmaltação",
-    price: 45.00,
-    duration: 60,
-    multipleAttendees: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { Plus, Search, Loader2 } from "lucide-react";
+import { useServices } from "@/hooks/useServices";
+import { toast } from "sonner";
 
 const ServiceList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [services] = useState<Service[]>(mockServices);
+  const { services, isLoading, error, deleteService } = useServices();
 
   // Filter services based on search term
   const filteredServices = services.filter(service => 
@@ -67,6 +45,32 @@ const ServiceList: React.FC = () => {
     }
     return `${hours}h ${remainingMinutes}min`;
   };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o serviço "${name}"?`)) {
+      try {
+        await deleteService(id);
+      } catch (error) {
+        toast.error("Erro ao excluir serviço.");
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10 text-red-500">
+        Erro ao carregar serviços. Por favor, tente novamente.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -112,7 +116,7 @@ const ServiceList: React.FC = () => {
                   <TableCell>
                     <Button variant="ghost" size="sm" asChild>
                       <Link to={`/dashboard/services/${service.id}`}>
-                        Detalhes
+                        Editar
                       </Link>
                     </Button>
                   </TableCell>

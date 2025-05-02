@@ -11,40 +11,46 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
-import { Client } from "@/types/client";
-
-// Mock data until we implement backend
-const mockClients: Client[] = [
-  {
-    id: "1",
-    name: "João Silva",
-    email: "joao@exemplo.com",
-    phone: "(11) 98765-4321",
-    notes: "Cliente desde 2023",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Maria Oliveira",
-    email: "maria@exemplo.com",
-    phone: "(11) 91234-5678",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { Plus, Search, Loader2 } from "lucide-react";
+import { useClients } from "@/hooks/useClients";
+import { toast } from "sonner";
 
 const ClientList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [clients] = useState<Client[]>(mockClients);
+  const { clients, isLoading, error, deleteClient } = useClients();
 
   // Filter clients based on search term
   const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm)
+    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.phone && client.phone.includes(searchTerm))
   );
+
+  const handleDelete = async (id: string, name: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o cliente "${name}"?`)) {
+      try {
+        await deleteClient(id);
+      } catch (error) {
+        toast.error("Erro ao excluir cliente.");
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10 text-red-500">
+        Erro ao carregar clientes. Por favor, tente novamente.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -90,7 +96,7 @@ const ClientList: React.FC = () => {
                   <TableCell>
                     <Button variant="ghost" size="sm" asChild>
                       <Link to={`/dashboard/clients/${client.id}`}>
-                        Detalhes
+                        Editar
                       </Link>
                     </Button>
                   </TableCell>

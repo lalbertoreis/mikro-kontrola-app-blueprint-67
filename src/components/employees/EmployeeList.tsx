@@ -11,35 +11,14 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { UserPlus, Pencil, Trash2 } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-// Dados de exemplo para funcionários
-const mockEmployees = [
-  {
-    id: "1",
-    name: "Ana Silva",
-    email: "ana.silva@exemplo.com",
-    phone: "(11) 98765-4321",
-    role: "Atendente",
-    startDate: "2023-01-15",
-    createdAt: "2023-01-10T14:30:00Z",
-    updatedAt: "2023-01-10T14:30:00Z"
-  },
-  {
-    id: "2",
-    name: "Carlos Santos",
-    email: "carlos.santos@exemplo.com",
-    phone: "(11) 91234-5678",
-    role: "Técnico",
-    startDate: "2022-11-01",
-    createdAt: "2022-10-25T10:15:00Z",
-    updatedAt: "2022-10-25T10:15:00Z"
-  }
-];
+import { useEmployees } from "@/hooks/useEmployees";
+import { toast } from "sonner";
 
 const EmployeeList = () => {
   const navigate = useNavigate();
+  const { employees, isLoading, error, deleteEmployee } = useEmployees();
 
   const handleAdd = () => {
     navigate("/dashboard/employees/new");
@@ -49,11 +28,32 @@ const EmployeeList = () => {
     navigate(`/dashboard/employees/${id}`);
   };
 
-  const handleDelete = (id: string) => {
-    // Na implementação real, aqui faria uma chamada para API para excluir
-    console.log(`Excluir funcionário com ID: ${id}`);
-    // E recarregaria os dados ou atualizaria o estado local
+  const handleDelete = async (id: string, name: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o funcionário "${name}"?`)) {
+      try {
+        await deleteEmployee(id);
+        toast.success(`Funcionário "${name}" excluído com sucesso.`);
+      } catch (error) {
+        toast.error("Erro ao excluir funcionário.");
+      }
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10 text-red-500">
+        Erro ao carregar funcionários. Por favor, tente novamente.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -71,23 +71,17 @@ const EmployeeList = () => {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Cargo</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Data de Início</TableHead>
+                <TableHead>Serviços</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockEmployees.length > 0 ? (
-                mockEmployees.map((employee) => (
+              {employees.length > 0 ? (
+                employees.map((employee) => (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium">{employee.name}</TableCell>
                     <TableCell>{employee.role}</TableCell>
-                    <TableCell>{employee.email}</TableCell>
-                    <TableCell>{employee.phone}</TableCell>
-                    <TableCell>
-                      {new Date(employee.startDate).toLocaleDateString('pt-BR')}
-                    </TableCell>
+                    <TableCell>{employee.services.length} serviços</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -107,7 +101,7 @@ const EmployeeList = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(employee.id)}
+                            onClick={() => handleDelete(employee.id, employee.name)}
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -119,7 +113,7 @@ const EmployeeList = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
                     Nenhum funcionário cadastrado.
                   </TableCell>
                 </TableRow>

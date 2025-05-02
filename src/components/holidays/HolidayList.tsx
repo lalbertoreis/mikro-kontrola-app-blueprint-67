@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { useHolidays } from "@/hooks/useHolidays";
 
 interface HolidayListProps {
   holidays: Holiday[];
@@ -30,6 +32,18 @@ interface HolidayListProps {
 
 const HolidayList: React.FC<HolidayListProps> = ({ holidays, isLoading }) => {
   const navigate = useNavigate();
+  const { deleteHoliday } = useHolidays();
+
+  const handleDelete = async (id: string, name: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o feriado "${name}"?`)) {
+      try {
+        await deleteHoliday(id);
+        toast.success(`Feriado "${name}" excluído com sucesso.`);
+      } catch (error) {
+        toast.error("Erro ao excluir feriado.");
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -106,7 +120,11 @@ const HolidayList: React.FC<HolidayListProps> = ({ holidays, isLoading }) => {
               >
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => handleDelete(holiday.id, holiday.name)}
+              >
                 <Trash className="h-4 w-4" />
               </Button>
             </TableCell>

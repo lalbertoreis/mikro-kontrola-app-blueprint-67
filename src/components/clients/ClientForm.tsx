@@ -1,10 +1,10 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,6 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { useClients, useClientById } from "@/hooks/useClients";
 import { ClientFormData } from "@/types/client";
 
 // Validação com zod
@@ -37,23 +39,14 @@ const formSchema = z.object({
 const ClientFormComponent: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   const isEditing = id !== undefined;
-  
-  // Mock para o cliente quando estivermos em edição
-  const mockClient: ClientFormData | null = isEditing
-    ? {
-        name: "João Silva",
-        email: "joao@exemplo.com",
-        phone: "(11) 98765-4321",
-        notes: "Cliente desde 2023",
-      }
-    : null;
+  const { data: client, isLoading: isClientLoading } = useClientById(id);
+  const { createClient, updateClient, isCreating, isUpdating } = useClients();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: mockClient || {
+    defaultValues: {
       name: "",
       email: "",
       phone: "",
@@ -61,17 +54,52 @@ const ClientFormComponent: React.FC = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    
-    // Aqui irá a lógica para salvar o cliente
-    
-    toast({
-      title: isEditing ? "Cliente atualizado!" : "Cliente cadastrado!",
-      description: `${values.name} foi ${isEditing ? "atualizado" : "cadastrado"} com sucesso.`,
-    });
-    
-    navigate("/dashboard/clients");
+  // Update form values when client data is loaded
+  useEffect(() => {
+    if (client && isEditing) {
+      form.reset({
+        name: client.name,
+        email: client.email || "",
+        phone: client.phone || "",
+        notes: client.notes || "",
+      });
+    }
+  }, [client, form, isEditing]);
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const clientData: ClientFormData = {
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        notes: values.notes,
+      };
+
+      if (isEditing && id) {
+        await updateClient({ id, data: clientData });
+        toast.success("Cliente atualizado com sucesso!");
+      } else {
+        await createClient(clientData);
+        toast.success("Cliente cadastrado com sucesso!");
+      }
+      
+      navigate("/dashboard/clients");
+    } catch (error) {
+      console.error("Erro ao salvar cliente:", error);
+      toast.error(
+        isEditing
+          ? "Erro ao atualizar cliente. Tente novamente."
+          : "Erro ao cadastrar cliente. Tente novamente."
+      );
+    }
+  };
+
+  if (isClientLoading && isEditing) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
@@ -136,6 +164,7 @@ const ClientFormComponent: React.FC = () => {
                     <Textarea 
                       placeholder="Informações adicionais sobre o cliente..." 
                       {...field} 
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormDescription>
@@ -151,10 +180,17 @@ const ClientFormComponent: React.FC = () => {
                 type="button" 
                 variant="outline" 
                 onClick={() => navigate("/dashboard/clients")}
+                disabled={isCreating || isUpdating}
               >
                 Cancelar
               </Button>
-              <Button type="submit">
+              <Button 
+                type="submit"
+                disabled={isCreating || isUpdating}
+              >
+                {(isCreating || isUpdating) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 {isEditing ? "Atualizar" : "Cadastrar"}
               </Button>
             </CardFooter>
