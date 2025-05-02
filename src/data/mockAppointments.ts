@@ -54,7 +54,7 @@ export const mockAppointments: AppointmentWithDetails[] = [
       name: "Carlos Mendes",
       email: "carlos@example.com",
       phone: "11987654321",
-      birthDate: "1985-06-10",
+      notes: "Cliente frequente",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -96,7 +96,7 @@ export const mockAppointments: AppointmentWithDetails[] = [
       name: "Ana Paula",
       email: "ana@example.com",
       phone: "11912345678",
-      birthDate: "1990-03-15",
+      notes: "Prefere esmaltes hipoalergênicos",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -138,7 +138,7 @@ export const mockAppointments: AppointmentWithDetails[] = [
       name: "Pedro Santos",
       email: "pedro@example.com",
       phone: "1199876543",
-      birthDate: "1982-11-20",
+      notes: "Prefere corte com tesoura",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -180,7 +180,7 @@ export const mockAppointments: AppointmentWithDetails[] = [
       name: "Juliana Lima",
       email: "juliana@example.com",
       phone: "11955443322",
-      birthDate: "1995-08-05",
+      notes: "Cliente nova",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
