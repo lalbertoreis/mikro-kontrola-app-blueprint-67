@@ -112,13 +112,17 @@ export async function createEmployee(employeeData: EmployeeFormData): Promise<Em
   const { name, role, shifts, services } = employeeData;
   
   try {
+    // Get user information for user_id field
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+    
     // Start a Supabase transaction
     const { data: employee, error: employeeError } = await supabase
       .from('employees')
       .insert({
         name,
         role,
-        user_id: (await supabase.auth.getUser()).data.user?.id
+        user_id: userId
       })
       .select()
       .single();
@@ -132,7 +136,7 @@ export async function createEmployee(employeeData: EmployeeFormData): Promise<Em
         day_of_week: shift.dayOfWeek,
         start_time: shift.startTime,
         end_time: shift.endTime,
-        user_id: (await supabase.auth.getUser()).data.user?.id
+        user_id: userId
       }));
 
       const { error: shiftsError } = await supabase
@@ -147,7 +151,7 @@ export async function createEmployee(employeeData: EmployeeFormData): Promise<Em
       const servicesToInsert = services.map(serviceId => ({
         employee_id: employee.id,
         service_id: serviceId,
-        user_id: (await supabase.auth.getUser()).data.user?.id
+        user_id: userId
       }));
 
       const { error: servicesError } = await supabase
@@ -176,6 +180,10 @@ export async function updateEmployee(id: string, employeeData: EmployeeFormData)
   const { name, role, shifts, services } = employeeData;
   
   try {
+    // Get user information for user_id field
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+    
     // Update employee
     const { data: employee, error: employeeError } = await supabase
       .from('employees')
@@ -205,7 +213,7 @@ export async function updateEmployee(id: string, employeeData: EmployeeFormData)
         day_of_week: shift.dayOfWeek,
         start_time: shift.startTime,
         end_time: shift.endTime,
-        user_id: (await supabase.auth.getUser()).data.user?.id
+        user_id: userId
       }));
 
       const { error: shiftsError } = await supabase
@@ -228,7 +236,7 @@ export async function updateEmployee(id: string, employeeData: EmployeeFormData)
       const servicesToInsert = services.map(serviceId => ({
         employee_id: id,
         service_id: serviceId,
-        user_id: (await supabase.auth.getUser()).data.user?.id
+        user_id: userId
       }));
 
       const { error: servicesError } = await supabase
