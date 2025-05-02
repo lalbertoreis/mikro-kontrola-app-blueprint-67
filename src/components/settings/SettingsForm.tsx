@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Instagram, WhatsApp, MapPin, Building, Settings, Image } from "lucide-react";
+import { Instagram, MessageSquare, MapPin, Building, Settings, Image } from "lucide-react";
 import { toast } from "sonner";
 
 const settingsFormSchema = z.object({
@@ -162,7 +161,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
                     <FormLabel>WhatsApp</FormLabel>
                     <FormControl>
                       <div className="flex items-center">
-                        <WhatsApp className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <MessageSquare className="mr-2 h-4 w-4 text-muted-foreground" />
                         <Input placeholder="(11) 99999-9999" {...field} />
                       </div>
                     </FormControl>
