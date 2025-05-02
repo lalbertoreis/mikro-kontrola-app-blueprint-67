@@ -1,22 +1,14 @@
 
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import HolidayList from "@/components/holidays/HolidayList";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { CalendarPlus } from "lucide-react";
-import { toast } from "sonner";
+import { useHolidays } from "@/hooks/useHolidays";
 
 const Holidays = () => {
-  const { data: holidays = [], isLoading, error } = useQuery({
-    queryKey: ["holidays"],
-    queryFn: async () => {
-      // Em uma implementação real, buscaríamos do backend
-      // Por enquanto, retornamos um array vazio
-      return [];
-    },
-  });
+  const { holidays, isLoading, error } = useHolidays();
 
   return (
     <DashboardLayout>

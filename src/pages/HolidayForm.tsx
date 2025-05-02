@@ -1,29 +1,47 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import HolidayFormComponent from "@/components/holidays/HolidayForm";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
+import { useHolidayById } from "@/hooks/useHolidays";
+import { createHoliday, updateHoliday } from "@/services/holidayService";
+import { HolidayFormData } from "@/types/holiday";
+import { toast } from "sonner";
 
 const HolidayForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
-
-  const { data: holiday, isLoading } = useQuery({
-    queryKey: ["holiday", id],
-    queryFn: async () => {
-      if (!id) return null;
-      // Em uma implementação real, buscaríamos do backend
-      return null;
-    },
-    enabled: isEditing,
-  });
+  const queryClient = useQueryClient();
+  
+  const { data: holiday, isLoading } = useHolidayById(id);
 
   const handleCancel = () => {
     navigate("/dashboard/holidays");
+  };
+
+  const handleSubmit = async (data: HolidayFormData) => {
+    try {
+      if (isEditing && id) {
+        await updateHoliday(id, data);
+        toast.success("Feriado atualizado com sucesso!");
+      } else {
+        await createHoliday(data);
+        toast.success("Feriado adicionado com sucesso!");
+      }
+      queryClient.invalidateQueries({ queryKey: ["holidays"] });
+      navigate("/dashboard/holidays");
+    } catch (error) {
+      console.error("Erro ao salvar feriado:", error);
+      toast.error(
+        isEditing
+          ? "Erro ao atualizar feriado. Tente novamente."
+          : "Erro ao adicionar feriado. Tente novamente."
+      );
+    }
   };
 
   return (
