@@ -20,6 +20,7 @@ import Finance from "./pages/Finance";
 import TransactionForm from "./pages/TransactionForm";
 import Calendar from "./pages/Calendar";
 import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
         <Route path="/dashboard/finance/:id" element={<TransactionForm />} />
         <Route path="/dashboard/calendar" element={<Calendar />} />
         <Route path="/dashboard/notifications" element={<Notifications />} />
+        <Route path="/dashboard/settings" element={<Settings />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
