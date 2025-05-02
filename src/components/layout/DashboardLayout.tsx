@@ -11,7 +11,8 @@ import {
   CreditCard, 
   Bell,
   UserPlus,
-  WalletCards
+  WalletCards,
+  CalendarRange
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -31,6 +32,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: "Clientes", to: "/dashboard/clients", icon: Users },
     { name: "Serviços", to: "/dashboard/services", icon: CreditCard },
     { name: "Funcionários", to: "/dashboard/employees", icon: UserPlus },
+    { name: "Feriados", to: "/dashboard/holidays", icon: CalendarRange },
     { name: "Financeiro", to: "/dashboard/finance", icon: WalletCards },
     { name: "Notificações", to: "/dashboard/notifications", icon: Bell },
     { name: "Configurações", to: "/dashboard/settings", icon: Settings },

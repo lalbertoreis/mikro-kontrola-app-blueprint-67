@@ -21,6 +21,8 @@ import TransactionForm from "./pages/TransactionForm";
 import Calendar from "./pages/Calendar";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
+import Holidays from "./pages/Holidays";
+import HolidayForm from "./pages/HolidayForm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -53,6 +55,9 @@ const App = () => (
         <Route path="/dashboard/calendar" element={<Calendar />} />
         <Route path="/dashboard/notifications" element={<Notifications />} />
         <Route path="/dashboard/settings" element={<Settings />} />
+        <Route path="/dashboard/holidays" element={<Holidays />} />
+        <Route path="/dashboard/holidays/new" element={<HolidayForm />} />
+        <Route path="/dashboard/holidays/:id" element={<HolidayForm />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
