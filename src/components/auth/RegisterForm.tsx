@@ -20,6 +20,12 @@ const RegisterForm = () => {
     password: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -27,6 +33,13 @@ const RegisterForm = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (errors[name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -35,7 +48,7 @@ const RegisterForm = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/dashboard'
+          redirectTo: `${window.location.origin}/dashboard`
         }
       });
       
@@ -50,18 +63,49 @@ const RegisterForm = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    };
+    let isValid = true;
+    
+    if (!formData.name.trim()) {
+      newErrors.name = "Nome é obrigatório";
+      isValid = false;
+    }
+    
+    if (!formData.email) {
+      newErrors.email = "Email é obrigatório";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email inválido";
+      isValid = false;
+    }
+    
+    if (!formData.password) {
+      newErrors.password = "Senha é obrigatória";
+      isValid = false;
+    } else if (formData.password.length < 6) {
+      newErrors.password = "A senha precisa ter pelo menos 6 caracteres";
+      isValid = false;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "As senhas não coincidem";
+      isValid = false;
+    }
+    
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("As senhas não coincidem");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error("A senha precisa ter pelo menos 6 caracteres");
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       setIsLoading(true);
@@ -78,16 +122,20 @@ const RegisterForm = () => {
       });
       
       if (error) {
-        toast.error("Erro ao criar conta: " + error.message);
+        if (error.message.includes("already registered")) {
+          toast.error("Este email já está cadastrado");
+        } else {
+          toast.error("Erro ao criar conta: " + error.message);
+        }
         return;
       }
       
-      toast.success("Conta criada com sucesso! Redirecionando...");
+      toast.success("Conta criada com sucesso! Verifique seu email para confirmação.");
       
-      // In a real app, we would redirect to dashboard after successful registration
+      // In a real app, we would redirect to a confirmation page
       setTimeout(() => {
-        navigate("/dashboard");
-      }, 1000);
+        navigate("/login");
+      }, 2000);
       
     } catch (error) {
       toast.error("Ocorreu um erro ao criar sua conta");
@@ -123,7 +171,7 @@ const RegisterForm = () => {
             <span className="w-full border-t border-gray-300 dark:border-gray-600" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white dark:bg-background px-2 text-gray-500 dark:text-gray-400">
+            <span className="bg-white dark:bg-gray-900 px-2 text-gray-500 dark:text-gray-400">
               Ou continue com email
             </span>
           </div>
@@ -140,8 +188,9 @@ const RegisterForm = () => {
             required
             value={formData.name}
             onChange={handleChange}
-            className="dark:bg-gray-900 dark:border-gray-700"
+            className="dark:bg-gray-800 dark:border-gray-700"
           />
+          {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
         </div>
         
         <div className="space-y-2">
@@ -154,8 +203,9 @@ const RegisterForm = () => {
             type="email"
             value={formData.email}
             onChange={handleChange}
-            className="dark:bg-gray-900 dark:border-gray-700"
+            className="dark:bg-gray-800 dark:border-gray-700"
           />
+          {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
         </div>
         
         <div className="space-y-2">
@@ -168,8 +218,9 @@ const RegisterForm = () => {
             type="password"
             value={formData.password}
             onChange={handleChange}
-            className="dark:bg-gray-900 dark:border-gray-700"
+            className="dark:bg-gray-800 dark:border-gray-700"
           />
+          {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password}</p>}
         </div>
         
         <div className="space-y-2">
@@ -182,8 +233,9 @@ const RegisterForm = () => {
             type="password"
             value={formData.confirmPassword}
             onChange={handleChange}
-            className="dark:bg-gray-900 dark:border-gray-700"
+            className="dark:bg-gray-800 dark:border-gray-700"
           />
+          {errors.confirmPassword && <p className="text-sm text-red-500 mt-1">{errors.confirmPassword}</p>}
         </div>
         
         <Button

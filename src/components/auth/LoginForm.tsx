@@ -18,6 +18,10 @@ const LoginForm = () => {
     email: "",
     password: "",
   });
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -25,6 +29,13 @@ const LoginForm = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (errors[name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -33,7 +44,7 @@ const LoginForm = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/dashboard'
+          redirectTo: `${window.location.origin}/dashboard`
         }
       });
       
@@ -48,8 +59,34 @@ const LoginForm = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {
+      email: "",
+      password: "",
+    };
+    let isValid = true;
+    
+    if (!formData.email) {
+      newErrors.email = "Email é obrigatório";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email inválido";
+      isValid = false;
+    }
+    
+    if (!formData.password) {
+      newErrors.password = "Senha é obrigatória";
+      isValid = false;
+    }
+    
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
     
     try {
       setIsLoading(true);
@@ -60,7 +97,11 @@ const LoginForm = () => {
       });
       
       if (error) {
-        toast.error("Email ou senha inválidos");
+        if (error.message.includes("Invalid login credentials")) {
+          toast.error("Email ou senha incorretos");
+        } else {
+          toast.error("Erro ao fazer login: " + error.message);
+        }
         console.error("Login error:", error);
         return;
       }
@@ -68,9 +109,7 @@ const LoginForm = () => {
       toast.success("Login realizado com sucesso! Redirecionando...");
       
       // Redirect to dashboard after successful login
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1000);
+      navigate("/dashboard");
       
     } catch (error) {
       toast.error("Ocorreu um erro ao tentar fazer login");
@@ -106,7 +145,7 @@ const LoginForm = () => {
             <span className="w-full border-t border-gray-300 dark:border-gray-600" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white dark:bg-background px-2 text-gray-500 dark:text-gray-400">
+            <span className="bg-white dark:bg-gray-900 px-2 text-gray-500 dark:text-gray-400">
               Ou continue com email
             </span>
           </div>
@@ -124,8 +163,9 @@ const LoginForm = () => {
             type="email"
             value={formData.email}
             onChange={handleChange}
-            className="dark:bg-gray-900 dark:border-gray-700"
+            className="dark:bg-gray-800 dark:border-gray-700"
           />
+          {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
         </div>
         
         <div className="space-y-2">
@@ -146,8 +186,9 @@ const LoginForm = () => {
             type="password"
             value={formData.password}
             onChange={handleChange}
-            className="dark:bg-gray-900 dark:border-gray-700"
+            className="dark:bg-gray-800 dark:border-gray-700"
           />
+          {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password}</p>}
         </div>
         
         <Button
