@@ -186,7 +186,11 @@ export type Database = {
       }
       holidays: {
         Row: {
+          auto_generated: boolean
+          blocking_type: string
           created_at: string | null
+          custom_end_time: string | null
+          custom_start_time: string | null
           date: string
           description: string | null
           id: string
@@ -197,7 +201,11 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          auto_generated?: boolean
+          blocking_type?: string
           created_at?: string | null
+          custom_end_time?: string | null
+          custom_start_time?: string | null
           date: string
           description?: string | null
           id?: string
@@ -208,7 +216,11 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          auto_generated?: boolean
+          blocking_type?: string
           created_at?: string | null
+          custom_end_time?: string | null
+          custom_start_time?: string | null
           date?: string
           description?: string | null
           id?: string
@@ -247,6 +259,45 @@ export type Database = {
           id?: string
           last_name?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      service_packages: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          discount: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          services: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          discount: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          services: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          discount?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          services?: Json
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

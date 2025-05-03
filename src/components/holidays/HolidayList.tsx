@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Holiday } from "@/types/holiday";
 import {
@@ -19,11 +19,25 @@ import {
   X,
   Loader2,
   CalendarRange,
+  Download,
+  Clock,
+  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useHolidays } from "@/hooks/useHolidays";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ImportHolidaysDialog } from "./ImportHolidaysDialog";
 
 interface HolidayListProps {
   holidays: Holiday[];
@@ -32,17 +46,28 @@ interface HolidayListProps {
 
 const HolidayList: React.FC<HolidayListProps> = ({ holidays, isLoading }) => {
   const navigate = useNavigate();
-  const { deleteHoliday } = useHolidays();
+  const { deleteHoliday, isDeleting } = useHolidays();
+  
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean, holiday: Holiday | null }>({
+    open: false,
+    holiday: null
+  });
+  const [importDialog, setImportDialog] = useState(false);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir o feriado "${name}"?`)) {
+  const handleDelete = async () => {
+    if (deleteDialog.holiday) {
       try {
-        await deleteHoliday(id);
-        toast.success(`Feriado "${name}" excluído com sucesso.`);
+        await deleteHoliday(deleteDialog.holiday.id);
+        toast.success(`Feriado "${deleteDialog.holiday.name}" excluído com sucesso.`);
+        setDeleteDialog({ open: false, holiday: null });
       } catch (error) {
         toast.error("Erro ao excluir feriado.");
       }
     }
+  };
+
+  const openDeleteDialog = (holiday: Holiday) => {
+    setDeleteDialog({ open: true, holiday });
   };
 
   if (isLoading) {
@@ -53,86 +78,178 @@ const HolidayList: React.FC<HolidayListProps> = ({ holidays, isLoading }) => {
     );
   }
 
-  if (holidays.length === 0) {
-    return (
-      <div className="flex h-40 flex-col items-center justify-center rounded-md border border-dashed">
-        <CalendarRange className="h-8 w-8 text-muted-foreground mb-2" />
-        <p className="text-muted-foreground">Nenhum feriado cadastrado</p>
-        <Button 
-          variant="link" 
-          onClick={() => navigate("/dashboard/holidays/new")}
-        >
-          Adicionar feriado
-        </Button>
-      </div>
-    );
-  }
-
-  const getHolidayTypeBadge = (type: string) => {
-    switch (type) {
-      case "national":
-        return <Badge variant="default">Nacional</Badge>;
-      case "state":
-        return <Badge variant="secondary">Estadual</Badge>;
-      case "municipal":
-        return <Badge variant="outline">Municipal</Badge>;
-      case "custom":
-        return <Badge variant="destructive">Personalizado</Badge>;
-      default:
-        return null;
-    }
-  };
-
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Data</TableHead>
-          <TableHead>Nome</TableHead>
-          <TableHead>Tipo</TableHead>
-          <TableHead>Ativo</TableHead>
-          <TableHead className="text-right">Ações</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {holidays.map((holiday) => (
-          <TableRow key={holiday.id}>
-            <TableCell>
-              <div className="flex items-center">
-                <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                {format(new Date(holiday.date), "dd/MM/yyyy")}
-              </div>
-            </TableCell>
-            <TableCell>{holiday.name}</TableCell>
-            <TableCell>{getHolidayTypeBadge(holiday.type)}</TableCell>
-            <TableCell>
-              {holiday.isActive ? (
-                <Check className="h-5 w-5 text-green-500" />
-              ) : (
-                <X className="h-5 w-5 text-red-500" />
-              )}
-            </TableCell>
-            <TableCell className="text-right">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/dashboard/holidays/${holiday.id}`)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => handleDelete(holiday.id, holiday.name)}
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Feriados</h2>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline"
+            onClick={() => setImportDialog(true)}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Importar Nacionais
+          </Button>
+          <Button 
+            variant="default" 
+            onClick={() => navigate("/dashboard/holidays/new")}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Adicionar Feriado
+          </Button>
+        </div>
+      </div>
+
+      {holidays.length === 0 ? (
+        <div className="flex h-40 flex-col items-center justify-center rounded-md border border-dashed">
+          <CalendarRange className="h-8 w-8 text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">Nenhum feriado cadastrado</p>
+          <Button 
+            variant="link" 
+            onClick={() => navigate("/dashboard/holidays/new")}
+          >
+            Adicionar feriado
+          </Button>
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Bloqueio</TableHead>
+                <TableHead>Ativo</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {holidays.map((holiday) => (
+                <TableRow key={holiday.id} className={holiday.autoGenerated ? "bg-muted/20" : ""}>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+                      {format(new Date(holiday.date), "dd/MM/yyyy")}
+                      {holiday.autoGenerated && (
+                        <Badge variant="outline" className="ml-2 text-xs">Auto</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{holiday.name}</TableCell>
+                  <TableCell>{getHolidayTypeBadge(holiday.type)}</TableCell>
+                  <TableCell>{getBlockingTypeBadge(holiday)}</TableCell>
+                  <TableCell>
+                    {holiday.isActive ? (
+                      <Check className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <X className="h-5 w-5 text-red-500" />
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigate(`/dashboard/holidays/${holiday.id}`)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => openDeleteDialog(holiday)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      
+      <AlertDialog 
+        open={deleteDialog.open} 
+        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Feriado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o feriado "{deleteDialog.holiday?.name}"?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <ImportHolidaysDialog open={importDialog} onOpenChange={setImportDialog} />
+    </>
   );
 };
+
+function getHolidayTypeBadge(type: string) {
+  switch (type) {
+    case "national":
+      return <Badge variant="default">Nacional</Badge>;
+    case "state":
+      return <Badge variant="secondary">Estadual</Badge>;
+    case "municipal":
+      return <Badge variant="outline">Municipal</Badge>;
+    case "custom":
+      return <Badge variant="destructive">Personalizado</Badge>;
+    default:
+      return null;
+  }
+}
+
+function getBlockingTypeBadge(holiday: Holiday) {
+  switch (holiday.blockingType) {
+    case "full_day":
+      return (
+        <div className="flex items-center">
+          <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
+          <span>Dia inteiro</span>
+        </div>
+      );
+    case "morning":
+      return (
+        <div className="flex items-center">
+          <Clock className="h-4 w-4 mr-1 text-yellow-500" />
+          <span>Manhã (até 12:00)</span>
+        </div>
+      );
+    case "afternoon":
+      return (
+        <div className="flex items-center">
+          <Clock className="h-4 w-4 mr-1 text-orange-500" />
+          <span>Tarde (após 12:00)</span>
+        </div>
+      );
+    case "custom":
+      return (
+        <div className="flex items-center">
+          <Clock className="h-4 w-4 mr-1 text-blue-500" />
+          <span>
+            {holiday.customStartTime} - {holiday.customEndTime}
+          </span>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
 
 export default HolidayList;

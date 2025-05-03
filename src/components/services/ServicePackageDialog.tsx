@@ -21,12 +21,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Service, ServicePackage, ServicePackageFormData } from "@/types/service";
-import { Search, Check } from "lucide-react";
+import { Service, ServicePackageFormData } from "@/types/service";
+import { Search, Check, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useServices } from "@/hooks/useServices";
+import { useServicePackages, useServicePackageById } from "@/hooks/useServicePackages";
 
 // Validação com zod
 const formSchema = z.object({
@@ -48,30 +49,6 @@ interface ServicePackageDialogProps {
   packageId?: string;
 }
 
-// Dados de exemplo para pacotes
-const mockPackages: ServicePackage[] = [
-  {
-    id: "1",
-    name: "Pacote Beleza Completa",
-    description: "Inclui corte, manicure e pedicure",
-    services: ["1", "2", "3"],
-    price: 120.00,
-    discount: 15,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Pacote Dia da Noiva",
-    description: "Tratamento completo para noivas",
-    services: ["4", "5", "2", "3"],
-    price: 300.00,
-    discount: 10,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-];
-
 const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   open,
   onOpenChange,
@@ -79,14 +56,12 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
 }) => {
   const isEditing = Boolean(packageId);
   const { services } = useServices();
+  const { data: packageData, isLoading: isLoadingPackage } = useServicePackageById(packageId);
+  const { createPackage, updatePackage, isCreating, isUpdating } = useServicePackages();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Obter pacote pelo ID (simulado)
-  const getPackageById = (id: string): ServicePackage | undefined => {
-    return mockPackages.find(pkg => pkg.id === id);
-  };
+  const isLoading = isCreating || isUpdating || isLoadingPackage;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -98,54 +73,50 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
     },
   });
 
-  // Carregar dados do pacote ao editar
+  // Load data when editing
   useEffect(() => {
-    if (isEditing && packageId) {
-      setIsLoading(true);
-      // Simular carregamento
-      setTimeout(() => {
-        const packageData = getPackageById(packageId);
-        if (packageData) {
-          form.reset({
-            name: packageData.name,
-            description: packageData.description || "",
-            price: packageData.price,
-            discount: packageData.discount,
-          });
-          setSelectedServices(packageData.services);
-        }
-        setIsLoading(false);
-      }, 500);
-    } else {
-      form.reset({
-        name: "",
-        description: "",
-        price: 0,
-        discount: 0,
-      });
-      setSelectedServices([]);
+    if (open) {
+      if (isEditing && packageData) {
+        form.reset({
+          name: packageData.name,
+          description: packageData.description || "",
+          price: packageData.price,
+          discount: packageData.discount,
+        });
+        setSelectedServices(packageData.services);
+      } else if (!isEditing) {
+        form.reset({
+          name: "",
+          description: "",
+          price: 0,
+          discount: 0,
+        });
+        setSelectedServices([]);
+      }
     }
-  }, [packageId, isEditing, form]);
+  }, [isEditing, packageData, form, open]);
 
-  // Filtrar serviços com base no termo de pesquisa
+  // Filter services by search term
   const filteredServices = services.filter((service) =>
     service.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calcular preço total dos serviços selecionados
+  // Calculate the total price of selected services
   const totalPrice = selectedServices.reduce((total, serviceId) => {
     const service = services.find((s) => s.id === serviceId);
     return total + (service?.price || 0);
   }, 0);
 
-  // Calcular desconto e preço final
+  // Calculate discount and final price
   const discount = form.watch("discount") || 0;
   const discountAmount = (totalPrice * discount) / 100;
   const finalPrice = totalPrice - discountAmount;
 
-  // Atualizar o campo de preço quando mudar a seleção de serviços
+  // Update price when selection or discount changes
   useEffect(() => {
-    form.setValue("price", finalPrice);
+    if (finalPrice >= 0) {
+      form.setValue("price", parseFloat(finalPrice.toFixed(2)));
+    }
   }, [selectedServices, discount, form]);
 
   const toggleService = (serviceId: string) => {
@@ -163,8 +134,8 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
       return;
     }
 
-    // Montar dados do pacote
-    const packageData: ServicePackageFormData = {
+    // Package data
+    const packageFormData: ServicePackageFormData = {
       name: values.name,
       description: values.description || "",
       services: selectedServices,
@@ -172,20 +143,19 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
       discount: values.discount
     };
 
-    console.log("Form submitted:", packageData);
-
-    // Simulando sucesso após envio
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success(isEditing ? "Pacote atualizado com sucesso!" : "Pacote cadastrado com sucesso!");
-      onOpenChange(false);
-    }, 1000);
-  };
-
-  // Encontrar um serviço pelo ID
-  const getServiceById = (id: string): Service | undefined => {
-    return services.find(s => s.id === id);
+    if (isEditing && packageId) {
+      updatePackage({ id: packageId, data: packageFormData }, {
+        onSuccess: () => {
+          onOpenChange(false);
+        }
+      });
+    } else {
+      createPackage(packageFormData, {
+        onSuccess: () => {
+          onOpenChange(false);
+        }
+      });
+    }
   };
 
   return (
@@ -199,7 +169,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
 
         {isLoading ? (
           <div className="flex justify-center items-center p-8">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -218,7 +188,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
                   </div>
                   <ScrollArea className="h-96 border rounded-md">
                     <div className="p-2 space-y-1">
-                      {filteredServices.map((service) => (
+                      {filteredServices.length > 0 ? filteredServices.map((service) => (
                         <div
                           key={service.id}
                           onClick={() => toggleService(service.id)}
@@ -238,10 +208,9 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
                             <Check className="h-4 w-4" />
                           )}
                         </div>
-                      ))}
-                      {filteredServices.length === 0 && (
+                      )) : (
                         <div className="p-4 text-center text-muted-foreground">
-                          Nenhum serviço encontrado.
+                          {searchTerm ? "Nenhum serviço encontrado." : "Nenhum serviço disponível."}
                         </div>
                       )}
                     </div>
@@ -257,7 +226,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
                   ) : (
                     <div className="space-y-2">
                       {selectedServices.map((serviceId) => {
-                        const service = getServiceById(serviceId);
+                        const service = services.find((s) => s.id === serviceId);
                         return service ? (
                           <Badge key={serviceId} variant="secondary" className="mr-1 py-1.5">
                             {service.name} (R$ {service.price.toFixed(2)})
@@ -366,7 +335,11 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
                     >
                       Cancelar
                     </Button>
-                    <Button type="submit">
+                    <Button 
+                      type="submit"
+                      disabled={isLoading}
+                    >
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {isEditing ? "Atualizar" : "Criar"} Pacote
                     </Button>
                   </DialogFooter>

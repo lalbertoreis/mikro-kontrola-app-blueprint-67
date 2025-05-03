@@ -29,6 +29,7 @@ export interface ServicePackage {
   services: string[];
   price: number;
   discount: number;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }

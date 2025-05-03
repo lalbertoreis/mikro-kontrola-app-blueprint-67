@@ -3,38 +3,31 @@ import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Package, Plus } from "lucide-react";
+import { Package, Plus, Trash, AlertCircle, Loader2 } from "lucide-react";
 import { ServicePackage } from "@/types/service";
 import ServicePackageDialog from "./ServicePackageDialog";
-
-// Dados de exemplo para pacotes
-const mockPackages: ServicePackage[] = [
-  {
-    id: "1",
-    name: "Pacote Beleza Completa",
-    description: "Inclui corte, manicure e pedicure",
-    services: ["1", "2", "3"],
-    price: 120.00,
-    discount: 15,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Pacote Dia da Noiva",
-    description: "Tratamento completo para noivas",
-    services: ["4", "5", "2", "3"],
-    price: 300.00,
-    discount: 10,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-];
+import { useServicePackages } from "@/hooks/useServicePackages";
+import { useServices } from "@/hooks/useServices";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const ServicePackageList = () => {
   const [open, setOpen] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState<string | undefined>(undefined);
-  const [packages] = useState<ServicePackage[]>(mockPackages);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [packageToDelete, setPackageToDelete] = useState<ServicePackage | null>(null);
+  
+  const { packages, isLoading, deletePackage, isDeleting } = useServicePackages();
+  const { services } = useServices();
 
   const handleNewPackage = () => {
     setSelectedPackageId(undefined);
@@ -46,10 +39,44 @@ const ServicePackageList = () => {
     setOpen(true);
   };
 
-  const calculateTotalWithoutDiscount = (pkg: ServicePackage): number => {
-    const total = pkg.price / (1 - pkg.discount / 100);
-    return Number(total.toFixed(2));
+  const handleDeleteClick = (pkg: ServicePackage) => {
+    setPackageToDelete(pkg);
+    setDeleteConfirmOpen(true);
   };
+
+  const confirmDelete = () => {
+    if (packageToDelete) {
+      deletePackage(packageToDelete.id, {
+        onSuccess: () => {
+          setDeleteConfirmOpen(false);
+          setPackageToDelete(null);
+        }
+      });
+    }
+  };
+
+  const calculateTotalWithoutDiscount = (pkg: ServicePackage): number => {
+    // Use the selected services to calculate the total price
+    const servicesPrice = pkg.services.reduce((total, serviceId) => {
+      const service = services.find(s => s.id === serviceId);
+      return total + (service?.price || 0);
+    }, 0);
+    
+    // If no services or old calculation method needed
+    if (servicesPrice === 0) {
+      return pkg.price / (1 - pkg.discount / 100);
+    }
+    
+    return servicesPrice;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-12">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -78,6 +105,14 @@ const ServicePackageList = () => {
               {packages.length > 0 ? (
                 packages.map((pkg) => {
                   const totalWithoutDiscount = calculateTotalWithoutDiscount(pkg);
+                  const serviceCount = pkg.services.length;
+                  
+                  // Get service names for display
+                  const serviceNames = pkg.services
+                    .map(id => services.find(s => s.id === id)?.name || "")
+                    .filter(name => name !== "")
+                    .join(", ");
+                  
                   return (
                     <TableRow key={pkg.id}>
                       <TableCell className="font-medium">
@@ -89,14 +124,30 @@ const ServicePackageList = () => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">{pkg.services.length} serviços</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {serviceCount > 0 ? (
+                          <span title={serviceNames}>{serviceCount} serviços</span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">Sem serviços</span>
+                        )}
+                      </TableCell>
                       <TableCell>{pkg.discount}%</TableCell>
                       <TableCell>R$ {totalWithoutDiscount.toFixed(2)}</TableCell>
                       <TableCell>R$ {pkg.price.toFixed(2)}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => handleEditPackage(pkg.id)}>
-                          Editar
-                        </Button>
+                        <div className="flex space-x-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditPackage(pkg.id)}>
+                            Editar
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-destructive hover:text-destructive" 
+                            onClick={() => handleDeleteClick(pkg)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -104,7 +155,17 @@ const ServicePackageList = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    Nenhum pacote cadastrado.
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <Package className="h-8 w-8 mb-2" />
+                      <p>Nenhum pacote cadastrado.</p>
+                      <Button
+                        variant="link" 
+                        className="mt-2"
+                        onClick={handleNewPackage}
+                      >
+                        Adicionar pacote
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
@@ -118,6 +179,32 @@ const ServicePackageList = () => {
         onOpenChange={setOpen}
         packageId={selectedPackageId}
       />
+      
+      <AlertDialog 
+        open={deleteConfirmOpen} 
+        onOpenChange={setDeleteConfirmOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Pacote</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o pacote "{packageToDelete?.name}"?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

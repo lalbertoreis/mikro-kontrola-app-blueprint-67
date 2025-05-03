@@ -1,9 +1,9 @@
-import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
+
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useToast } from "@/hooks/use-toast";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,13 +16,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Loader2 } from "lucide-react";
 import { ServiceFormData } from "@/types/service";
-import ServicePackageForm from "./ServicePackageForm";
+import { useServiceById, useServices } from "@/hooks/useServices";
 
-// Validação com zod
+// Form schema with zod
 const formSchema = z.object({
   name: z.string().min(2, {
     message: "O nome deve ter pelo menos 2 caracteres.",
@@ -31,103 +31,96 @@ const formSchema = z.object({
   price: z.coerce.number().min(0, {
     message: "O preço não pode ser negativo.",
   }),
-  duration: z.coerce.number().int().min(5, {
+  duration: z.coerce.number().min(5, {
     message: "A duração deve ser de pelo menos 5 minutos.",
   }),
-  multipleAttendees: z.boolean(),
-  maxAttendees: z.coerce.number().int().min(2).optional(),
+  multipleAttendees: z.boolean().default(false),
+  maxAttendees: z.coerce.number().min(2, {
+    message: "O número máximo de pessoas deve ser pelo menos 2.",
+  }).optional().refine(val => val === undefined || val >= 2, {
+    message: "O número máximo de pessoas deve ser pelo menos 2.",
+  }),
+  isActive: z.boolean().default(true),
 });
 
-const ServiceFormComponent: React.FC = () => {
+const ServiceForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { data: service, isLoading: isServiceLoading } = useServiceById(id);
+  const { createService, updateService, isCreating, isUpdating } = useServices();
   
-  const isEditing = id !== undefined;
-  const [activeTab, setActiveTab] = React.useState<string>("service");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Mock para o serviço quando estivermos em edição
-  const mockService: ServiceFormData | null = isEditing
-    ? {
-        name: "Corte de Cabelo",
-        description: "Corte tradicional masculino",
-        price: 50.00,
-        duration: 30,
-        multipleAttendees: false,
-        isActive: true,
-      }
-    : null;
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: mockService || {
+    defaultValues: {
       name: "",
       description: "",
       price: 0,
       duration: 30,
       multipleAttendees: false,
-      maxAttendees: 2,
+      maxAttendees: undefined,
       isActive: true,
     },
   });
 
-  // Atualiza o campo maxAttendees com o valor padrão quando multipleAttendees muda
-  React.useEffect(() => {
-    const multipleAttendees = form.watch('multipleAttendees');
-    if (!multipleAttendees) {
-      form.setValue('maxAttendees', undefined);
-    } else if (!form.watch('maxAttendees')) {
-      form.setValue('maxAttendees', 2);
+  // Enable/disable maxAttendees field based on multipleAttendees toggle
+  const multipleAttendees = form.watch("multipleAttendees");
+
+  // Load service data if editing
+  useEffect(() => {
+    if (service) {
+      form.reset({
+        name: service.name,
+        description: service.description || "",
+        price: service.price,
+        duration: service.duration,
+        multipleAttendees: service.multipleAttendees,
+        maxAttendees: service.maxAttendees,
+        isActive: service.isActive,
+      });
     }
-  }, [form.watch('multipleAttendees')]);
+  }, [service, form]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    
-    // Aqui irá a lógica para salvar o serviço
-    
-    toast({
-      title: isEditing ? "Serviço atualizado!" : "Serviço cadastrado!",
-      description: `${values.name} foi ${isEditing ? "atualizado" : "cadastrado"} com sucesso.`,
-    });
-    
-    navigate("/dashboard/services");
-  }
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      setIsSubmitting(true);
+      
+      const serviceData: ServiceFormData = {
+        name: values.name,
+        description: values.description,
+        price: values.price,
+        duration: values.duration,
+        multipleAttendees: values.multipleAttendees,
+        maxAttendees: values.multipleAttendees ? values.maxAttendees : undefined,
+        isActive: values.isActive,
+      };
 
-  function onPackageSuccess() {
-    toast({
-      title: "Pacote cadastrado!",
-      description: "O pacote de serviços foi cadastrado com sucesso.",
-    });
-    
-    navigate("/dashboard/services");
-  }
+      if (id) {
+        await updateService({ id, data: serviceData });
+      } else {
+        await createService(serviceData);
+      }
+      
+      navigate("/dashboard/services");
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="grid grid-cols-2">
-              <TabsTrigger value="service">
-                {isEditing ? "Editar Serviço" : "Novo Serviço"}
-              </TabsTrigger>
-              <TabsTrigger value="package">
-                Novo Pacote
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsContent value="service">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <CardContent className="pt-6">
+        {isServiceLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="name"
@@ -141,78 +134,79 @@ const ServiceFormComponent: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descrição</FormLabel>
+                      <FormLabel>Preço (R$)</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Descrição do serviço..." 
-                          {...field} 
-                          value={field.value || ""}
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Descrição do serviço..."
+                        className="resize-none"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="duration"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Duração (minutos)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="5"
+                          step="5"
+                          {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        Detalhes adicionais sobre o serviço oferecido.
+                        Tempo necessário para realizar o serviço
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Preço (R$)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01"
-                            placeholder="0,00" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="duration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Duração (minutos)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="30" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
+
                 <FormField
                   control={form.control}
-                  name="multipleAttendees"
+                  name="isActive"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Atendimentos múltiplos
-                        </FormLabel>
+                        <FormLabel>Ativo</FormLabel>
                         <FormDescription>
-                          Permite que mais de uma pessoa seja atendida ao mesmo tempo.
+                          Serviço disponível para agendamento
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -224,59 +218,85 @@ const ServiceFormComponent: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
-                {form.watch('multipleAttendees') && (
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="multipleAttendees"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Múltiplos Atendimentos</FormLabel>
+                        <FormDescription>
+                          Permite atender vários clientes ao mesmo tempo
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {multipleAttendees && (
                   <FormField
                     control={form.control}
                     name="maxAttendees"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Número máximo de pessoas</FormLabel>
+                        <FormLabel>Máximo de Pessoas</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="2" 
-                            min={2}
+                          <Input
+                            type="number"
+                            min="2"
+                            step="1"
+                            placeholder="Número máximo de atendimentos"
                             {...field}
-                            value={field.value || 2}
+                            value={field.value || ""}
                             onChange={(e) => {
-                              const value = parseInt(e.target.value);
-                              field.onChange(isNaN(value) ? 2 : Math.max(2, value));
+                              const value = e.target.value === "" ? undefined : parseInt(e.target.value);
+                              field.onChange(value);
                             }}
                           />
                         </FormControl>
                         <FormDescription>
-                          Quantas pessoas podem ser atendidas simultaneamente.
+                          Quantidade máxima de pessoas atendidas simultaneamente
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 )}
-                
-                <CardFooter className="px-0 pt-4 flex justify-between">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => navigate("/dashboard/services")}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="submit">
-                    {isEditing ? "Atualizar" : "Cadastrar"}
-                  </Button>
-                </CardFooter>
-              </form>
-            </Form>
-          </TabsContent>
-          
-          <TabsContent value="package">
-            <ServicePackageForm onSuccess={onPackageSuccess} />
-          </TabsContent>
-        </Tabs>
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/dashboard/services")}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting || isCreating || isUpdating}
+                >
+                  {(isSubmitting || isCreating || isUpdating) && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {id ? "Atualizar" : "Cadastrar"} Serviço
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
       </CardContent>
     </Card>
   );
 };
 
-export default ServiceFormComponent;
+export default ServiceForm;

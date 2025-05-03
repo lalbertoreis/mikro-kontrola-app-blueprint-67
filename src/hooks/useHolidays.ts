@@ -6,7 +6,8 @@ import {
   fetchHolidayById, 
   createHoliday, 
   updateHoliday, 
-  deleteHoliday 
+  deleteHoliday,
+  importHolidays
 } from "@/services/holidayService";
 import type { Holiday, HolidayFormData } from "@/types/holiday";
 
@@ -22,11 +23,6 @@ export function useHolidays() {
     mutationFn: (newHoliday: HolidayFormData) => createHoliday(newHoliday),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      toast.success("Feriado adicionado com sucesso!");
-    },
-    onError: (error) => {
-      console.error("Erro ao adicionar feriado:", error);
-      toast.error("Erro ao adicionar feriado. Tente novamente.");
     },
   });
 
@@ -35,11 +31,6 @@ export function useHolidays() {
       updateHoliday(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      toast.success("Feriado atualizado com sucesso!");
-    },
-    onError: (error) => {
-      console.error("Erro ao atualizar feriado:", error);
-      toast.error("Erro ao atualizar feriado. Tente novamente.");
     },
   });
 
@@ -47,11 +38,13 @@ export function useHolidays() {
     mutationFn: deleteHoliday,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      toast.success("Feriado excluído com sucesso!");
     },
-    onError: (error) => {
-      console.error("Erro ao excluir feriado:", error);
-      toast.error("Erro ao excluir feriado. Tente novamente.");
+  });
+
+  const importMutation = useMutation({
+    mutationFn: (year: number) => importHolidays(year),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["holidays"] });
     },
   });
 
@@ -62,9 +55,11 @@ export function useHolidays() {
     createHoliday: createMutation.mutate,
     updateHoliday: updateMutation.mutate,
     deleteHoliday: deleteMutation.mutate,
+    importHolidays: importMutation.mutate,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    isImporting: importMutation.isPending,
   };
 }
 
