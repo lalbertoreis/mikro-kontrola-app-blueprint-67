@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     }));
     
     // Insert holidays into the database
-    // Use the correct conflict key: 'date, user_id'
+    // The unique constraint holidays_date_user_id_key has been added to the database
     const { data, error } = await supabase
       .from('holidays')
       .upsert(formattedHolidays, { 

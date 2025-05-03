@@ -40,6 +40,7 @@ export const ImportHolidaysDialog: React.FC<ImportHolidaysDialogProps> = ({
     message: string;
   } | null>(null);
   const queryClient = useQueryClient();
+  const { importHolidays } = useHolidays();
 
   // Generate a list of years for the dropdown (current year + 5 years ahead + 2 years back)
   const currentYear = new Date().getFullYear();
@@ -52,53 +53,17 @@ export const ImportHolidaysDialog: React.FC<ImportHolidaysDialogProps> = ({
     try {
       setImporting(true);
       setImportResult(null);
-
-      const response = await fetch(
-        `https://brasilapi.com.br/api/feriados/v1/${selectedYear}`
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Erro ao buscar feriados: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const holidays = await response.json();
-
-      // Create a user object for the holidays
-      const user = await supabase.auth.getUser();
-
-      if (!user.data?.user) {
-        throw new Error("Usuário não autenticado");
-      }
       
-      // Transform holidays to the format expected by the API
-      const formattedHolidays = holidays.map((h: any) => ({
-        date: h.date,
-        name: h.name,
-        type: "national",
-        is_active: true,
-        auto_generated: true,
-        blocking_type: "full_day",
-        user_id: user.data.user.id,
-      }));
-
-      // Insert holidays into the database with upsert based on date and user_id
-      // We're now using date AND user_id as the conflict key
-      const { error } = await supabase.from("holidays").upsert(formattedHolidays, {
-        onConflict: 'date, user_id',
-        ignoreDuplicates: false
-      });
-
-      if (error) throw error;
-
+      // Use the importHolidays function from the hook
+      await importHolidays(parseInt(selectedYear));
+      
       setImportResult({
         success: true,
-        message: `${formattedHolidays.length} feriados importados com sucesso!`,
+        message: `Feriados nacionais importados com sucesso para ${selectedYear}!`,
       });
       
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      toast.success(`${formattedHolidays.length} feriados importados para ${selectedYear}.`);
+      toast.success(`Feriados importados para ${selectedYear}.`);
     } catch (error) {
       console.error("Erro ao importar feriados:", error);
       setImportResult({

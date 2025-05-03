@@ -164,10 +164,12 @@ export async function deleteHoliday(id: string): Promise<void> {
 
 export async function importHolidays(year: number): Promise<any> {
   try {
-    const response = await supabase.functions.invoke("fetch-holidays", {
+    const { data, error } = await supabase.functions.invoke("fetch-holidays", {
       body: { year }
     });
-    return response.data;
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Erro ao importar feriados:', error);
     throw error;
