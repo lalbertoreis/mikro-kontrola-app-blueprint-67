@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -40,6 +41,8 @@ const formSchema = z.object({
   duration: z.number().min(1, {
     message: "A duração deve ser de pelo menos 1 minuto.",
   }),
+  multipleAttendees: z.boolean().default(false),
+  maxAttendees: z.number().min(2).optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -61,6 +64,8 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({ open, onOpenChange, servi
       description: "",
       price: 0,
       duration: 30,
+      multipleAttendees: false,
+      maxAttendees: 2,
       isActive: true,
     },
   });
@@ -73,6 +78,8 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({ open, onOpenChange, servi
         description: service.description || "",
         price: service.price,
         duration: service.duration,
+        multipleAttendees: service.multipleAttendees,
+        maxAttendees: service.maxAttendees || 2,
         isActive: service.isActive,
       });
     } else if (!isEditing) {
@@ -81,10 +88,22 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({ open, onOpenChange, servi
         description: "",
         price: 0,
         duration: 30,
+        multipleAttendees: false,
+        maxAttendees: 2,
         isActive: true,
       });
     }
   }, [service, form, isEditing]);
+
+  // Atualiza o campo maxAttendees com o valor padrão quando multipleAttendees muda
+  useEffect(() => {
+    const multipleAttendees = form.watch('multipleAttendees');
+    if (!multipleAttendees) {
+      form.setValue('maxAttendees', undefined);
+    } else if (!form.watch('maxAttendees')) {
+      form.setValue('maxAttendees', 2);
+    }
+  }, [form.watch('multipleAttendees')]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -93,8 +112,9 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({ open, onOpenChange, servi
         description: values.description,
         price: values.price,
         duration: values.duration,
+        multipleAttendees: values.multipleAttendees,
+        maxAttendees: values.multipleAttendees ? values.maxAttendees : undefined,
         isActive: values.isActive,
-        multipleAttendees: false, // Default value
       };
 
       if (isEditing && serviceId) {
@@ -204,6 +224,52 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({ open, onOpenChange, servi
                   </FormItem>
                 )}
               />
+              
+              <FormField
+                control={form.control}
+                name="multipleAttendees"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Atendimentos múltiplos</FormLabel>
+                      <FormDescription>
+                        Permite que mais de uma pessoa seja atendida ao mesmo tempo.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              {form.watch('multipleAttendees') && (
+                <FormField
+                  control={form.control}
+                  name="maxAttendees"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número máximo de pessoas</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min={2}
+                          {...field}
+                          value={field.value || 2}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Quantas pessoas podem ser atendidas simultaneamente.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               
               <FormField
                 control={form.control}
