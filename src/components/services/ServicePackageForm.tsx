@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +30,7 @@ const mockServices: Service[] = [
     price: 50.00,
     duration: 30,
     multipleAttendees: false,
+    isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -39,6 +41,7 @@ const mockServices: Service[] = [
     price: 45.00,
     duration: 60,
     multipleAttendees: false,
+    isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },

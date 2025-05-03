@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,6 +54,7 @@ const ServiceFormComponent: React.FC = () => {
         price: 50.00,
         duration: 30,
         multipleAttendees: false,
+        isActive: true,
       }
     : null;
 
@@ -67,6 +67,7 @@ const ServiceFormComponent: React.FC = () => {
       duration: 30,
       multipleAttendees: false,
       maxAttendees: 2,
+      isActive: true,
     },
   });
 

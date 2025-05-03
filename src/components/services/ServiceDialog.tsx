@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -95,6 +94,7 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({ open, onOpenChange, servi
         price: values.price,
         duration: values.duration,
         isActive: values.isActive,
+        multipleAttendees: false, // Default value
       };
 
       if (isEditing && serviceId) {

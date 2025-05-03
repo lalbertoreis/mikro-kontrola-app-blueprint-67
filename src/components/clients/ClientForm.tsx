@@ -21,6 +21,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Loader2 } from "lucide-react";
 import { useClients, useClientById } from "@/hooks/useClients";
 import { ClientFormData } from "@/types/client";
+import { fetchAddressFromCEP } from "@/utils/cepUtils";
 
 // Validação com zod
 const formSchema = z.object({
@@ -33,6 +34,8 @@ const formSchema = z.object({
   phone: z.string().min(10, {
     message: "Telefone inválido.",
   }),
+  cep: z.string().optional(),
+  address: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -43,6 +46,7 @@ const ClientFormComponent: React.FC = () => {
   const isEditing = id !== undefined;
   const { data: client, isLoading: isClientLoading } = useClientById(id);
   const { createClient, updateClient, isCreating, isUpdating } = useClients();
+  const [isFetchingAddress, setIsFetchingAddress] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,6 +54,8 @@ const ClientFormComponent: React.FC = () => {
       name: "",
       email: "",
       phone: "",
+      cep: "",
+      address: "",
       notes: "",
     },
   });
@@ -61,10 +67,47 @@ const ClientFormComponent: React.FC = () => {
         name: client.name,
         email: client.email || "",
         phone: client.phone || "",
+        cep: client.cep || "",
+        address: client.address || "",
         notes: client.notes || "",
       });
     }
   }, [client, form, isEditing]);
+
+  const handleCEPChange = async (cep: string) => {
+    if (cep.length === 9) { // Format: 12345-678
+      setIsFetchingAddress(true);
+      try {
+        const addressData = await fetchAddressFromCEP(cep);
+        if (addressData) {
+          const fullAddress = `${addressData.logradouro}, ${addressData.bairro}, ${addressData.localidade} - ${addressData.uf}`;
+          form.setValue("address", fullAddress);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar endereço:", error);
+      } finally {
+        setIsFetchingAddress(false);
+      }
+    }
+  };
+
+  // Format CEP as user types (12345-678)
+  const handleCEPFormat = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    
+    if (value.length > 8) {
+      value = value.slice(0, 8);
+    }
+    
+    if (value.length > 5) {
+      value = `${value.slice(0, 5)}-${value.slice(5)}`;
+    }
+    
+    form.setValue("cep", value);
+    if (value.length === 9) {
+      handleCEPChange(value);
+    }
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -72,6 +115,8 @@ const ClientFormComponent: React.FC = () => {
         name: values.name,
         email: values.email,
         phone: values.phone,
+        cep: values.cep || "",
+        address: values.address || "",
         notes: values.notes,
       };
 
@@ -153,6 +198,51 @@ const ClientFormComponent: React.FC = () => {
                 )}
               />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="cep"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CEP</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          placeholder="12345-678" 
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            handleCEPFormat(e);
+                            field.onChange(e);
+                          }} 
+                        />
+                        {isFetchingAddress && (
+                          <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-3" />
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Digite o CEP para preencher o endereço automaticamente
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Endereço</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Endereço completo" {...field} value={field.value || ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}
