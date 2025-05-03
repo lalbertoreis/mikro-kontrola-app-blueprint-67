@@ -7,6 +7,7 @@ export interface Service {
   duration: number; // in minutes
   multipleAttendees: boolean;
   maxAttendees?: number;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +19,7 @@ export interface ServiceFormData {
   duration: number;
   multipleAttendees: boolean;
   maxAttendees?: number;
+  isActive: boolean;
 }
 
 export interface ServicePackage {

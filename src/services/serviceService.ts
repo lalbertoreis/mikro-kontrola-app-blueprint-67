@@ -17,6 +17,7 @@ export async function fetchServices(): Promise<Service[]> {
       description: item.description || undefined,
       price: Number(item.price),
       duration: Number(item.duration),
+      isActive: item.is_active,
       multipleAttendees: false, // This field might not exist in the database, adjust accordingly
       maxAttendees: undefined, // This field might not exist in the database, adjust accordingly
       createdAt: item.created_at,
@@ -45,6 +46,7 @@ export async function fetchServiceById(id: string): Promise<Service | null> {
       description: data.description || undefined,
       price: Number(data.price),
       duration: Number(data.duration),
+      isActive: data.is_active,
       multipleAttendees: false, // This field might not exist in the database, adjust accordingly
       maxAttendees: undefined, // This field might not exist in the database, adjust accordingly
       createdAt: data.created_at,
@@ -58,7 +60,7 @@ export async function fetchServiceById(id: string): Promise<Service | null> {
 
 export async function createService(serviceData: ServiceFormData): Promise<Service> {
   try {
-    const { name, description, price, duration } = serviceData;
+    const { name, description, price, duration, isActive } = serviceData;
     
     const { data, error } = await supabase
       .from('services')
@@ -67,7 +69,7 @@ export async function createService(serviceData: ServiceFormData): Promise<Servi
         description,
         price,
         duration,
-        is_active: true,
+        is_active: isActive,
         user_id: (await supabase.auth.getUser()).data.user?.id
       })
       .select()
@@ -81,6 +83,7 @@ export async function createService(serviceData: ServiceFormData): Promise<Servi
       description: data.description || undefined,
       price: Number(data.price),
       duration: Number(data.duration),
+      isActive: data.is_active,
       multipleAttendees: false,
       maxAttendees: undefined,
       createdAt: data.created_at,
@@ -94,7 +97,7 @@ export async function createService(serviceData: ServiceFormData): Promise<Servi
 
 export async function updateService(id: string, serviceData: ServiceFormData): Promise<Service> {
   try {
-    const { name, description, price, duration } = serviceData;
+    const { name, description, price, duration, isActive } = serviceData;
     
     const { data, error } = await supabase
       .from('services')
@@ -103,6 +106,7 @@ export async function updateService(id: string, serviceData: ServiceFormData): P
         description,
         price,
         duration,
+        is_active: isActive,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
@@ -117,6 +121,7 @@ export async function updateService(id: string, serviceData: ServiceFormData): P
       description: data.description || undefined,
       price: Number(data.price),
       duration: Number(data.duration),
+      isActive: data.is_active,
       multipleAttendees: false,
       maxAttendees: undefined,
       createdAt: data.created_at,
