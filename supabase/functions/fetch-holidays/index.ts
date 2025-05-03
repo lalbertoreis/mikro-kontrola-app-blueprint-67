@@ -56,10 +56,11 @@ Deno.serve(async (req) => {
     }));
     
     // Insert holidays into the database
+    // Use the correct conflict key: 'date, user_id'
     const { data, error } = await supabase
       .from('holidays')
       .upsert(formattedHolidays, { 
-        onConflict: 'date',
+        onConflict: 'date, user_id',
         ignoreDuplicates: false
       });
     

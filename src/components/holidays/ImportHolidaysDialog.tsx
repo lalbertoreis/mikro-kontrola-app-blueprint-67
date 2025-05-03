@@ -83,9 +83,10 @@ export const ImportHolidaysDialog: React.FC<ImportHolidaysDialogProps> = ({
         user_id: user.data.user.id,
       }));
 
-      // Insert holidays into the database with upsert to avoid duplicates
+      // Insert holidays into the database with upsert based on date and user_id
+      // We're now using date AND user_id as the conflict key
       const { error } = await supabase.from("holidays").upsert(formattedHolidays, {
-        onConflict: 'date',
+        onConflict: 'date, user_id',
         ignoreDuplicates: false
       });
 
