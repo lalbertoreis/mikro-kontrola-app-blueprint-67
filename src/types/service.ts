@@ -33,7 +33,7 @@ export interface ServicePackage {
   createdAt: string;
   updatedAt: string;
   showInOnlineBooking: boolean;
-  totalDuration?: number; // Nova propriedade para armazenar o tempo total
+  totalDuration?: number;
 }
 
 export interface ServicePackageFormData {
@@ -43,5 +43,5 @@ export interface ServicePackageFormData {
   price: number;
   discount: number;
   showInOnlineBooking: boolean;
-  totalDuration?: number; // Nova propriedade para armazenar o tempo total
+  totalDuration?: number;
 }

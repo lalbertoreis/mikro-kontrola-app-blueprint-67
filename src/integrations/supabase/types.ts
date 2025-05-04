@@ -273,6 +273,7 @@ export type Database = {
           price: number
           services: Json
           show_in_online_booking: boolean | null
+          total_duration: number | null
           updated_at: string | null
           user_id: string
         }
@@ -286,6 +287,7 @@ export type Database = {
           price: number
           services: Json
           show_in_online_booking?: boolean | null
+          total_duration?: number | null
           updated_at?: string | null
           user_id: string
         }
@@ -299,6 +301,7 @@ export type Database = {
           price?: number
           services?: Json
           show_in_online_booking?: boolean | null
+          total_duration?: number | null
           updated_at?: string | null
           user_id?: string
         }

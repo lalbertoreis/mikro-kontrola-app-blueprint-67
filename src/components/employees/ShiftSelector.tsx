@@ -31,7 +31,7 @@ interface ShiftSelectorProps {
 const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange }) => {
   const [newDay, setNewDay] = useState<string>("0");
   const [newStart, setNewStart] = useState<string>("09:00");
-  const [newEnd, setNewStart] = useState<string>("18:00");
+  const [newEnd, setNewEnd] = useState<string>("18:00");
   const [includeLunchBreak, setIncludeLunchBreak] = useState<boolean>(false);
   const [lunchStart, setLunchStart] = useState<string>("12:00");
   const [lunchEnd, setLunchEnd] = useState<string>("13:00");

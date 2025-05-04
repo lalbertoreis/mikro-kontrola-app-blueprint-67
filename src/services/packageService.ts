@@ -24,7 +24,7 @@ export async function fetchServicePackages(): Promise<ServicePackage[]> {
         createdAt: item.created_at,
         updatedAt: item.updated_at,
         showInOnlineBooking: item.show_in_online_booking,
-        totalDuration: item.total_duration
+        totalDuration: item.total_duration || undefined
       };
     });
   } catch (error) {
@@ -55,7 +55,7 @@ export async function fetchServicePackageById(id: string): Promise<ServicePackag
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       showInOnlineBooking: data.show_in_online_booking,
-      totalDuration: data.total_duration
+      totalDuration: data.total_duration || undefined
     };
   } catch (error) {
     console.error('Error fetching service package:', error);
@@ -96,7 +96,7 @@ export async function createServicePackage(packageData: ServicePackageFormData):
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       showInOnlineBooking: data.show_in_online_booking,
-      totalDuration: data.total_duration
+      totalDuration: data.total_duration || undefined
     };
   } catch (error) {
     console.error('Error creating service package:', error);
@@ -137,7 +137,7 @@ export async function updateServicePackage(id: string, packageData: ServicePacka
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       showInOnlineBooking: data.show_in_online_booking,
-      totalDuration: data.total_duration
+      totalDuration: data.total_duration || undefined
     };
   } catch (error) {
     console.error('Error updating service package:', error);
