@@ -28,6 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useServices } from "@/hooks/useServices";
 import { useServicePackages, useServicePackageById } from "@/hooks/useServicePackages";
+import { Switch } from "@/components/ui/switch";
 
 // Validação com zod
 const formSchema = z.object({
@@ -41,6 +42,7 @@ const formSchema = z.object({
   discount: z.coerce.number().min(0).max(100, {
     message: "O desconto deve estar entre 0 e 100%.",
   }),
+  showInOnlineBooking: z.boolean().default(true),
 });
 
 interface ServicePackageDialogProps {
@@ -70,6 +72,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
       description: "",
       price: 0,
       discount: 0,
+      showInOnlineBooking: true,
     },
   });
 
@@ -82,6 +85,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
           description: packageData.description || "",
           price: packageData.price,
           discount: packageData.discount,
+          showInOnlineBooking: packageData.showInOnlineBooking,
         });
         setSelectedServices(packageData.services);
       } else if (!isEditing) {
@@ -90,6 +94,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
           description: "",
           price: 0,
           discount: 0,
+          showInOnlineBooking: true,
         });
         setSelectedServices([]);
       }
@@ -140,7 +145,8 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
       description: values.description || "",
       services: selectedServices,
       price: values.price,
-      discount: values.discount
+      discount: values.discount,
+      showInOnlineBooking: values.showInOnlineBooking,
     };
 
     if (isEditing && packageId) {
@@ -326,6 +332,27 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
                       )}
                     />
                   </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="showInOnlineBooking"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Mostrar na agenda online</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Pacote estará disponível para agendamento online
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                   
                   <DialogFooter>
                     <Button
