@@ -11,19 +11,22 @@ export async function fetchServicePackages(): Promise<ServicePackage[]> {
     
     if (error) throw error;
     
-    // Transform the JSONB services array to string array
-    return data.map(item => ({
-      id: item.id,
-      name: item.name,
-      description: item.description || undefined,
-      services: Array.isArray(item.services) ? item.services.map(String) : [],
-      price: Number(item.price),
-      discount: Number(item.discount),
-      isActive: item.is_active,
-      createdAt: item.created_at,
-      updatedAt: item.updated_at,
-      showInOnlineBooking: item.show_in_online_booking
-    }));
+    // Transform the JSONB services array to string array and calculate total duration
+    return data.map(item => {
+      return {
+        id: item.id,
+        name: item.name,
+        description: item.description || undefined,
+        services: Array.isArray(item.services) ? item.services.map(String) : [],
+        price: Number(item.price),
+        discount: Number(item.discount),
+        isActive: item.is_active,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        showInOnlineBooking: item.show_in_online_booking,
+        totalDuration: item.total_duration
+      };
+    });
   } catch (error) {
     console.error('Error fetching service packages:', error);
     throw error;
@@ -51,7 +54,8 @@ export async function fetchServicePackageById(id: string): Promise<ServicePackag
       isActive: data.is_active,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
-      showInOnlineBooking: data.show_in_online_booking
+      showInOnlineBooking: data.show_in_online_booking,
+      totalDuration: data.total_duration
     };
   } catch (error) {
     console.error('Error fetching service package:', error);
@@ -61,7 +65,7 @@ export async function fetchServicePackageById(id: string): Promise<ServicePackag
 
 export async function createServicePackage(packageData: ServicePackageFormData): Promise<ServicePackage> {
   try {
-    const { name, description, services, price, discount, showInOnlineBooking } = packageData;
+    const { name, description, services, price, discount, showInOnlineBooking, totalDuration } = packageData;
     
     const { data, error } = await supabase
       .from('service_packages')
@@ -72,6 +76,7 @@ export async function createServicePackage(packageData: ServicePackageFormData):
         price,
         discount,
         show_in_online_booking: showInOnlineBooking,
+        total_duration: totalDuration,
         is_active: true,
         user_id: (await supabase.auth.getUser()).data.user?.id
       })
@@ -90,7 +95,8 @@ export async function createServicePackage(packageData: ServicePackageFormData):
       isActive: data.is_active,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
-      showInOnlineBooking: data.show_in_online_booking
+      showInOnlineBooking: data.show_in_online_booking,
+      totalDuration: data.total_duration
     };
   } catch (error) {
     console.error('Error creating service package:', error);
@@ -100,7 +106,7 @@ export async function createServicePackage(packageData: ServicePackageFormData):
 
 export async function updateServicePackage(id: string, packageData: ServicePackageFormData): Promise<ServicePackage> {
   try {
-    const { name, description, services, price, discount, showInOnlineBooking } = packageData;
+    const { name, description, services, price, discount, showInOnlineBooking, totalDuration } = packageData;
     
     const { data, error } = await supabase
       .from('service_packages')
@@ -111,6 +117,7 @@ export async function updateServicePackage(id: string, packageData: ServicePacka
         price,
         discount,
         show_in_online_booking: showInOnlineBooking,
+        total_duration: totalDuration,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
@@ -129,7 +136,8 @@ export async function updateServicePackage(id: string, packageData: ServicePacka
       isActive: data.is_active,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
-      showInOnlineBooking: data.show_in_online_booking
+      showInOnlineBooking: data.show_in_online_booking,
+      totalDuration: data.total_duration
     };
   } catch (error) {
     console.error('Error updating service package:', error);

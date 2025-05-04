@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -29,6 +30,7 @@ import { useEmployees, useEmployeeById } from "@/hooks/useEmployees";
 import ShiftSelector from "./ShiftSelector";
 import ServiceSelector from "./ServiceSelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { X } from "lucide-react";
 
 // Definir esquema de validação para o funcionário
 const employeeSchema = z.object({
@@ -151,11 +153,18 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
       if (isCreating || isUpdating) return;
       onOpenChange(state);
     }}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
-        <DialogHeader className="sticky top-0 z-10 bg-background pb-4">
-          <DialogTitle>
-            {isEditing ? "Editar Funcionário" : "Novo Funcionário"}
-          </DialogTitle>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
+        <DialogHeader className="sticky top-0 z-40 bg-background pb-4">
+          <div className="flex items-center justify-between">
+            <DialogTitle>
+              {isEditing ? "Editar Funcionário" : "Novo Funcionário"}
+            </DialogTitle>
+            <DialogClose className="z-50 relative">
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
+          </div>
         </DialogHeader>
 
         {isEmployeeLoading && isEditing ? (

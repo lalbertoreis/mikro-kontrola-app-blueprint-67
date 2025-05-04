@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Package, Plus, Trash, AlertCircle, Loader2, Check, X } from "lucide-react";
+import { Package, Plus, Trash, Clock, Loader2, Check, X } from "lucide-react";
 import { ServicePackage } from "@/types/service";
 import ServicePackageDialog from "./ServicePackageDialog";
 import { useServicePackages } from "@/hooks/useServicePackages";
@@ -71,6 +71,16 @@ const ServicePackageList = () => {
     return servicesPrice;
   };
 
+  // Format duration as hours and minutes
+  const formatDuration = (minutes: number | undefined): string => {
+    if (!minutes) return "-";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 
+      ? `${hours}h${mins > 0 ? ` ${mins}min` : ''}`
+      : `${mins}min`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-12">
@@ -99,6 +109,7 @@ const ServicePackageList = () => {
                 <TableHead>Desconto</TableHead>
                 <TableHead>Preço Original</TableHead>
                 <TableHead>Preço com Desconto</TableHead>
+                <TableHead className="hidden md:table-cell">Duração</TableHead>
                 <TableHead className="hidden md:table-cell">Agenda Online</TableHead>
                 <TableHead className="w-24"></TableHead>
               </TableRow>
@@ -128,7 +139,14 @@ const ServicePackageList = () => {
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {serviceCount > 0 ? (
-                          <span title={serviceNames}>{serviceCount} serviços</span>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span>{serviceCount} serviços</span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-80">
+                              <p className="text-sm">{serviceNames}</p>
+                            </TooltipContent>
+                          </Tooltip>
                         ) : (
                           <span className="text-muted-foreground text-xs">Sem serviços</span>
                         )}
@@ -136,6 +154,12 @@ const ServicePackageList = () => {
                       <TableCell>{pkg.discount.toFixed(2)}%</TableCell>
                       <TableCell>R$ {totalWithoutDiscount.toFixed(2)}</TableCell>
                       <TableCell>R$ {pkg.price.toFixed(2)}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{formatDuration(pkg.totalDuration)}</span>
+                        </div>
+                      </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <Tooltip>
                           <TooltipTrigger>
@@ -172,7 +196,7 @@ const ServicePackageList = () => {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     <div className="flex flex-col items-center justify-center text-muted-foreground">
                       <Package className="h-8 w-8 mb-2" />
                       <p>Nenhum pacote cadastrado.</p>

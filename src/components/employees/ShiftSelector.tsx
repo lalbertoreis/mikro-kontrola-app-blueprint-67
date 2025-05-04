@@ -21,6 +21,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { toast } from "sonner";
 
 interface ShiftSelectorProps {
   shifts: Shift[];
@@ -30,10 +31,32 @@ interface ShiftSelectorProps {
 const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange }) => {
   const [newDay, setNewDay] = useState<string>("0");
   const [newStart, setNewStart] = useState<string>("09:00");
-  const [newEnd, setNewEnd] = useState<string>("18:00");
+  const [newEnd, setNewStart] = useState<string>("18:00");
   const [includeLunchBreak, setIncludeLunchBreak] = useState<boolean>(false);
   const [lunchStart, setLunchStart] = useState<string>("12:00");
   const [lunchEnd, setLunchEnd] = useState<string>("13:00");
+
+  // Validação para verificar se já existe um turno para o dia selecionado com horários sobrepostos
+  const checkOverlappingShifts = (shift: Shift): boolean => {
+    return shifts.some((existingShift) => {
+      if (existingShift.dayOfWeek !== shift.dayOfWeek) {
+        return false;
+      }
+
+      const newStart = shift.startTime;
+      const newEnd = shift.endTime;
+      const existingStart = existingShift.startTime;
+      const existingEnd = existingShift.endTime;
+
+      // Verificar se os horários se sobrepõem
+      // (newStart está entre existing) OU (newEnd está entre existing) OU (newStart < existingStart E newEnd > existingEnd)
+      return (
+        (newStart >= existingStart && newStart < existingEnd) ||
+        (newEnd > existingStart && newEnd <= existingEnd) ||
+        (newStart <= existingStart && newEnd >= existingEnd)
+      );
+    });
+  };
 
   const handleAddShift = () => {
     const newShift: Shift = {
@@ -43,6 +66,13 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange }) => {
       lunchBreakStart: includeLunchBreak ? lunchStart : undefined,
       lunchBreakEnd: includeLunchBreak ? lunchEnd : undefined,
     };
+
+    // Verificar sobreposição antes de adicionar
+    if (checkOverlappingShifts(newShift)) {
+      toast.error("Já existe um turno com horários sobrepostos neste dia.");
+      return;
+    }
+
     onChange([...shifts, newShift]);
   };
 
@@ -186,42 +216,40 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange }) => {
         </Accordion>
       </div>
 
-      <div className="border rounded-lg p-4 mt-4">
+      <div className="border rounded-lg p-4 mt-4 max-h-[250px] overflow-y-auto">
         <h4 className="font-medium mb-4">Turnos Configurados</h4>
-        <ScrollArea className="h-[200px]">
-          {shifts.length === 0 ? (
-            <div className="text-center text-gray-500 py-4">
-              Nenhum turno adicionado
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {shifts.map((shift, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 border rounded bg-gray-50"
-                >
-                  <div>
-                    <div className="font-medium">{formatDayOfWeek(shift.dayOfWeek)}</div>
-                    <div className="text-sm">{shift.startTime} - {shift.endTime}</div>
-                    {shift.lunchBreakStart && (
-                      <div className="text-xs text-muted-foreground">
-                        Almoço: {shift.lunchBreakStart} - {shift.lunchBreakEnd}
-                      </div>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveShift(index)}
-                    className="text-destructive"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+        {shifts.length === 0 ? (
+          <div className="text-center text-gray-500 py-4">
+            Nenhum turno adicionado
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {shifts.map((shift, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-2 border rounded bg-gray-50"
+              >
+                <div>
+                  <div className="font-medium">{formatDayOfWeek(shift.dayOfWeek)}</div>
+                  <div className="text-sm">{shift.startTime} - {shift.endTime}</div>
+                  {shift.lunchBreakStart && (
+                    <div className="text-xs text-muted-foreground">
+                      Almoço: {shift.lunchBreakStart} - {shift.lunchBreakEnd}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveShift(index)}
+                  className="text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
