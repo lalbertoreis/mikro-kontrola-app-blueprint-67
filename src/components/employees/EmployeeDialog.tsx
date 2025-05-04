@@ -28,6 +28,7 @@ import { EmployeeFormData, Shift } from "@/types/employee";
 import { useEmployees, useEmployeeById } from "@/hooks/useEmployees";
 import ShiftSelector from "./ShiftSelector";
 import ServiceSelector from "./ServiceSelector";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Definir esquema de validação para o funcionário
 const employeeSchema = z.object({
@@ -145,9 +146,13 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px]">
-        <DialogHeader>
+    <Dialog open={open} onOpenChange={(state) => {
+      // Prevent dialog from closing during form submission
+      if (isCreating || isUpdating) return;
+      onOpenChange(state);
+    }}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+        <DialogHeader className="sticky top-0 z-10 bg-background pb-4">
           <DialogTitle>
             {isEditing ? "Editar Funcionário" : "Novo Funcionário"}
           </DialogTitle>
@@ -158,89 +163,93 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="info">Informações</TabsTrigger>
-              <TabsTrigger value="shifts">Turnos</TabsTrigger>
-              <TabsTrigger value="services">Serviços</TabsTrigger>
-            </TabsList>
+          <ScrollArea className="max-h-[calc(90vh-10rem)]">
+            <div className="px-1"> {/* Add padding to prevent scroll issues */}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3 sticky top-0 z-10">
+                  <TabsTrigger value="info">Informações</TabsTrigger>
+                  <TabsTrigger value="shifts">Turnos</TabsTrigger>
+                  <TabsTrigger value="services">Serviços</TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="info" className="pt-4 pb-2">
-              <Form {...form}>
-                <form className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome do funcionário" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                <TabsContent value="info" className="pt-4 pb-2">
+                  <Form {...form}>
+                    <form className="space-y-6">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Nome do funcionário" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cargo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Cargo" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </form>
+                  </Form>
+
+                  <div className="flex justify-end space-x-4 mt-6">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={goToNextTab}>
+                      Próximo
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="shifts" className="pt-4 pb-2">
+                  <ShiftSelector shifts={shifts} onChange={setShifts} />
+                  <div className="mt-6 flex justify-end space-x-4">
+                    <Button variant="outline" onClick={goToPreviousTab}>
+                      Voltar
+                    </Button>
+                    <Button onClick={goToNextTab}>
+                      Próximo
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="services" className="pt-4 pb-2">
+                  <ServiceSelector
+                    selectedServiceIds={selectedServices}
+                    onChange={setSelectedServices}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cargo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Cargo" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </form>
-              </Form>
-
-              <div className="flex justify-end space-x-4 mt-6">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={goToNextTab}>
-                  Próximo
-                </Button>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="shifts" className="pt-4 pb-2">
-              <ShiftSelector shifts={shifts} onChange={setShifts} />
-              <div className="mt-6 flex justify-end space-x-4">
-                <Button variant="outline" onClick={goToPreviousTab}>
-                  Voltar
-                </Button>
-                <Button onClick={goToNextTab}>
-                  Próximo
-                </Button>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="services" className="pt-4 pb-2">
-              <ServiceSelector
-                selectedServiceIds={selectedServices}
-                onChange={setSelectedServices}
-              />
-              <DialogFooter className="mt-6">
-                <Button variant="outline" onClick={goToPreviousTab}>
-                  Voltar
-                </Button>
-                <Button 
-                  onClick={form.handleSubmit(onSubmit)}
-                  disabled={isCreating || isUpdating}
-                >
-                  {(isCreating || isUpdating) && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {isEditing ? "Atualizar" : "Adicionar"} Funcionário
-                </Button>
-              </DialogFooter>
-            </TabsContent>
-          </Tabs>
+                  <DialogFooter className="mt-6">
+                    <Button variant="outline" onClick={goToPreviousTab}>
+                      Voltar
+                    </Button>
+                    <Button 
+                      onClick={form.handleSubmit(onSubmit)}
+                      disabled={isCreating || isUpdating}
+                    >
+                      {(isCreating || isUpdating) && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      {isEditing ? "Atualizar" : "Adicionar"} Funcionário
+                    </Button>
+                  </DialogFooter>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </ScrollArea>
         )}
       </DialogContent>
     </Dialog>

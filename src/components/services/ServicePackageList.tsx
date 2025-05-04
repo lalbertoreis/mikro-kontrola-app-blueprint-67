@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Package, Plus, Trash, AlertCircle, Loader2 } from "lucide-react";
+import { Package, Plus, Trash, AlertCircle, Loader2, Check, X } from "lucide-react";
 import { ServicePackage } from "@/types/service";
 import ServicePackageDialog from "./ServicePackageDialog";
 import { useServicePackages } from "@/hooks/useServicePackages";
@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ServicePackageList = () => {
   const [open, setOpen] = useState(false);
@@ -98,6 +99,7 @@ const ServicePackageList = () => {
                 <TableHead>Desconto</TableHead>
                 <TableHead>Preço Original</TableHead>
                 <TableHead>Preço com Desconto</TableHead>
+                <TableHead className="hidden md:table-cell">Agenda Online</TableHead>
                 <TableHead className="w-24"></TableHead>
               </TableRow>
             </TableHeader>
@@ -131,9 +133,25 @@ const ServicePackageList = () => {
                           <span className="text-muted-foreground text-xs">Sem serviços</span>
                         )}
                       </TableCell>
-                      <TableCell>{pkg.discount}%</TableCell>
+                      <TableCell>{pkg.discount.toFixed(2)}%</TableCell>
                       <TableCell>R$ {totalWithoutDiscount.toFixed(2)}</TableCell>
                       <TableCell>R$ {pkg.price.toFixed(2)}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Tooltip>
+                          <TooltipTrigger>
+                            {pkg.showInOnlineBooking !== false ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <X className="h-4 w-4 text-destructive" />
+                            )}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {pkg.showInOnlineBooking !== false ? 
+                              "Visível na agenda online" : 
+                              "Não visível na agenda online"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
                       <TableCell>
                         <div className="flex space-x-1">
                           <Button variant="ghost" size="sm" onClick={() => handleEditPackage(pkg.id)}>
@@ -154,7 +172,7 @@ const ServicePackageList = () => {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={7} className="h-24 text-center">
                     <div className="flex flex-col items-center justify-center text-muted-foreground">
                       <Package className="h-8 w-8 mb-2" />
                       <p>Nenhum pacote cadastrado.</p>

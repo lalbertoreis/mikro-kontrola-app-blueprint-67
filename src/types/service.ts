@@ -32,6 +32,7 @@ export interface ServicePackage {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  showInOnlineBooking?: boolean;
 }
 
 export interface ServicePackageFormData {
@@ -40,4 +41,5 @@ export interface ServicePackageFormData {
   services: string[];
   price: number;
   discount: number;
+  showInOnlineBooking?: boolean;
 }

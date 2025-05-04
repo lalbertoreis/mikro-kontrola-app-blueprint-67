@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,41 +11,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Service, ServicePackageFormData } from "@/types/service";
-import { Search, Check } from "lucide-react";
+import { Search, Check, CircleHelp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
-
-// Dados de exemplo para serviços
-const mockServices: Service[] = [
-  {
-    id: "1",
-    name: "Corte de Cabelo",
-    description: "Corte tradicional masculino",
-    price: 50.00,
-    duration: 30,
-    multipleAttendees: false,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Manicure",
-    description: "Manicure completa com esmaltação",
-    price: 45.00,
-    duration: 60,
-    multipleAttendees: false,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useServices } from "@/hooks/useServices";
 
 // Validação com zod
 const formSchema = z.object({
@@ -59,6 +37,7 @@ const formSchema = z.object({
   discount: z.coerce.number().min(0).max(100, {
     message: "O desconto deve estar entre 0 e 100%.",
   }),
+  showInOnlineBooking: z.boolean().default(true),
 });
 
 interface ServicePackageFormProps {
@@ -71,10 +50,11 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
   onSuccess,
 }) => {
   const { toast } = useToast();
+  const { services } = useServices();
   const isEditing = Boolean(packageId);
-  const [services] = useState<Service[]>(mockServices);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [editMode, setEditMode] = useState<"discount" | "price">("discount");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -83,6 +63,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
       description: "",
       price: 0,
       discount: 0,
+      showInOnlineBooking: true,
     },
   });
 
@@ -97,14 +78,25 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
     return total + (service?.price || 0);
   }, 0);
 
-  // Calcular desconto e preço final
-  const discountAmount = (totalPrice * (form.watch("discount") || 0)) / 100;
-  const finalPrice = totalPrice - discountAmount;
+  // Monitorar alterações nos campos de preço e desconto
+  const watchDiscount = form.watch("discount");
+  const watchPrice = form.watch("price");
 
-  // Atualizar o campo de preço quando mudar a seleção de serviços
-  React.useEffect(() => {
-    form.setValue("price", finalPrice);
-  }, [selectedServices, form.watch("discount")]);
+  // Calcular desconto e preço final com base no modo de edição
+  useEffect(() => {
+    if (selectedServices.length === 0) return;
+    
+    if (editMode === "discount") {
+      // Se o usuário estiver editando o desconto, calcular o preço final
+      const discountAmount = (totalPrice * watchDiscount) / 100;
+      const finalPrice = totalPrice - discountAmount;
+      form.setValue("price", Number(finalPrice.toFixed(2)));
+    } else {
+      // Se o usuário estiver editando o preço final, calcular o desconto
+      const discountPercent = ((totalPrice - watchPrice) / totalPrice) * 100;
+      form.setValue("discount", Number(discountPercent.toFixed(2)));
+    }
+  }, [watchDiscount, watchPrice, totalPrice, editMode, selectedServices.length, form]);
 
   const toggleService = (serviceId: string) => {
     const isSelected = selectedServices.includes(serviceId);
@@ -131,7 +123,8 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
       description: values.description || "",
       services: selectedServices,
       price: values.price,
-      discount: values.discount
+      discount: values.discount,
+      showInOnlineBooking: values.showInOnlineBooking,
     };
 
     console.log("Form submitted:", packageData);
@@ -146,6 +139,11 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
       });
       onSuccess();
     }, 1000);
+  };
+
+  // Alternar entre modos de edição (desconto ou preço)
+  const toggleEditMode = () => {
+    setEditMode(editMode === "discount" ? "price" : "discount");
   };
 
   return (
@@ -217,7 +215,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                       Valor total: R$ {totalPrice.toFixed(2)}
                     </div>
                     <div className="text-sm font-medium text-primary">
-                      Valor com desconto: R$ {finalPrice.toFixed(2)}
+                      Valor com desconto: R$ {form.watch("price").toFixed(2)}
                     </div>
                   </div>
                 )}
@@ -261,47 +259,147 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                   )}
                 />
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="discount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Desconto (%)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="1"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {editMode === "discount" ? (
+                    <FormField
+                      control={form.control}
+                      name="discount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <span>Desconto (%)</span>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 p-1" 
+                              onClick={toggleEditMode}
+                            >
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <CircleHelp className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Clique para editar o preço final em vez do desconto</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </Button>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <span>Preço Final (R$)</span>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 p-1" 
+                              onClick={toggleEditMode}
+                            >
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <CircleHelp className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Clique para editar o desconto em vez do preço final</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </Button>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max={totalPrice}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Preço Final (R$)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            disabled
-                            {...field}
-                            value={finalPrice.toFixed(2)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {editMode === "discount" ? (
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Preço Final Calculado (R$)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              disabled
+                              {...field}
+                              value={field.value.toFixed(2)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <FormField
+                      control={form.control}
+                      name="discount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Desconto Calculado (%)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              disabled
+                              {...field}
+                              value={field.value.toFixed(2)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
+                
+                <FormField
+                  control={form.control}
+                  name="showInOnlineBooking"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Exibir na Agenda Online</FormLabel>
+                        <FormDescription>
+                          Tornar este pacote disponível para agendamento online
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
                 
                 <div className="flex justify-end space-x-4 pt-4">
                   <Button

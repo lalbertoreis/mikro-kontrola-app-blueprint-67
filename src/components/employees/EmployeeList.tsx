@@ -20,7 +20,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Loader2, MoreHorizontal, UserPlus } from "lucide-react";
+import { Loader2, MoreHorizontal, UserPlus, Pencil, Trash } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import EmployeeDialog from "./EmployeeDialog";
 
@@ -49,22 +49,52 @@ const EmployeeList: React.FC = () => {
     }
   };
 
-  // Função para resumir os turnos
-  const summarizeShifts = (shifts: Employee['shifts']) => {
-    const dayMap: Record<number, string[]> = {};
+  // Função para criar a visualização de turnos por dia da semana
+  const renderWeekSchedule = (shifts: Employee['shifts']) => {
+    // Criar um mapa de dias da semana
+    const weekDays = [0, 1, 2, 3, 4, 5, 6];
+    const dayHasShift = weekDays.map(day => shifts.some(shift => shift.dayOfWeek === day));
     
-    shifts.forEach(shift => {
-      const day = shift.dayOfWeek;
-      if (!dayMap[day]) {
-        dayMap[day] = [];
-      }
-      dayMap[day].push(`${shift.startTime}-${shift.endTime}`);
-    });
-    
-    return Object.entries(dayMap).map(([day, times]) => {
-      const dayName = formatDayOfWeek(parseInt(day));
-      return `${dayName} (${times.join(', ')})`;
-    }).join('; ');
+    return (
+      <div className="flex space-x-1.5">
+        {weekDays.map((day, index) => {
+          const letter = formatDayOfWeek(day).substring(0, 1);
+          return (
+            <Tooltip key={day}>
+              <TooltipTrigger>
+                <div 
+                  className={`w-6 h-6 flex items-center justify-center rounded-full text-xs ${
+                    dayHasShift[index] 
+                      ? "bg-green-500 text-white" 
+                      : "bg-gray-200 text-gray-500"
+                  }`}
+                >
+                  {letter}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {dayHasShift[index] ? (
+                  <div>
+                    <p>{formatDayOfWeek(day)}</p>
+                    {shifts
+                      .filter(shift => shift.dayOfWeek === day)
+                      .map((shift, i) => (
+                        <p key={i} className="text-xs">
+                          {shift.startTime} - {shift.endTime}
+                          {shift.lunchBreakStart && ` (Almoço: ${shift.lunchBreakStart}-${shift.lunchBreakEnd})`}
+                        </p>
+                      ))
+                    }
+                  </div>
+                ) : (
+                  <p>{formatDayOfWeek(day)} - Folga</p>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -105,41 +135,33 @@ const EmployeeList: React.FC = () => {
                       <TableCell>{employee.name}</TableCell>
                       <TableCell>{employee.role}</TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-help">
-                              {employee.shifts.length} turnos
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">{summarizeShifts(employee.shifts)}</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        {renderWeekSchedule(employee.shifts)}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {employee.services.length} serviços
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Abrir menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditEmployee(employee.id)}>
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-destructive" 
-                              onClick={() => handleDelete(employee.id)}
-                              disabled={isDeleting}
-                            >
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex space-x-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            onClick={() => handleEditEmployee(employee.id)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Editar</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive" 
+                            onClick={() => handleDelete(employee.id)}
+                            disabled={isDeleting}
+                          >
+                            <Trash className="h-4 w-4" />
+                            <span className="sr-only">Excluir</span>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

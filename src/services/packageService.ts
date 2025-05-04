@@ -21,7 +21,8 @@ export async function fetchServicePackages(): Promise<ServicePackage[]> {
       discount: Number(item.discount),
       isActive: item.is_active,
       createdAt: item.created_at,
-      updatedAt: item.updated_at
+      updatedAt: item.updated_at,
+      showInOnlineBooking: item.show_in_online_booking
     }));
   } catch (error) {
     console.error('Error fetching service packages:', error);
@@ -49,7 +50,8 @@ export async function fetchServicePackageById(id: string): Promise<ServicePackag
       discount: Number(data.discount),
       isActive: data.is_active,
       createdAt: data.created_at,
-      updatedAt: data.updated_at
+      updatedAt: data.updated_at,
+      showInOnlineBooking: data.show_in_online_booking
     };
   } catch (error) {
     console.error('Error fetching service package:', error);
@@ -59,7 +61,7 @@ export async function fetchServicePackageById(id: string): Promise<ServicePackag
 
 export async function createServicePackage(packageData: ServicePackageFormData): Promise<ServicePackage> {
   try {
-    const { name, description, services, price, discount } = packageData;
+    const { name, description, services, price, discount, showInOnlineBooking } = packageData;
     
     const { data, error } = await supabase
       .from('service_packages')
@@ -69,6 +71,7 @@ export async function createServicePackage(packageData: ServicePackageFormData):
         services,
         price,
         discount,
+        show_in_online_booking: showInOnlineBooking,
         is_active: true,
         user_id: (await supabase.auth.getUser()).data.user?.id
       })
@@ -86,7 +89,8 @@ export async function createServicePackage(packageData: ServicePackageFormData):
       discount: Number(data.discount),
       isActive: data.is_active,
       createdAt: data.created_at,
-      updatedAt: data.updated_at
+      updatedAt: data.updated_at,
+      showInOnlineBooking: data.show_in_online_booking
     };
   } catch (error) {
     console.error('Error creating service package:', error);
@@ -96,7 +100,7 @@ export async function createServicePackage(packageData: ServicePackageFormData):
 
 export async function updateServicePackage(id: string, packageData: ServicePackageFormData): Promise<ServicePackage> {
   try {
-    const { name, description, services, price, discount } = packageData;
+    const { name, description, services, price, discount, showInOnlineBooking } = packageData;
     
     const { data, error } = await supabase
       .from('service_packages')
@@ -106,6 +110,7 @@ export async function updateServicePackage(id: string, packageData: ServicePacka
         services,
         price,
         discount,
+        show_in_online_booking: showInOnlineBooking,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
@@ -123,7 +128,8 @@ export async function updateServicePackage(id: string, packageData: ServicePacka
       discount: Number(data.discount),
       isActive: data.is_active,
       createdAt: data.created_at,
-      updatedAt: data.updated_at
+      updatedAt: data.updated_at,
+      showInOnlineBooking: data.show_in_online_booking
     };
   } catch (error) {
     console.error('Error updating service package:', error);
