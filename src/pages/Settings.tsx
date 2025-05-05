@@ -47,6 +47,31 @@ const Settings = () => {
             bookingTimeInterval: data.booking_time_interval || 30,
             bookingCancelMinHours: data.booking_cancel_min_hours || 1,
           });
+        } else {
+          // If no profile exists yet, create one
+          if (user.id) {
+            const { error: createError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                business_name: '',
+                business_logo: '',
+                enable_online_booking: false,
+                slug: '',
+                instagram: '',
+                whatsapp: '',
+                address: '',
+                booking_simultaneous_limit: 3,
+                booking_future_limit: 3, 
+                booking_time_interval: 30,
+                booking_cancel_min_hours: 1
+              });
+            
+            if (createError) {
+              console.error("Erro ao criar perfil:", createError);
+              toast.error("Erro ao criar perfil");
+            }
+          }
         }
       } catch (error) {
         console.error("Erro ao buscar configurações:", error);
@@ -78,24 +103,55 @@ const Settings = () => {
     }
 
     try {
-      // Update profile in Supabase
-      const { error } = await supabase
+      // First check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .update({
-          business_name: updatedData.businessName,
-          business_logo: updatedData.businessLogo,
-          enable_online_booking: updatedData.enableOnlineBooking,
-          slug: updatedData.enableOnlineBooking ? updatedData.slug : null,
-          instagram: updatedData.instagram,
-          whatsapp: updatedData.whatsapp,
-          address: updatedData.address,
-          booking_simultaneous_limit: updatedData.bookingSimultaneousLimit,
-          booking_future_limit: updatedData.bookingFutureLimit,
-          booking_time_interval: updatedData.bookingTimeInterval,
-          booking_cancel_min_hours: updatedData.bookingCancelMinHours,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error("Erro ao verificar perfil:", checkError);
+        toast.error("Erro ao salvar as configurações");
+        return;
+      }
+      
+      const profileData = {
+        business_name: updatedData.businessName,
+        business_logo: updatedData.businessLogo,
+        enable_online_booking: updatedData.enableOnlineBooking,
+        slug: updatedData.enableOnlineBooking ? updatedData.slug : null,
+        instagram: updatedData.instagram,
+        whatsapp: updatedData.whatsapp,
+        address: updatedData.address,
+        booking_simultaneous_limit: updatedData.bookingSimultaneousLimit,
+        booking_future_limit: updatedData.bookingFutureLimit,
+        booking_time_interval: updatedData.bookingTimeInterval,
+        booking_cancel_min_hours: updatedData.bookingCancelMinHours,
+        updated_at: new Date().toISOString()
+      };
+      
+      let error;
+      
+      if (existingProfile) {
+        // Update existing profile
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update(profileData)
+          .eq('id', user.id);
+        
+        error = updateError;
+      } else {
+        // Insert new profile
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            ...profileData
+          });
+        
+        error = insertError;
+      }
 
       if (error) throw error;
       
