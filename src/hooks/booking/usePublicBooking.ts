@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "sonner";
@@ -220,7 +219,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
         id: appointment.id,
         serviceName: service.name,
         employeeName: employee.name,
-        date: format(date, 'dd/MM/yyyy'),
+        date: format(date, 'dd/MM/yyyy'),  // Use formatted string instead of Date object
         time,
       };
       
@@ -310,7 +309,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
           id: app.id,
           serviceName: app.services?.name || 'Serviço',
           employeeName: app.employees?.name || 'Profissional',
-          date: format(new Date(app.start_time), 'dd/MM/yyyy'),
+          date: format(new Date(app.start_time), 'dd/MM/yyyy'),  // Format date to string
           time: format(new Date(app.start_time), 'HH:mm'),
           status: app.status
         }));

@@ -11,8 +11,9 @@ export interface BookingAppointment {
   id: string;
   serviceName: string;
   employeeName: string;
-  date: Date;
+  date: string;  // Changed from Date to string to match how it's actually used
   time: string;
+  status?: string; // Make status optional
 }
 
 interface MyAppointmentsDialogProps {
@@ -28,8 +29,20 @@ const MyAppointmentsDialog: React.FC<MyAppointmentsDialogProps> = ({
   appointments,
   onCancelAppointment,
 }) => {
-  const formatAppointmentDate = (date: Date) => {
-    return format(date, "dd 'de' MMMM", { locale: ptBR });
+  // Updated to handle string dates instead of Date objects
+  const formatAppointmentDate = (date: string) => {
+    try {
+      // Try to parse the date string (in case it's a formatted date already)
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) {
+        // If it's not a valid date, just return the string as is
+        return date;
+      }
+      return format(dateObj, "dd 'de' MMMM", { locale: ptBR });
+    } catch (error) {
+      // If there's an error formatting, just return the original string
+      return date;
+    }
   };
 
   return (
