@@ -36,7 +36,14 @@ export async function cancelAppointment(appointmentId: string): Promise<boolean>
     const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
     
     if (timeDiffHours < cancelMinHours) {
-      throw new Error(`O cancelamento só é permitido até ${cancelMinHours} hora(s) antes do horário marcado.`);
+      // Format the message based on the cancelMinHours value
+      let timeMessage = `${cancelMinHours} hora(s)`;
+      if (cancelMinHours >= 24) {
+        const days = Math.floor(cancelMinHours / 24);
+        timeMessage = days === 1 ? '1 dia' : `${days} dias`;
+      }
+      
+      throw new Error(`O cancelamento só é permitido até ${timeMessage} antes do horário marcado.`);
     }
     
     // Update appointment status to canceled

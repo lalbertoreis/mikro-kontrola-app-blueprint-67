@@ -21,7 +21,9 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
           .maybeSingle();
         
         if (error) {
-          throw error;
+          console.error("Error fetching business profile:", error);
+          navigate('/booking/404');
+          return;
         }
         
         if (data) {
@@ -45,7 +47,7 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
           navigate('/booking/404');
         }
       } catch (error) {
-        console.error("Error fetching business:", error);
+        console.error("Error in business profile hook:", error);
         navigate('/booking/404');
       } finally {
         setIsLoadingBusiness(false);

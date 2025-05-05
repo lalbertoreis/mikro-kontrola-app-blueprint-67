@@ -23,9 +23,14 @@ const Settings = () => {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
-        if (error) throw error;
+        if (error) {
+          console.error("Erro ao buscar configurações:", error);
+          toast.error("Erro ao carregar as configurações");
+          setIsLoading(false);
+          return;
+        }
         
         if (data) {
           setSettings({
