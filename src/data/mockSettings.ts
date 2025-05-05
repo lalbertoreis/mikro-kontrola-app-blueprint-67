@@ -11,4 +11,9 @@ export const mockSettings: BusinessSettings = {
   address: "",
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
+  bookingSimultaneousLimit: 3,
+  bookingFutureLimit: 3,
+  bookingTimeInterval: 30,
+  bookingCancelMinHours: 1,
 };
+
