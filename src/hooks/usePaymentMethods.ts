@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PaymentMethod } from "@/types/finance";
 import { 
   createPaymentMethod, 
@@ -14,7 +14,7 @@ export function usePaymentMethods() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  const fetchPaymentMethods = async () => {
+  const fetchPaymentMethods = useCallback(async () => {
     if (!user) return;
     
     setIsLoading(true);
@@ -33,13 +33,15 @@ export function usePaymentMethods() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   const addPaymentMethod = async (data: { name: string, fee?: number, is_active?: boolean }) => {
     if (!user) return null;
     
     const result = await createPaymentMethod({
-      ...data,
+      name: data.name,
+      fee: data.fee,
+      is_active: data.is_active,
       user_id: user.id,
     });
     
@@ -54,7 +56,11 @@ export function usePaymentMethods() {
   const editPaymentMethod = async (id: string, data: { name: string, fee?: number, is_active?: boolean }) => {
     if (!user) return null;
     
-    const result = await updatePaymentMethod(id, data);
+    const result = await updatePaymentMethod(id, {
+      name: data.name,
+      fee: data.fee,
+      is_active: data.is_active
+    });
     
     if (result) {
       await fetchPaymentMethods();
@@ -81,7 +87,7 @@ export function usePaymentMethods() {
     if (user) {
       fetchPaymentMethods();
     }
-  }, [user]);
+  }, [user, fetchPaymentMethods]);
 
   return {
     paymentMethods,

@@ -3,6 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, WalletCards } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
+import { format } from "date-fns";
 
 interface FinancialSummaryProps {
   startDate?: string;
@@ -23,6 +24,12 @@ const FinancialSummary = ({ startDate, endDate }: FinancialSummaryProps) => {
       style: 'currency',
       currency: 'BRL',
     }).format(value);
+  };
+
+  // Formatar data para exibição
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    return format(new Date(dateStr), "dd/MM/yyyy");
   };
 
   if (isLoading) {
@@ -72,7 +79,7 @@ const FinancialSummary = ({ startDate, endDate }: FinancialSummaryProps) => {
             {formatCurrency(summary.totalIncome)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Período: {new Date(summary.periodStart).toLocaleDateString('pt-BR')} a {new Date(summary.periodEnd).toLocaleDateString('pt-BR')}
+            Período: {formatDate(summary.periodStart)} a {formatDate(summary.periodEnd)}
           </p>
         </CardContent>
       </Card>
@@ -89,7 +96,7 @@ const FinancialSummary = ({ startDate, endDate }: FinancialSummaryProps) => {
             {formatCurrency(summary.totalExpenses)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Período: {new Date(summary.periodStart).toLocaleDateString('pt-BR')} a {new Date(summary.periodEnd).toLocaleDateString('pt-BR')}
+            Período: {formatDate(summary.periodStart)} a {formatDate(summary.periodEnd)}
           </p>
         </CardContent>
       </Card>
@@ -106,7 +113,7 @@ const FinancialSummary = ({ startDate, endDate }: FinancialSummaryProps) => {
             {formatCurrency(summary.balance)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Período: {new Date(summary.periodStart).toLocaleDateString('pt-BR')} a {new Date(summary.periodEnd).toLocaleDateString('pt-BR')}
+            Período: {formatDate(summary.periodStart)} a {formatDate(summary.periodEnd)}
           </p>
         </CardContent>
       </Card>

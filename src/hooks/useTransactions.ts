@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Transaction, FinancialSummary, TransactionFormData, TransactionType } from "@/types/finance";
 import { 
   fetchTransactions,
@@ -17,7 +17,7 @@ export function useTransactions() {
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const { user } = useAuth();
 
-  const loadTransactions = async (startDate?: string, endDate?: string) => {
+  const loadTransactions = useCallback(async (startDate?: string, endDate?: string) => {
     if (!user) return;
     
     setIsLoading(true);
@@ -49,9 +49,9 @@ export function useTransactions() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
-  const loadSummary = async (startDate?: string, endDate?: string) => {
+  const loadSummary = useCallback(async (startDate?: string, endDate?: string) => {
     if (!user) return;
     
     try {
@@ -60,7 +60,7 @@ export function useTransactions() {
     } catch (error) {
       console.error("Error loading summary:", error);
     }
-  };
+  }, [user]);
 
   const getTransaction = async (id: string) => {
     if (!user) return null;
@@ -117,7 +117,7 @@ export function useTransactions() {
       loadTransactions();
       loadSummary();
     }
-  }, [user]);
+  }, [user, loadTransactions, loadSummary]);
 
   return {
     transactions,
