@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Business404 } from "@/pages/Business404";
 import { usePublicBooking } from "@/hooks/booking/usePublicBooking";
@@ -7,10 +7,14 @@ import BookingLayout from "@/components/booking/public/BookingLayout";
 import ServicesList from "@/components/booking/public/ServicesList";
 import PackagesList from "@/components/booking/public/PackagesList";
 import BookingDialogs from "@/components/booking/public/BookingDialogs";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ConfirmationScreen from "@/components/booking/dialog/ConfirmationScreen";
 
 const PublicBooking: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [confirmationDate, setConfirmationDate] = useState<Date | null>(null);
+  const [confirmationTime, setConfirmationTime] = useState<string | null>(null);
   
   const {
     businessProfile,
@@ -37,8 +41,20 @@ const PublicBooking: React.FC = () => {
     handlePackageClick,
     handleBookingConfirm,
     handleLogout,
-    handleCancelAppointment
+    handleCancelAppointment,
+    bookingConfirmed,
+    setBookingConfirmed
   } = usePublicBooking(slug, navigate);
+
+  // Modified booking confirmation handler to capture date/time for confirmation screen
+  const handleBookingConfirmWithDetails = async (bookingData: any) => {
+    // Store the date and time for the confirmation screen
+    setConfirmationDate(bookingData.date);
+    setConfirmationTime(bookingData.time);
+    
+    // Call the original handler
+    await handleBookingConfirm(bookingData);
+  };
 
   if (isLoadingBusiness) {
     return (
@@ -94,10 +110,24 @@ const PublicBooking: React.FC = () => {
         onCloseBookingDialog={() => setIsBookingDialogOpen(false)}
         onCloseLoginDialog={() => setIsLoginDialogOpen(false)}
         onCloseAppointmentsDialog={() => setIsMyAppointmentsDialogOpen(false)}
-        onBookingConfirm={handleBookingConfirm}
+        onBookingConfirm={handleBookingConfirmWithDetails}
         onLogin={() => {}}
         onCancelAppointment={handleCancelAppointment}
       />
+      
+      {/* Separate confirmation dialog */}
+      <Dialog 
+        open={bookingConfirmed} 
+        onOpenChange={(open) => !open && setBookingConfirmed(false)}
+      >
+        <DialogContent className="sm:max-w-md p-0">
+          <ConfirmationScreen
+            selectedDate={confirmationDate}
+            selectedTime={confirmationTime}
+            onClose={() => setBookingConfirmed(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </BookingLayout>
   );
 };

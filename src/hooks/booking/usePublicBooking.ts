@@ -8,7 +8,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { Service, ServicePackage } from "@/types/service";
 import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
 import { BusinessSettings } from "@/types/settings";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 export function usePublicBooking(slug: string | undefined, navigate: NavigateFunction) {
   const { services, isLoading: isServicesLoading } = useServices();
@@ -25,6 +25,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
   const [tempBookingData, setTempBookingData] = useState<any>(null);
   const [businessProfile, setBusinessProfile] = useState<BusinessSettings | null>(null);
   const [isLoadingBusiness, setIsLoadingBusiness] = useState(true);
+  const [bookingConfirmed, setBookingConfirmed] = useState<boolean>(false);
 
   // Map services to employees
   const serviceWithEmployeesMap = useMemo(() => {
@@ -116,51 +117,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     toast.info("Funcionalidade de agendamento de pacotes em breve!");
   };
 
-  const handleBookingConfirm = async (bookingData: any) => {
-    console.log("Booking data:", bookingData);
-    
-    // The flow has changed - now we always receive client info directly in bookingData
-    if (bookingData.clientInfo) {
-      // Use the client info provided in the booking form
-      const userData = {
-        name: bookingData.clientInfo.name,
-        phone: bookingData.clientInfo.phone
-      };
-      
-      // Store user info and process booking directly
-      localStorage.setItem("bookingUser", JSON.stringify(userData));
-      setUserProfile(userData);
-      setIsLoggedIn(true);
-      
-      try {
-        await processBooking(bookingData);
-        // Successfully processed booking
-        setIsBookingDialogOpen(false);
-      } catch (error) {
-        console.error("Error processing booking:", error);
-        toast.error("Erro ao realizar agendamento. Tente novamente.");
-      }
-    } else {
-      // This case shouldn't happen anymore with the new flow but keeping as fallback
-      toast.error("Informações de cliente não fornecidas");
-    }
-  };
-
-  const handleLogin = (userData: { name: string; phone: string }) => {
-    // Store user info in local storage (in a real app, you'd use proper auth)
-    localStorage.setItem("bookingUser", JSON.stringify(userData));
-    setUserProfile(userData);
-    setIsLoggedIn(true);
-    setIsLoginDialogOpen(false);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("bookingUser");
-    setUserProfile(null);
-    setIsLoggedIn(false);
-    setAppointments([]);
-  };
-
+  // Fix the processBooking function to handle date correctly
   const processBooking = async (bookingData: any) => {
     const { service, employee, date, time, clientInfo } = bookingData;
     
@@ -193,9 +150,18 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
         clientId = newClient.id;
       }
       
-      // Format start and end dates (accounting for timezone)
-      const startDate = new Date(`${format(date, 'yyyy-MM-dd')}T${time}:00`);
-      const endDate = new Date(startDate.getTime() + service.duration * 60000);
+      // Fix: Create date object and set time WITHOUT timezone adjustments
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const [hours, minutes] = time.split(':').map(Number);
+      
+      // Create start and end date objects with the correct date and time
+      const startDate = new Date(`${dateStr}T${time}:00`);
+      // Ensure we're using local time by setting hours/minutes directly
+      startDate.setHours(hours, minutes, 0, 0);
+      
+      // Calculate end time based on service duration
+      const endDate = new Date(startDate);
+      endDate.setMinutes(endDate.getMinutes() + service.duration);
       
       // Create appointment
       const { data: appointment, error: appointmentError } = await supabase
@@ -219,8 +185,9 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
         id: appointment.id,
         serviceName: service.name,
         employeeName: employee.name,
-        date: format(date, 'dd/MM/yyyy'),  // Use formatted string instead of Date object
+        date: format(date, 'dd/MM/yyyy'),
         time,
+        status: 'scheduled'
       };
       
       setAppointments((prev) => [...prev, newAppointment]);
@@ -231,12 +198,26 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
         console.log('Sound notification not available');
       });
       
-      toast.success("Agendamento realizado com sucesso!");
       return appointment;
     } catch (error) {
       console.error('Error processing booking:', error);
       throw error;
     }
+  };
+
+  const handleLogin = (userData: { name: string; phone: string }) => {
+    // Store user info in local storage (in a real app, you'd use proper auth)
+    localStorage.setItem("bookingUser", JSON.stringify(userData));
+    setUserProfile(userData);
+    setIsLoggedIn(true);
+    setIsLoginDialogOpen(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("bookingUser");
+    setUserProfile(null);
+    setIsLoggedIn(false);
+    setAppointments([]);
   };
 
   const handleCancelAppointment = async (id: string) => {
@@ -273,7 +254,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     }
   }, []);
 
-  // Fetch user appointments when logged in
+  // Fix the fetchUserAppointments function to handle dates correctly
   useEffect(() => {
     const fetchUserAppointments = async () => {
       if (!isLoggedIn || !userProfile?.phone) return;
@@ -304,13 +285,13 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
         
         if (appointmentsError) throw appointmentsError;
         
-        // Transform data for UI
+        // Transform data for UI with proper date handling
         const bookingAppointments: BookingAppointment[] = appointmentsData.map(app => ({
           id: app.id,
           serviceName: app.services?.name || 'Serviço',
           employeeName: app.employees?.name || 'Profissional',
-          date: format(new Date(app.start_time), 'dd/MM/yyyy'),  // Format date to string
-          time: format(new Date(app.start_time), 'HH:mm'),
+          date: format(parseISO(app.start_time), 'dd/MM/yyyy'),
+          time: format(parseISO(app.start_time), 'HH:mm'),
           status: app.status
         }));
         
@@ -322,6 +303,41 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     
     fetchUserAppointments();
   }, [isLoggedIn, userProfile]);
+
+  // Fix handleBookingConfirm to manage modal state correctly
+  const handleBookingConfirm = async (bookingData: any) => {
+    console.log("Booking data:", bookingData);
+    
+    // The flow has changed - now we always receive client info directly in bookingData
+    if (bookingData.clientInfo) {
+      // Use the client info provided in the booking form
+      const userData = {
+        name: bookingData.clientInfo.name,
+        phone: bookingData.clientInfo.phone
+      };
+      
+      // Store user info
+      localStorage.setItem("bookingUser", JSON.stringify(userData));
+      setUserProfile(userData);
+      setIsLoggedIn(true);
+      
+      try {
+        // Only show confirmation screen after successful DB operation
+        const result = await processBooking(bookingData);
+        if (result) {
+          // Successfully processed booking
+          setIsBookingDialogOpen(false);
+          setBookingConfirmed(true); // This state will control the confirmation modal
+        }
+      } catch (error) {
+        console.error("Error processing booking:", error);
+        toast.error("Erro ao realizar agendamento. Tente novamente.");
+      }
+    } else {
+      // This case shouldn't happen anymore with the new flow but keeping as fallback
+      toast.error("Informações de cliente não fornecidas");
+    }
+  };
 
   return {
     businessProfile,
@@ -351,6 +367,8 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     handleBookingConfirm,
     handleLogin,
     handleLogout,
-    handleCancelAppointment
+    handleCancelAppointment,
+    bookingConfirmed: bookingConfirmed, // Add this to expose the confirmation state
+    setBookingConfirmed: setBookingConfirmed, // Add this to allow resetting the state
   };
 }

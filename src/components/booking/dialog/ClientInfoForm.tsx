@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 interface ClientInfoFormProps {
   clientInfo: { name: string; phone: string };
@@ -20,112 +19,127 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
   onNextStep,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [showNameField, setShowNameField] = useState(false);
-  const [existingClient, setExistingClient] = useState<any>(null);
+  const [existingClient, setExistingClient] = useState<{ name: string } | null>(null);
+  const [phoneInputTimeout, setPhoneInputTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isValid, setIsValid] = useState(false);
 
-  // Check if phone already exists when phone is entered
+  // Check if form is valid
   useEffect(() => {
-    const checkExistingClient = async () => {
-      if (clientInfo.phone && clientInfo.phone.length >= 8) {
+    if (existingClient) {
+      // If we found an existing client, phone is all we need
+      setIsValid(clientInfo.phone.length >= 10);
+    } else {
+      // Otherwise, we need both name and phone
+      setIsValid(clientInfo.name.length >= 3 && clientInfo.phone.length >= 10);
+    }
+  }, [clientInfo, existingClient]);
+
+  // Look up client by phone number with debounce
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // First, update the phone field normally
+    onClientInfoChange(e);
+    
+    // Clear any existing timeout
+    if (phoneInputTimeout) {
+      clearTimeout(phoneInputTimeout);
+    }
+    
+    // Set new timeout to search for client after typing stops
+    const timeout = setTimeout(async () => {
+      const phone = e.target.value;
+      if (phone.length >= 10) {
         setIsLoading(true);
         try {
           const { data, error } = await supabase
             .from('clients')
-            .select('*')
-            .eq('phone', clientInfo.phone)
+            .select('name')
+            .eq('phone', phone)
             .maybeSingle();
-          
+            
           if (error) throw error;
           
           if (data) {
-            // Client exists, auto-populate name
             setExistingClient(data);
-            const event = {
+            // Auto-fill name if client exists
+            const nameChangeEvent = {
               target: {
                 name: 'name',
                 value: data.name
               }
             } as React.ChangeEvent<HTMLInputElement>;
-            onClientInfoChange(event);
-            setShowNameField(false);
+            onClientInfoChange(nameChangeEvent);
           } else {
-            // New client, show name field
             setExistingClient(null);
-            setShowNameField(true);
           }
-        } catch (err) {
-          console.error('Error checking client:', err);
-          setShowNameField(true);
+        } catch (error) {
+          console.error('Error looking up client:', error);
+          setExistingClient(null);
         } finally {
           setIsLoading(false);
         }
+      } else {
+        setExistingClient(null);
       }
-    };
+    }, 500); // 500ms debounce
     
-    const timer = setTimeout(checkExistingClient, 500);
-    return () => clearTimeout(timer);
-  }, [clientInfo.phone, onClientInfoChange]);
-
-  const handleSubmit = () => {
-    if (!clientInfo.phone) {
-      toast.error("Por favor, insira seu número de telefone");
-      return;
-    }
-    
-    if (showNameField && !clientInfo.name) {
-      toast.error("Por favor, insira seu nome");
-      return;
-    }
-    
-    onNextStep();
+    setPhoneInputTimeout(timeout);
   };
 
   return (
-    <div className="p-6 space-y-4">
-      <h2 className="text-lg font-semibold">Suas informações</h2>
+    <div className="p-4 space-y-4">
+      <div className="flex items-center mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onPreviousStep}
+          className="mr-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+        </Button>
+        <h2 className="text-lg font-semibold">Informações para contato</h2>
+      </div>
+
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="phone">Telefone</Label>
+        <div>
+          <Label htmlFor="phone">Telefone*</Label>
           <Input
             id="phone"
             name="phone"
             value={clientInfo.phone}
-            onChange={onClientInfoChange}
+            onChange={handlePhoneChange}
             placeholder="(00) 00000-0000"
+            className="w-full"
             required
           />
+          {isLoading && <p className="text-xs text-gray-500 mt-1">Buscando...</p>}
           {existingClient && (
-            <p className="text-sm text-green-600">Cliente encontrado: {existingClient.name}</p>
+            <p className="text-xs text-green-500 mt-1">
+              Cliente encontrado! Basta confirmar para agendar.
+            </p>
           )}
         </div>
-        
-        {showNameField && (
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome</Label>
+
+        {!existingClient && (
+          <div>
+            <Label htmlFor="name">Nome completo*</Label>
             <Input
               id="name"
               name="name"
               value={clientInfo.name}
               onChange={onClientInfoChange}
-              placeholder="Nome completo"
+              placeholder="Digite seu nome completo"
+              className="w-full"
               required
             />
           </div>
         )}
-      </div>
-      
-      <div className="mt-6 pt-4 border-t flex justify-between">
-        <Button 
-          variant="outline" 
-          onClick={onPreviousStep}
+
+        <Button
+          onClick={onNextStep}
+          className="w-full mt-4 bg-purple-500 hover:bg-purple-600"
+          disabled={!isValid}
         >
-          Voltar
-        </Button>
-        <Button 
-          onClick={handleSubmit}
-          disabled={isLoading || (!clientInfo.phone) || (showNameField && !clientInfo.name)}
-        >
-          {isLoading ? "Verificando..." : "Confirmar Agendamento"}
+          Confirmar Agendamento
         </Button>
       </div>
     </div>

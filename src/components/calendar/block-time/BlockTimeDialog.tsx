@@ -26,12 +26,15 @@ const BlockTimeDialog: React.FC<BlockTimeDialogProps> = ({
 }) => {
   const { blockTimeSlot, isBlocking } = useAppointments();
   
-  // Handle form submission
+  // Handle form submission with improved date handling
   const handleSubmit = async (values: BlockTimeFormValues) => {
     try {
+      // Format date properly to avoid timezone issues
+      const formattedDate = format(values.date, "yyyy-MM-dd");
+      
       await blockTimeSlot({
         employeeId: values.employee,
-        date: format(values.date, "yyyy-MM-dd"),
+        date: formattedDate,
         startTime: values.startTime,
         endTime: values.endTime,
         reason: values.reason,

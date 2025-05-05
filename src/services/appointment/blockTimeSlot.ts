@@ -13,13 +13,17 @@ export async function blockTimeSlot(blockData: {
   try {
     const { employeeId, date, startTime, endTime, reason } = blockData;
     
-    // Calculate complete start and end times
-    const startDate = new Date(date);
+    // Fix: Create date objects with proper timezone handling
+    // Format: date = "yyyy-MM-dd", startTime = "HH:mm", endTime = "HH:mm"
     const [startHours, startMinutes] = startTime.split(':').map(Number);
-    startDate.setHours(startHours, startMinutes, 0, 0);
-    
-    const endDate = new Date(date);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+    // Create Date objects with the correct date and times
+    const startDate = new Date(`${date}T${startTime}:00`);
+    const endDate = new Date(`${date}T${endTime}:00`);
+    
+    // Ensure we're using local time by setting hours/minutes directly
+    startDate.setHours(startHours, startMinutes, 0, 0);
     endDate.setHours(endHours, endMinutes, 0, 0);
 
     // Check for overlapping appointments
@@ -94,7 +98,7 @@ export async function blockTimeSlot(blockData: {
       throw new Error('Não foi possível encontrar ou criar um serviço para o bloqueio.');
     }
     
-    // Create a "blocked" appointment
+    // Create a "blocked" appointment with fixed date/time handling
     const { data, error } = await supabase
       .from('appointments')
       .insert({
