@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
@@ -8,7 +9,7 @@ import {
   fetchAvailableTimeSlots,
   registerAppointmentPayment,
   cancelAppointment
-} from "@/services/appointmentService";
+} from "@/services/appointment";
 import type { Appointment, AppointmentFormData } from "@/types/calendar";
 
 export function useAppointments() {

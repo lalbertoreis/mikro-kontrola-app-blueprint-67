@@ -1,7 +1,7 @@
 
 import React from "react";
 import { toast } from "sonner";
-import { registerAppointmentPayment } from "@/services/appointmentService";
+import { registerAppointmentPayment } from "@/services/appointment";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
