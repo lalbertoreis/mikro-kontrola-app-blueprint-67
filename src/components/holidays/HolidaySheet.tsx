@@ -50,7 +50,6 @@ const formSchema = z.object({
   type: z.enum(["national", "state", "municipal", "custom"], {
     required_error: "Selecione o tipo de feriado",
   }),
-  description: z.string().optional(),
   isActive: z.boolean().default(true),
   blockingType: z.enum(["full_day", "morning", "afternoon", "custom"], {
     required_error: "Selecione o tipo de bloqueio",
@@ -58,7 +57,7 @@ const formSchema = z.object({
   customStartTime: z.string().optional(),
   customEndTime: z.string().optional(),
 }).refine((data) => {
-  if (data.blockingType === "custom") {
+  if (data.blockingType === "custom" && data.isActive) {
     return data.customStartTime && data.customEndTime;
   }
   return true;
@@ -88,7 +87,6 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
       date: holiday?.date ? new Date(holiday.date) : new Date(),
       name: holiday?.name || "",
       type: holiday?.type || "custom" as HolidayType,
-      description: holiday?.description || "",
       isActive: holiday?.isActive !== undefined ? holiday.isActive : true,
       blockingType: holiday?.blockingType || "full_day" as BlockingType,
       customStartTime: holiday?.customStartTime || "09:00",
@@ -103,7 +101,6 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
         date: holiday?.date ? new Date(holiday.date) : new Date(),
         name: holiday?.name || "",
         type: holiday?.type || "custom" as HolidayType,
-        description: holiday?.description || "",
         isActive: holiday?.isActive !== undefined ? holiday.isActive : true,
         blockingType: holiday?.blockingType || "full_day" as BlockingType,
         customStartTime: holiday?.customStartTime || "09:00",
@@ -112,6 +109,7 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
     }
   }, [holiday, open, form]);
 
+  const showBlockingConfig = form.watch("isActive");
   const blockingType = form.watch("blockingType");
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -120,7 +118,6 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
         date: data.date,
         name: data.name,
         type: data.type as HolidayType,
-        description: data.description,
         isActive: data.isActive,
         blockingType: data.blockingType as BlockingType,
         customStartTime: data.blockingType === "custom" ? data.customStartTime : undefined,
@@ -150,7 +147,7 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{isEditing ? "Editar" : "Novo"} Feriado</SheetTitle>
+          <SheetTitle>{isEditing ? "Editar feriado" : "Novo feriado"}</SheetTitle>
         </SheetHeader>
 
         <Form {...form}>
@@ -203,7 +200,7 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
                         selected={field.value}
                         onSelect={field.onChange}
                         initialFocus
-                        className="pointer-events-auto"
+                        className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
@@ -261,7 +258,7 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
             />
 
             {/* Configuração do Bloqueio */}
-            {form.watch("isActive") && (
+            {showBlockingConfig && (
               <div className="space-y-3 p-4 border rounded-lg">
                 <div className="font-medium">Configuração do Bloqueio</div>
 
@@ -281,7 +278,7 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="full_day" id="full_day" />
                             <FormLabel htmlFor="full_day" className="font-normal cursor-pointer">
-                              Dia Inteiro
+                              Dia inteiro
                             </FormLabel>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -352,7 +349,7 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
               </div>
             )}
 
-            <SheetFooter className="flex justify-end gap-2">
+            <SheetFooter className="flex justify-end gap-2 pt-2">
               <Button 
                 type="button"
                 variant="outline"
@@ -363,6 +360,7 @@ export const HolidaySheet: React.FC<HolidaySheetProps> = ({
               <Button 
                 type="submit"
                 disabled={isCreating || isUpdating}
+                className="bg-kontrola-600 hover:bg-kontrola-700"
               >
                 {(isCreating || isUpdating) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

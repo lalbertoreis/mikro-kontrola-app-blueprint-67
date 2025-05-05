@@ -1,5 +1,4 @@
-
-import React, { useEffect } from "react";
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
@@ -29,6 +28,7 @@ import Notifications from "@/pages/Notifications";
 import Holidays from "@/pages/Holidays";
 import HolidayForm from "@/pages/HolidayForm";
 import PaymentMethods from "@/pages/PaymentMethods";
+import FixedCosts from "@/pages/FixedCosts";
 
 // Criando o cliente para o React Query
 const queryClient = new QueryClient({
@@ -84,6 +84,7 @@ const App = () => {
               <Route path="/dashboard/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
               <Route path="/dashboard/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
               <Route path="/dashboard/payment-methods" element={<ProtectedRoute><PaymentMethods /></ProtectedRoute>} />
+              <Route path="/dashboard/fixed-costs" element={<ProtectedRoute><FixedCosts /></ProtectedRoute>} />
               <Route path="/dashboard/finance/transaction/new" element={<ProtectedRoute><TransactionForm /></ProtectedRoute>} />
               <Route path="/dashboard/finance/transaction/:id" element={<ProtectedRoute><TransactionForm /></ProtectedRoute>} />
               <Route path="/dashboard/holidays" element={<ProtectedRoute><Holidays /></ProtectedRoute>} />
