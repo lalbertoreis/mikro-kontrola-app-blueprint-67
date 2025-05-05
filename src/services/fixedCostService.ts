@@ -33,9 +33,19 @@ export const fetchFixedCostById = async (id: string) => {
 };
 
 export const createFixedCost = async (data: FixedCostFormData & { user_id: string }) => {
+  // Ensure all required fields are present with correct types
+  const fixedCostData = {
+    name: data.name,
+    month: data.month,
+    year: data.year,
+    amount: data.amount,
+    description: data.description || null,
+    user_id: data.user_id
+  };
+
   const { data: result, error } = await supabase
     .from("fixed_costs")
-    .insert([data])
+    .insert([fixedCostData])
     .select()
     .single();
 
@@ -48,9 +58,18 @@ export const createFixedCost = async (data: FixedCostFormData & { user_id: strin
 };
 
 export const updateFixedCost = async (id: string, data: FixedCostFormData) => {
+  // Ensure all required fields are present with correct types
+  const fixedCostData = {
+    name: data.name,
+    month: data.month,
+    year: data.year,
+    amount: data.amount,
+    description: data.description || null
+  };
+
   const { data: result, error } = await supabase
     .from("fixed_costs")
-    .update(data)
+    .update(fixedCostData)
     .eq("id", id)
     .select()
     .single();

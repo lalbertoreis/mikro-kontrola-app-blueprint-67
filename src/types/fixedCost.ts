@@ -14,4 +14,3 @@ export interface FixedCost {
 // Use the FixedCostFormValues type from the schema instead
 import { FixedCostFormValues } from "@/components/finance/fixedCostSchema";
 export type FixedCostFormData = FixedCostFormValues;
-
