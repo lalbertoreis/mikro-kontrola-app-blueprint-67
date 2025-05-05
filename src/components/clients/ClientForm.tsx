@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -238,13 +239,13 @@ const ClientForm: React.FC<ClientFormProps> = ({
                       {isFetchingAddress && (
                         <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-3" />
                       )}
-                    </FormControl>
-                    <FormDescription>
-                      Digite o CEP para preencher o endereço automaticamente
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Digite o CEP para preencher o endereço automaticamente
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
               )}
             />
           </div>
