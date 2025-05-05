@@ -37,6 +37,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   const [clientInfo, setClientInfo] = useState({ name: "", phone: "" });
   const [availableDays, setAvailableDays] = useState<{ [key: number]: boolean }>({});
   const [isLoadingDays, setIsLoadingDays] = useState(false);
+  const [availablePeriods, setAvailablePeriods] = useState<Period[]>(["Manhã", "Tarde", "Noite"]);
   
   // Settings defaults
   const timeInterval = businessSettings?.bookingTimeInterval || 30;
@@ -101,6 +102,52 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     fetchEmployeeAvailableDays();
   }, [selectedEmployee]);
 
+  // Check available periods for a date
+  const checkAvailablePeriods = async (employee: any, date: Date) => {
+    if (!employee || !date) return [];
+    
+    const dayOfWeek = date.getDay();
+    
+    // Get employee shift hours for this day
+    const shiftHours = await getEmployeeShiftHours(employee.id, dayOfWeek);
+    if (!shiftHours) return [];
+    
+    const { startTime: shiftStart, endTime: shiftEnd } = shiftHours;
+    
+    // Define period time ranges
+    const periodRanges = {
+      "Manhã": { start: "06:00", end: "12:00" },
+      "Tarde": { start: "12:00", end: "18:00" },
+      "Noite": { start: "18:00", end: "23:59" }
+    };
+    
+    // Parse shift times to calculate overlap with periods
+    const [shiftStartHour, shiftStartMinute] = shiftStart.split(':').map(Number);
+    const [shiftEndHour, shiftEndMinute] = shiftEnd.split(':').map(Number);
+    
+    // Convert to minutes for easier comparison
+    const shiftStartInMinutes = shiftStartHour * 60 + shiftStartMinute;
+    const shiftEndInMinutes = shiftEndHour * 60 + shiftEndMinute;
+    
+    // Check which periods overlap with the shift
+    const available: Period[] = [];
+    
+    Object.entries(periodRanges).forEach(([period, range]) => {
+      const [periodStartHour, periodStartMinute] = range.start.split(':').map(Number);
+      const [periodEndHour, periodEndMinute] = range.end.split(':').map(Number);
+      
+      const periodStartInMinutes = periodStartHour * 60 + periodStartMinute;
+      const periodEndInMinutes = periodEndHour * 60 + periodEndMinute;
+      
+      // If there's overlap, add this period to available periods
+      if (shiftStartInMinutes < periodEndInMinutes && shiftEndInMinutes > periodStartInMinutes) {
+        available.push(period as Period);
+      }
+    });
+    
+    return available;
+  };
+
   // Create time slot intervals based on settings and employee shift
   const generateTimeIntervals = async (employee: any, date: Date, period: Period): Promise<TimeSlot[]> => {
     if (!employee || !date) return [];
@@ -161,6 +208,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setIsLoadingSlots(true);
     
     try {
+      // Format date in YYYY-MM-DD format using the correct timezone handling
       const formattedDate = format(date, 'yyyy-MM-dd');
       
       // Generate all potential time slots for this period
@@ -199,13 +247,20 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setSelectedPeriod(null);
     setSelectedTime(null);
     setAvailableTimeSlots([]);
+    setAvailablePeriods(["Manhã", "Tarde", "Noite"]);
   };
 
-  const handleDateSelect = (date: Date) => {
+  const handleDateSelect = async (date: Date) => {
     setSelectedDate(date);
     setSelectedPeriod(null);
     setSelectedTime(null);
     setAvailableTimeSlots([]);
+    
+    // Check which periods are available for this date and employee
+    if (selectedEmployee) {
+      const periods = await checkAvailablePeriods(selectedEmployee, date);
+      setAvailablePeriods(periods);
+    }
   };
 
   const handlePeriodSelect = async (period: Period) => {
@@ -262,6 +317,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setAvailableTimeSlots([]);
     setCurrentStep("datetime");
     setClientInfo({ name: "", phone: "" });
+    setAvailablePeriods(["Manhã", "Tarde", "Noite"]);
     onClose();
   };
   
@@ -333,6 +389,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
               <PeriodSelector
                 selectedPeriod={selectedPeriod}
                 onPeriodSelect={handlePeriodSelect}
+                availablePeriods={availablePeriods}
               />
             )}
 

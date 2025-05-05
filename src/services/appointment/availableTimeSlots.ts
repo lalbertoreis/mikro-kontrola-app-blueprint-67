@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { format, parse } from "date-fns";
 
 /**
  * Fetches shift information for an employee on a specific day of the week
@@ -35,7 +34,7 @@ async function fetchServiceDuration(serviceId: string): Promise<number> {
     .from('services')
     .select('duration')
     .eq('id', serviceId)
-    .single();
+    .maybeSingle();
   
   if (serviceError) {
     console.error('Error fetching service duration:', serviceError);
@@ -74,7 +73,7 @@ async function fetchTimeInterval(): Promise<number> {
     .from('profiles')
     .select('booking_time_interval')
     .eq('id', (await supabase.auth.getUser()).data.user?.id)
-    .single();
+    .maybeSingle();
   
   if (profileError) {
     console.error('Error fetching business settings:', profileError);
@@ -157,9 +156,9 @@ export async function fetchAvailableTimeSlots(
   date: string
 ): Promise<string[]> {
   try {
-    // Format date and get day of week
+    // Format date and get day of week - use the date as is, without adjustments
     const formattedDate = date;
-    const dateObj = new Date(date);
+    const dateObj = new Date(`${date}T12:00:00`); // Use noon to avoid timezone issues
     const dayOfWeek = dateObj.getDay(); // 0 for Sunday, 1 for Monday, etc.
     
     // Step 1: Check if the employee has a shift for this day of the week
