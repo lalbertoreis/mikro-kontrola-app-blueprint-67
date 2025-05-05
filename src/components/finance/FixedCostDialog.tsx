@@ -83,10 +83,10 @@ export const FixedCostDialog: React.FC<FixedCostDialogProps> = ({
         description: fixedCost.description || "",
       });
     } else if (open) {
-      // Ensure all required fields have non-optional values
+      // Ensure all required fields have explicit non-optional values
       const currentDate = new Date();
       form.reset({
-        name: "",
+        name: "",  // Explicitly set as empty string, not optional
         month: currentDate.getMonth() + 1,
         year: currentDate.getFullYear(),
         amount: 0,
