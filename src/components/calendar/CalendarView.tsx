@@ -72,11 +72,10 @@ const CalendarView: React.FC = () => {
     setBlockTimeDialogOpen(true);
   };
 
-  // As the AppointmentWithDetails type requires employee, service, and client objects,
-  // let's ensure our appointments data has these properties before passing them to the components
+  // Map appointments to AppointmentWithDetails
   const appointmentsWithDetails = appointments.map(appointment => {
-    // Create objects for employee, service, and client with default values if they don't exist
-    const employeeObject = {
+    // Create objects for employee, service, and client with default values only if needed
+    const employeeObject = appointment.employee || {
       id: appointment.employeeId,
       name: "Profissional não especificado",
       role: "",
@@ -86,7 +85,7 @@ const CalendarView: React.FC = () => {
       updatedAt: ""
     };
     
-    const serviceObject = {
+    const serviceObject = appointment.service || {
       id: appointment.serviceId || "",
       name: "Serviço não especificado",
       price: 0,
@@ -97,7 +96,7 @@ const CalendarView: React.FC = () => {
       updatedAt: ""
     };
     
-    const clientObject = {
+    const clientObject = appointment.client || {
       id: appointment.clientId || "",
       name: "Cliente não especificado",
       email: "",

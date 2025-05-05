@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/calendar";
 
@@ -7,9 +8,9 @@ export async function fetchAppointments(): Promise<Appointment[]> {
       .from('appointments')
       .select(`
         *,
-        employee:employee_id(id, name),
-        service:service_id(id, name, duration, price),
-        client:client_id(id, name, phone, email)
+        employee:employees(id, name),
+        service:services(id, name, duration, price),
+        client:clients(id, name, phone, email)
       `)
       .order('start_time');
     
@@ -27,6 +28,10 @@ export async function fetchAppointments(): Promise<Appointment[]> {
       notes: item.notes || undefined,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
+      // Add the joined data
+      employee: item.employee || undefined,
+      service: item.service || undefined,
+      client: item.client || undefined,
     }));
   } catch (error) {
     console.error('Error fetching appointments:', error);
@@ -300,7 +305,6 @@ export async function fetchAvailableTimeSlots(
   }
 }
 
-// New function to register payment for an appointment
 export async function registerAppointmentPayment(
   appointmentId: string, 
   paymentMethod: string

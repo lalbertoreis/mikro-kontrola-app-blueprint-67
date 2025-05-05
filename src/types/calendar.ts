@@ -15,6 +15,10 @@ export interface Appointment {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  // These are optional to handle data from the API
+  employee?: Employee;
+  service?: Service;
+  client?: Client;
 }
 
 export type AppointmentStatus = 
