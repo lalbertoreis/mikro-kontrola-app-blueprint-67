@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { Transaction, FinancialSummary, TransactionFormData } from "@/types/finance";
+import { Transaction, FinancialSummary, TransactionFormData, TransactionType } from "@/types/finance";
 import { 
   fetchTransactions,
   fetchTransactionById,

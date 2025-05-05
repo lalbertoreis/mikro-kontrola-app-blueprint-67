@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TransactionFormData, TransactionType } from "@/types/finance";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Exemplo de transação para edição
 const mockTransaction = {
@@ -59,7 +59,8 @@ interface TransactionFormProps {
 
 const TransactionForm = ({ transactionId, onSuccess }: TransactionFormProps) => {
   const isEditing = Boolean(transactionId);
-
+  const { user } = useAuth();
+  
   // Na implementação real, aqui buscaríamos dados da transação se estiver editando
   // const { data: transaction, isLoading } = useQuery(...);
   
@@ -71,6 +72,7 @@ const TransactionForm = ({ transactionId, onSuccess }: TransactionFormProps) => 
         type: mockTransaction.type,
         category: mockTransaction.category,
         notes: mockTransaction.notes,
+        user_id: user?.id || ''
       }
     : {
         description: "",
@@ -79,6 +81,7 @@ const TransactionForm = ({ transactionId, onSuccess }: TransactionFormProps) => 
         type: "income",
         category: "",
         notes: "",
+        user_id: user?.id || ''
       };
 
   const form = useForm<TransactionFormData>({
