@@ -1,9 +1,11 @@
+
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import Navbar from "@/components/layout/Navbar";
 
 // Páginas
 import Index from "@/pages/Index";
@@ -40,6 +42,18 @@ const queryClient = new QueryClient({
   },
 });
 
+// Layout component for public pages
+const PublicLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1">
+        {children}
+      </main>
+    </div>
+  );
+};
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
@@ -62,11 +76,11 @@ const App = () => {
           <AuthProvider>
             <Routes>
               {/* Rotas públicas */}
-              <Route path="/" element={<Index />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/" element={<PublicLayout><Index /></PublicLayout>} />
+              <Route path="/features" element={<PublicLayout><Features /></PublicLayout>} />
+              <Route path="/pricing" element={<PublicLayout><Pricing /></PublicLayout>} />
+              <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
+              <Route path="/register" element={<PublicLayout><Register /></PublicLayout>} />
               
               {/* Rotas protegidas */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
