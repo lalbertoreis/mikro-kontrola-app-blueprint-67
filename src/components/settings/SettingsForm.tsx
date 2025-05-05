@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Instagram, MessageSquare, MapPin, Building, Settings, Image, Globe } from "lucide-react";
 import { toast } from "sonner";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const settingsFormSchema = z.object({
   businessName: z.string().min(2, {
@@ -58,6 +59,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
   });
 
   const watchEnableOnlineBooking = form.watch("enableOnlineBooking");
+  const watchBusinessLogo = form.watch("businessLogo");
 
   const handleSubmit = (data: BusinessSettingsFormData) => {
     onSubmit(data);
@@ -98,12 +100,20 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Logo do Negócio</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center">
-                      <Image className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="URL da logo" {...field} />
-                    </div>
-                  </FormControl>
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    {watchBusinessLogo && (
+                      <Avatar className="w-24 h-24">
+                        <AvatarImage src={watchBusinessLogo} alt="Logo do negócio" />
+                        <AvatarFallback className="text-xl">Logo</AvatarFallback>
+                      </Avatar>
+                    )}
+                    <FormControl>
+                      <div className="flex items-center flex-1">
+                        <Image className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="URL da logo" {...field} />
+                      </div>
+                    </FormControl>
+                  </div>
                   <FormDescription>
                     URL de uma imagem para sua logo
                   </FormDescription>

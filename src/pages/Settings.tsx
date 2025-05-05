@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import SettingsForm from "@/components/settings/SettingsForm";
 import { BusinessSettingsFormData } from "@/types/settings";
 import { mockSettings } from "@/data/mockSettings";
+import { toast } from "sonner";
 
 const Settings = () => {
   const [settings, setSettings] = useState(mockSettings);
@@ -21,12 +22,13 @@ const Settings = () => {
         .replace(/^-|-$/g, '');
     }
 
-    setSettings({
+    const updatedSettings = {
       ...settings,
       ...updatedData,
       updatedAt: new Date().toISOString(),
-    });
+    };
 
+    setSettings(updatedSettings);
     console.log("Configurações salvas:", updatedData);
   };
 

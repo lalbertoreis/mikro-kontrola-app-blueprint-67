@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
@@ -31,6 +30,7 @@ import HolidayForm from "@/pages/HolidayForm";
 import PaymentMethods from "@/pages/PaymentMethods";
 import FixedCosts from "@/pages/FixedCosts";
 import PublicBooking from "@/pages/PublicBooking";
+import { Business404 } from "@/pages/Business404";
 
 // Criando o cliente para o React Query
 const queryClient = new QueryClient({
@@ -82,6 +82,7 @@ const App = () => {
               
               {/* Rotas de agenda online */}
               <Route path="/booking/:slug" element={<PublicBooking />} />
+              <Route path="/booking/404" element={<Business404 />} />
               
               {/* Rotas de autenticação sem Navbar */}
               <Route path="/login" element={<Login />} />
