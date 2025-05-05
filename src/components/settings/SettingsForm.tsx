@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Instagram, MessageSquare, MapPin, Building, Settings, Image } from "lucide-react";
+import { Instagram, MessageSquare, MapPin, Building, Settings, Image, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 const settingsFormSchema = z.object({
@@ -26,6 +27,9 @@ const settingsFormSchema = z.object({
   }),
   businessLogo: z.string().optional(),
   enableOnlineBooking: z.boolean().default(false),
+  slug: z.string().regex(/^[a-z0-9-]+$/, {
+    message: "O slug deve conter apenas letras minúsculas, números e hífens.",
+  }).optional().or(z.literal('')),
   instagram: z.string().optional(),
   whatsapp: z.string().optional(),
   address: z.string().optional(),
@@ -41,6 +45,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
     businessName: "",
     businessLogo: "",
     enableOnlineBooking: false,
+    slug: "",
     instagram: "",
     whatsapp: "",
     address: "",
@@ -127,6 +132,31 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
                 </FormItem>
               )}
             />
+
+            {watchEnableOnlineBooking && (
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL da Agenda Online</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center">
+                        <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1 flex items-center border rounded-md focus-within:ring-2 focus-within:ring-ring">
+                          <span className="pl-3 text-muted-foreground">/booking/</span>
+                          <Input className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="seu-negocio" {...field} />
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Este será o endereço onde seus clientes acessarão sua agenda online
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
         </Card>
 

@@ -30,6 +30,7 @@ import Holidays from "@/pages/Holidays";
 import HolidayForm from "@/pages/HolidayForm";
 import PaymentMethods from "@/pages/PaymentMethods";
 import FixedCosts from "@/pages/FixedCosts";
+import PublicBooking from "@/pages/PublicBooking";
 
 // Criando o cliente para o React Query
 const queryClient = new QueryClient({
@@ -78,6 +79,9 @@ const App = () => {
               <Route path="/" element={<PublicLayout><Index /></PublicLayout>} />
               <Route path="/features" element={<PublicLayout><Features /></PublicLayout>} />
               <Route path="/pricing" element={<PublicLayout><Pricing /></PublicLayout>} />
+              
+              {/* Rotas de agenda online */}
+              <Route path="/booking/:slug" element={<PublicBooking />} />
               
               {/* Rotas de autenticação sem Navbar */}
               <Route path="/login" element={<Login />} />

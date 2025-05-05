@@ -9,13 +9,25 @@ const Settings = () => {
   const [settings, setSettings] = useState(mockSettings);
 
   const handleSubmit = (data: BusinessSettingsFormData) => {
+    // Generate slug from business name if not provided and online booking is enabled
+    let updatedData = { ...data };
+    
+    if (data.enableOnlineBooking && (!data.slug || data.slug.trim() === "")) {
+      updatedData.slug = data.businessName
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+
     setSettings({
       ...settings,
-      ...data,
+      ...updatedData,
       updatedAt: new Date().toISOString(),
     });
 
-    console.log("Configurações salvas:", data);
+    console.log("Configurações salvas:", updatedData);
   };
 
   return (
@@ -31,6 +43,7 @@ const Settings = () => {
             businessName: settings.businessName,
             businessLogo: settings.businessLogo,
             enableOnlineBooking: settings.enableOnlineBooking,
+            slug: settings.slug,
             instagram: settings.instagram,
             whatsapp: settings.whatsapp,
             address: settings.address,
