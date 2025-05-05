@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { format, addDays, addMonths } from "date-fns";
+import { format, addDays, addMonths, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, X, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Service } from "@/types/service";
 import { Employee } from "@/types/employee";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { supabase } from "@/integrations/supabase/client";
+import { BusinessSettings } from "@/types/settings";
 
 type Period = "Manhã" | "Tarde" | "Noite";
 type TimeSlot = string;
@@ -17,6 +19,7 @@ interface BookingDialogProps {
   onClose: () => void;
   service: Service;
   employees: Employee[];
+  businessSettings?: BusinessSettings;
   onBookingConfirm: (data: {
     service: Service;
     employee: Employee;
@@ -30,6 +33,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   onClose,
   service,
   employees,
+  businessSettings,
   onBookingConfirm,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -38,6 +42,12 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null);
   const [bookingConfirmed, setBookingConfirmed] = useState<boolean>(false);
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+
+  // Settings defaults
+  const timeInterval = businessSettings?.bookingTimeInterval || 30;
+  const futureLimit = businessSettings?.bookingFutureLimit || 3;
 
   // Generate week days (7 days from current week start)
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
@@ -59,8 +69,8 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     }
   };
   
-  // Calculate max future date based on settings (default: 3 months)
-  const maxFutureDate = addMonths(new Date(), 3);
+  // Calculate max future date based on settings
+  const maxFutureDate = addMonths(new Date(), futureLimit);
 
   // Check if can go to next week
   const canGoNext = addDays(currentWeekStart, 7) <= maxFutureDate;
@@ -68,33 +78,113 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   // Check if can go to previous week
   const canGoPrevious = currentWeekStart > new Date();
 
-  // Sample time slots based on selected period
-  // In a real app, these would be dynamically generated based on employee availability
-  const generateTimeSlots = (period: Period): TimeSlot[] => {
-    // These are sample slots, in a real app you'd fetch these from backend
-    // based on employee availability and service duration
-    const slots: Record<Period, TimeSlot[]> = {
-      "Manhã": ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"],
-      "Tarde": ["13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"],
-      "Noite": ["18:00", "18:30", "19:00", "19:30", "20:00"]
+  // Create time slot intervals based on settings
+  const generateTimeIntervals = (period: Period): TimeSlot[] => {
+    const intervals: Record<Period, { start: number; end: number }> = {
+      "Manhã": { start: 8, end: 12 },
+      "Tarde": { start: 13, end: 18 },
+      "Noite": { start: 18, end: 21 }
     };
     
-    return slots[period];
+    const { start, end } = intervals[period];
+    const slots: TimeSlot[] = [];
+    
+    // Generate slots based on the time interval from settings
+    for (let hour = start; hour < end; hour++) {
+      for (let minute = 0; minute < 60; minute += timeInterval) {
+        const formattedHour = hour.toString().padStart(2, '0');
+        const formattedMinute = minute.toString().padStart(2, '0');
+        slots.push(`${formattedHour}:${formattedMinute}`);
+      }
+    }
+    
+    return slots;
+  };
+
+  // Fetch available time slots based on employee, service duration, and date
+  const fetchAvailableTimeSlots = async (employee: Employee, date: Date, period: Period) => {
+    if (!employee || !date) return [];
+    
+    setIsLoadingSlots(true);
+    
+    try {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      const serviceDuration = service.duration;
+      
+      // Get all appointments for this employee on this date
+      const { data: appointments, error } = await supabase
+        .from('appointments')
+        .select('start_time, end_time')
+        .eq('employee_id', employee.id)
+        .gte('start_time', `${formattedDate}T00:00:00`)
+        .lt('start_time', `${formattedDate}T23:59:59`)
+        .neq('status', 'canceled');
+      
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        return [];
+      }
+      
+      // Generate all possible time slots based on period
+      const allTimeSlots = generateTimeIntervals(period);
+      
+      // Filter out slots that overlap with existing appointments
+      const availableSlots = allTimeSlots.filter(timeSlot => {
+        const [hours, minutes] = timeSlot.split(':').map(Number);
+        
+        // Start time of this potential appointment
+        const startDateTime = new Date(date);
+        startDateTime.setHours(hours, minutes, 0, 0);
+        
+        // End time (start time + service duration)
+        const endDateTime = new Date(startDateTime);
+        endDateTime.setMinutes(endDateTime.getMinutes() + serviceDuration);
+        
+        // Check if this time slot conflicts with any existing appointment
+        return !appointments.some(appointment => {
+          const appointmentStart = new Date(appointment.start_time);
+          const appointmentEnd = new Date(appointment.end_time);
+          
+          // Check for overlap
+          return (
+            (startDateTime < appointmentEnd && endDateTime > appointmentStart) ||
+            (startDateTime.getTime() === appointmentStart.getTime()) ||
+            (endDateTime.getTime() === appointmentEnd.getTime())
+          );
+        });
+      });
+      
+      return availableSlots;
+    } catch (err) {
+      console.error('Error in fetchAvailableTimeSlots:', err);
+      return [];
+    } finally {
+      setIsLoadingSlots(false);
+    }
   };
 
   const handleEmployeeSelect = (employee: Employee) => {
     setSelectedEmployee(employee);
+    setSelectedPeriod(null);
+    setSelectedTime(null);
+    setAvailableTimeSlots([]);
   };
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setSelectedPeriod(null);
     setSelectedTime(null);
+    setAvailableTimeSlots([]);
   };
 
-  const handlePeriodSelect = (period: Period) => {
+  const handlePeriodSelect = async (period: Period) => {
     setSelectedPeriod(period);
     setSelectedTime(null);
+    
+    if (selectedEmployee && selectedDate) {
+      const slots = await fetchAvailableTimeSlots(selectedEmployee, selectedDate, period);
+      setAvailableTimeSlots(slots);
+    }
   };
 
   const handleTimeSelect = (time: TimeSlot) => {
@@ -120,6 +210,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setSelectedTime(null);
     setBookingConfirmed(false);
     setCurrentWeekStart(new Date());
+    setAvailableTimeSlots([]);
     onClose();
   };
 
@@ -140,7 +231,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={resetDialog}>
-      <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[650px] p-0 gap-0 overflow-hidden max-h-[90vh] overflow-y-auto">
         <DialogHeader className="p-4 border-b">
           <div className="flex justify-between items-center">
             <DialogTitle>{service.name}</DialogTitle>
@@ -280,20 +371,29 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
             {selectedDate && selectedPeriod && (
               <div className="mb-6">
                 <p className="text-sm text-gray-500 mb-2">Horários disponíveis:</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {generateTimeSlots(selectedPeriod).map((time) => (
-                    <Button
-                      key={time}
-                      variant={selectedTime === time ? "default" : "outline"}
-                      className={`${
-                        selectedTime === time ? "bg-purple-500 hover:bg-purple-600" : ""
-                      }`}
-                      onClick={() => handleTimeSelect(time)}
-                    >
-                      {time}
-                    </Button>
-                  ))}
-                </div>
+                {isLoadingSlots ? (
+                  <div className="text-center py-4">Carregando horários...</div>
+                ) : availableTimeSlots.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-2">
+                    {availableTimeSlots.map((time) => (
+                      <Button
+                        key={time}
+                        variant={selectedTime === time ? "default" : "outline"}
+                        className={`${
+                          selectedTime === time ? "bg-purple-500 hover:bg-purple-600" : ""
+                        }`}
+                        onClick={() => handleTimeSelect(time)}
+                      >
+                        {time}
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    Não há horários disponíveis para este período. 
+                    Tente outro período ou data.
+                  </div>
+                )}
               </div>
             )}
 

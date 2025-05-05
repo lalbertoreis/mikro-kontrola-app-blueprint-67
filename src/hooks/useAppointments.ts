@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
@@ -7,7 +6,8 @@ import {
   createAppointment, 
   blockTimeSlot,
   fetchAvailableTimeSlots,
-  registerAppointmentPayment
+  registerAppointmentPayment,
+  cancelAppointment
 } from "@/services/appointmentService";
 import type { Appointment, AppointmentFormData } from "@/types/calendar";
 
@@ -62,6 +62,18 @@ export function useAppointments() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (appointmentId: string) => cancelAppointment(appointmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Agendamento cancelado com sucesso!");
+    },
+    onError: (error: any) => {
+      console.error("Erro ao cancelar agendamento:", error);
+      toast.error(error.message || "Erro ao cancelar agendamento. Tente novamente.");
+    },
+  });
+
   return {
     appointments,
     isLoading,
@@ -69,9 +81,11 @@ export function useAppointments() {
     createAppointment: createMutation.mutate,
     blockTimeSlot: blockTimeMutation.mutate,
     registerPayment: paymentMutation.mutate,
+    cancelAppointment: cancelMutation.mutate,
     isCreating: createMutation.isPending,
     isBlocking: blockTimeMutation.isPending,
-    isRegisteringPayment: paymentMutation.isPending
+    isRegisteringPayment: paymentMutation.isPending,
+    isCanceling: cancelMutation.isPending
   };
 }
 

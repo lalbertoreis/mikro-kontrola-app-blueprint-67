@@ -331,6 +331,49 @@ export async function fetchAvailableTimeSlots(
   }
 }
 
+export async function cancelAppointment(appointmentId: string): Promise<boolean> {
+  try {
+    // First get the appointment details
+    const { data: appointment, error: fetchError } = await supabase
+      .from('appointments')
+      .select('*, profiles:user_id(booking_cancel_min_hours)')
+      .eq('id', appointmentId)
+      .single();
+    
+    if (fetchError) {
+      throw new Error('Erro ao buscar detalhes do agendamento');
+    }
+    
+    // Check if there's a time limit for cancellation
+    const cancelMinHours = appointment.profiles?.booking_cancel_min_hours || 1;
+    const appointmentStartTime = new Date(appointment.start_time);
+    const now = new Date();
+    
+    // Calculate time difference in hours
+    const timeDiffMs = appointmentStartTime.getTime() - now.getTime();
+    const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
+    
+    if (timeDiffHours < cancelMinHours) {
+      throw new Error(`O cancelamento só é permitido até ${cancelMinHours} hora(s) antes do horário marcado.`);
+    }
+    
+    // Update appointment status to canceled
+    const { error: updateError } = await supabase
+      .from('appointments')
+      .update({ status: 'canceled' })
+      .eq('id', appointmentId);
+      
+    if (updateError) {
+      throw new Error('Erro ao cancelar o agendamento');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error canceling appointment:', error);
+    throw error;
+  }
+}
+
 export async function registerAppointmentPayment(
   appointmentId: string, 
   paymentMethod: string

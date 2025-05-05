@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useServices } from "@/hooks/useServices";
@@ -241,6 +240,7 @@ const PublicBooking: React.FC = () => {
           onClose={() => setIsBookingDialogOpen(false)}
           service={selectedService}
           employees={employees}
+          businessSettings={businessProfile}
           onBookingConfirm={handleBookingConfirm}
         />
       )}
