@@ -23,10 +23,10 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({ appointment, colorCla
   const isBlocked = appointment.status === 'blocked';
   const chipColorClass = isBlocked ? "bg-red-200 text-red-800" : colorClass;
   
-  // Safely access service name, client name, and employee name
-  const serviceName = appointment.service?.name || "Serviço não especificado";
-  const clientName = appointment.client?.name || "Cliente não especificado";
-  const employeeName = appointment.employee?.name || "Profissional não especificado";
+  // Access service, client and employee data safely
+  const serviceName = appointment.service?.name ?? "Serviço não especificado";
+  const clientName = appointment.client?.name ?? "Cliente não especificado";
+  const employeeName = appointment.employee?.name ?? "Profissional não especificado";
   
   return (
     <Tooltip>

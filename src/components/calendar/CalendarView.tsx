@@ -72,9 +72,42 @@ const CalendarView: React.FC = () => {
     setBlockTimeDialogOpen(true);
   };
 
-  // Type assertion para converter appointments para AppointmentWithDetails[]
-  // Isso é necessário porque o backend garante que essas propriedades existem
-  const appointmentsWithDetails = appointments as unknown as AppointmentWithDetails[];
+  // As the AppointmentWithDetails type requires employee, service, and client objects,
+  // let's ensure our appointments data has these properties before passing them to the components
+  const appointmentsWithDetails = appointments.map(appointment => {
+    return {
+      ...appointment,
+      employee: appointment.employee || { 
+        id: appointment.employeeId,
+        name: "Profissional não especificado",
+        role: "",
+        shifts: [],
+        services: [],
+        createdAt: "",
+        updatedAt: ""
+      },
+      service: appointment.service || {
+        id: appointment.serviceId || "",
+        name: "Serviço não especificado",
+        price: 0,
+        duration: 0,
+        multipleAttendees: false,
+        isActive: true,
+        createdAt: "",
+        updatedAt: ""
+      },
+      client: appointment.client || {
+        id: appointment.clientId || "",
+        name: "Cliente não especificado",
+        email: "",
+        phone: "",
+        cep: "",
+        address: "",
+        createdAt: "",
+        updatedAt: ""
+      }
+    } as AppointmentWithDetails;
+  });
 
   const formattedDate = view === "week" 
     ? format(currentDate, "'Semana de' dd 'de' MMMM", { locale: ptBR })

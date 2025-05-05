@@ -44,10 +44,10 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
   const isBlocked = appointment.status === 'blocked';
   const cardColorClass = isBlocked ? "bg-red-100 border-red-600 text-red-800" : colorClass;
 
-  // Safely access service name, client name, and employee name
-  const serviceName = appointment.service?.name || "Serviço não especificado";
-  const clientName = appointment.client?.name || "Cliente não especificado";
-  const employeeName = appointment.employee?.name || "Profissional não especificado";
+  // Access service, client and employee data safely
+  const serviceName = appointment.service?.name ?? "Serviço não especificado";
+  const clientName = appointment.client?.name ?? "Cliente não especificado";
+  const employeeName = appointment.employee?.name ?? "Profissional não especificado";
 
   return (
     <Tooltip>
