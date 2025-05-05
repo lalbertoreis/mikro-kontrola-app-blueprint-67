@@ -2,13 +2,18 @@
 import React from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ClientFormComponent from "@/components/clients/ClientForm";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useClientById } from "@/hooks/useClients";
 
 const ClientForm = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const isEditing = id !== undefined;
   const { data: client, isLoading } = useClientById(id);
+
+  const handleSubmitSuccess = () => {
+    navigate("/dashboard/clients");
+  };
 
   return (
     <DashboardLayout>
@@ -28,7 +33,10 @@ const ClientForm = () => {
             <p>Carregando...</p>
           </div>
         ) : (
-          <ClientFormComponent client={client} />
+          <ClientFormComponent 
+            client={client} 
+            onSubmitSuccess={handleSubmitSuccess}
+          />
         )}
       </div>
     </DashboardLayout>

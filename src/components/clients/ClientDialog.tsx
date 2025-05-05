@@ -69,6 +69,13 @@ const ClientDialog: React.FC<ClientDialogProps> = ({
   const handleFormSubmit = () => {
     setIsSubmitting(true);
     setFormDirty(false);
+    // Don't close the dialog immediately - it will be closed after successful submission by the form component
+  };
+
+  const handleFormSubmitSuccess = () => {
+    setFormDirty(false);
+    setIsSubmitting(false);
+    onOpenChange(false);
   };
 
   const handleDiscardChanges = () => {
@@ -93,8 +100,10 @@ const ClientDialog: React.FC<ClientDialogProps> = ({
           if (!state && formDirty && !isSubmitting) {
             setShowUnsavedDialog(true);
             setPendingClose(true);
+          } else if (!state) {
+            onOpenChange(false);
           } else {
-            onOpenChange(state);
+            onOpenChange(true);
           }
         }}
       >
@@ -117,6 +126,7 @@ const ClientDialog: React.FC<ClientDialogProps> = ({
             onFormChange={handleFormChange}
             onClose={handleCloseAttempt}
             onSubmit={handleFormSubmit}
+            onSubmitSuccess={handleFormSubmitSuccess}
           />
         </DialogContent>
       </Dialog>

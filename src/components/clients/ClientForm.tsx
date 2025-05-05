@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +44,7 @@ interface ClientFormProps {
   onFormChange?: () => void;
   onClose?: () => void;
   onSubmit?: () => void;
+  onSubmitSuccess?: () => void;
 }
 
 const ClientForm: React.FC<ClientFormProps> = ({
@@ -50,6 +52,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
   onFormChange,
   onClose,
   onSubmit,
+  onSubmitSuccess,
 }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -154,14 +157,15 @@ const ClientForm: React.FC<ClientFormProps> = ({
         const clientId = client?.id || id;
         if (clientId) {
           await updateClient({ id: clientId, data: clientData });
-          toast.success("Cliente atualizado com sucesso!");
         }
       } else {
         await createClient(clientData);
-        toast.success("Cliente cadastrado com sucesso!");
       }
       
-      if (isInDialogMode && onClose) {
+      // Notify parent of successful submission
+      if (onSubmitSuccess) {
+        onSubmitSuccess();
+      } else if (isInDialogMode && onClose) {
         onClose();
       } else {
         navigate("/dashboard/clients");
