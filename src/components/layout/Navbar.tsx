@@ -10,7 +10,6 @@ import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import NotificationIndicator from "@/components/notifications/NotificationIndicator";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -99,7 +98,6 @@ const Navbar = () => {
             <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200 dark:border-gray-800">
               {user ? (
                 <>
-                  <NotificationIndicator />
                   <Button 
                     variant="destructive" 
                     className="justify-start"
@@ -151,7 +149,6 @@ const AuthButtons = () => (
 
 const UserMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) => (
   <div className="flex items-center space-x-4">
-    {user && <NotificationIndicator />}
     <Link to="/dashboard">
       <Button variant="ghost" className="font-medium">
         Dashboard

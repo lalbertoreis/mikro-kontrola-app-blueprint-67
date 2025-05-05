@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import NotificationIndicator from "@/components/notifications/NotificationIndicator";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -26,6 +28,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { signOut } = useAuth();
   
   const navigationItems = [
     { name: "Dashboard", to: "/dashboard", icon: Home },
@@ -37,11 +40,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: "Financeiro", to: "/dashboard/finance", icon: WalletCards },
     { name: "Métodos de Pagamento", to: "/dashboard/payment-methods", icon: DollarSign },
     { name: "Custos Fixos", to: "/dashboard/fixed-costs", icon: CreditCard },
-    { name: "Notificações", to: "/dashboard/notifications", icon: Bell },
     { name: "Configurações", to: "/dashboard/settings", icon: Settings },
   ];
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  const handleLogout = () => {
+    signOut();
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -96,13 +102,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </Button>
             )}
             
-            {/* Profile dropdown placeholder */}
-            <div className="ml-auto">
-              <Button variant="ghost" size="sm" className="flex items-center">
-                <span className="h-8 w-8 rounded-full bg-kontrola-100 text-kontrola-600 flex items-center justify-center mr-2">
-                  U
-                </span>
-                <span>Usuário</span>
+            {/* Add notification indicator and user profile */}
+            <div className="ml-auto flex items-center space-x-4">
+              <NotificationIndicator />
+              <Link to="/dashboard">
+                <Button variant="ghost" size="sm" className="font-medium">
+                  Dashboard
+                </Button>
+              </Link>
+              <Button variant="outline" onClick={handleLogout} className="flex items-center">
+                Sair
               </Button>
             </div>
           </div>
