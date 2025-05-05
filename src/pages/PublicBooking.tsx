@@ -104,8 +104,24 @@ const PublicBooking: React.FC = () => {
   const handleBookingConfirm = (bookingData: any) => {
     // If user is not logged in, prompt for login first
     if (!isLoggedIn) {
-      setTempBookingData(bookingData);
-      setIsLoginDialogOpen(true);
+      // Check if client info exists in the booking data
+      if (bookingData.clientInfo) {
+        // Use the client info provided in the booking form
+        const userData = {
+          name: bookingData.clientInfo.name,
+          phone: bookingData.clientInfo.phone
+        };
+        
+        // Store user info and process booking directly
+        localStorage.setItem("bookingUser", JSON.stringify(userData));
+        setUserProfile(userData);
+        setIsLoggedIn(true);
+        processBooking(bookingData);
+      } else {
+        // For old version compatibility where client info isn't included
+        setTempBookingData(bookingData);
+        setIsLoginDialogOpen(true);
+      }
       return;
     }
 

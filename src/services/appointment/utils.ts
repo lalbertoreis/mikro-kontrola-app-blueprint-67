@@ -29,3 +29,28 @@ export async function checkOverlappingAppointments(
 
   return data && data.length > 0;
 }
+
+// Check if an employee is available for a specific day of week
+export async function checkEmployeeAvailability(
+  employeeId: string,
+  dayOfWeek: number
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('shifts')
+      .select('id')
+      .eq('employee_id', employeeId)
+      .eq('day_of_week', dayOfWeek);
+      
+    if (error) {
+      console.error('Error checking employee availability:', error);
+      return false;
+    }
+    
+    // If we have at least one shift for this day, the employee is available
+    return data && data.length > 0;
+  } catch (error) {
+    console.error('Error in checkEmployeeAvailability:', error);
+    return false;
+  }
+}

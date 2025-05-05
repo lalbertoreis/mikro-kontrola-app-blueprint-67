@@ -10,9 +10,12 @@ import { Employee } from "@/types/employee";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { supabase } from "@/integrations/supabase/client";
 import { BusinessSettings } from "@/types/settings";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type Period = "Manhã" | "Tarde" | "Noite";
 type TimeSlot = string;
+type BookingStep = "datetime" | "clientinfo" | "confirmation";
 
 interface BookingDialogProps {
   open: boolean;
@@ -25,6 +28,10 @@ interface BookingDialogProps {
     employee: Employee;
     date: Date;
     time: string;
+    clientInfo?: {
+      name: string;
+      phone: string;
+    }
   }) => void;
 }
 
@@ -44,7 +51,11 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
   const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
-
+  const [currentStep, setCurrentStep] = useState<BookingStep>("datetime");
+  const [clientInfo, setClientInfo] = useState({ name: "", phone: "" });
+  const [availableDays, setAvailableDays] = useState<{ [key: number]: boolean }>({});
+  const [isLoadingDays, setIsLoadingDays] = useState(false);
+  
   // Settings defaults
   const timeInterval = businessSettings?.bookingTimeInterval || 30;
   const futureLimit = businessSettings?.bookingFutureLimit || 3;
@@ -78,6 +89,47 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   // Check if can go to previous week
   const canGoPrevious = currentWeekStart > new Date();
 
+  // Fetch employee shift information to determine available days
+  useEffect(() => {
+    const fetchEmployeeShifts = async () => {
+      if (!selectedEmployee) return;
+      
+      setIsLoadingDays(true);
+      try {
+        const { data: shifts, error } = await supabase
+          .from('shifts')
+          .select('day_of_week')
+          .eq('employee_id', selectedEmployee.id);
+          
+        if (error) {
+          console.error('Error fetching employee shifts:', error);
+          return;
+        }
+        
+        // Create a map of available days
+        const availableDaysMap: { [key: number]: boolean } = {};
+        
+        // Initialize all days as unavailable
+        for (let i = 0; i < 7; i++) {
+          availableDaysMap[i] = false;
+        }
+        
+        // Set days with shifts as available
+        shifts?.forEach(shift => {
+          availableDaysMap[shift.day_of_week] = true;
+        });
+        
+        setAvailableDays(availableDaysMap);
+      } catch (err) {
+        console.error('Error in fetchEmployeeShifts:', err);
+      } finally {
+        setIsLoadingDays(false);
+      }
+    };
+    
+    fetchEmployeeShifts();
+  }, [selectedEmployee]);
+
   // Create time slot intervals based on settings
   const generateTimeIntervals = (period: Period): TimeSlot[] => {
     const intervals: Record<Period, { start: number; end: number }> = {
@@ -109,50 +161,15 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     
     try {
       const formattedDate = format(date, 'yyyy-MM-dd');
-      const serviceDuration = service.duration;
       
-      // Get all appointments for this employee on this date
-      const { data: appointments, error } = await supabase
-        .from('appointments')
-        .select('start_time, end_time')
-        .eq('employee_id', employee.id)
-        .gte('start_time', `${formattedDate}T00:00:00`)
-        .lt('start_time', `${formattedDate}T23:59:59`)
-        .neq('status', 'canceled');
+      // Use the updated service to fetch available slots considering existing appointments
+      const slots = await import("@/services/appointment").then(
+        module => module.fetchAvailableTimeSlots(employee.id, service.id, formattedDate)
+      );
       
-      if (error) {
-        console.error('Error fetching appointments:', error);
-        return [];
-      }
-      
-      // Generate all possible time slots based on period
-      const allTimeSlots = generateTimeIntervals(period);
-      
-      // Filter out slots that overlap with existing appointments
-      const availableSlots = allTimeSlots.filter(timeSlot => {
-        const [hours, minutes] = timeSlot.split(':').map(Number);
-        
-        // Start time of this potential appointment
-        const startDateTime = new Date(date);
-        startDateTime.setHours(hours, minutes, 0, 0);
-        
-        // End time (start time + service duration)
-        const endDateTime = new Date(startDateTime);
-        endDateTime.setMinutes(endDateTime.getMinutes() + serviceDuration);
-        
-        // Check if this time slot conflicts with any existing appointment
-        return !appointments.some(appointment => {
-          const appointmentStart = new Date(appointment.start_time);
-          const appointmentEnd = new Date(appointment.end_time);
-          
-          // Check for overlap
-          return (
-            (startDateTime < appointmentEnd && endDateTime > appointmentStart) ||
-            (startDateTime.getTime() === appointmentStart.getTime()) ||
-            (endDateTime.getTime() === appointmentEnd.getTime())
-          );
-        });
-      });
+      // Filter slots by period
+      const periodSlots = generateTimeIntervals(period);
+      const availableSlots = slots.filter(slot => periodSlots.includes(slot));
       
       return availableSlots;
     } catch (err) {
@@ -165,6 +182,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
 
   const handleEmployeeSelect = (employee: Employee) => {
     setSelectedEmployee(employee);
+    setSelectedDate(null);
     setSelectedPeriod(null);
     setSelectedTime(null);
     setAvailableTimeSlots([]);
@@ -191,15 +209,33 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setSelectedTime(time);
   };
 
-  const handleBookingConfirm = () => {
-    if (selectedEmployee && selectedDate && selectedTime) {
-      onBookingConfirm({
-        service,
-        employee: selectedEmployee,
-        date: selectedDate,
-        time: selectedTime,
-      });
-      setBookingConfirmed(true);
+  const handleClientInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setClientInfo(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleNextStep = () => {
+    if (currentStep === "datetime") {
+      setCurrentStep("clientinfo");
+    } else if (currentStep === "clientinfo") {
+      // Move to confirmation and trigger the callback with client info
+      if (selectedEmployee && selectedDate && selectedTime) {
+        onBookingConfirm({
+          service,
+          employee: selectedEmployee,
+          date: selectedDate,
+          time: selectedTime,
+          clientInfo
+        });
+        setCurrentStep("confirmation");
+        setBookingConfirmed(true);
+      }
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep === "clientinfo") {
+      setCurrentStep("datetime");
     }
   };
 
@@ -211,6 +247,8 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setBookingConfirmed(false);
     setCurrentWeekStart(new Date());
     setAvailableTimeSlots([]);
+    setCurrentStep("datetime");
+    setClientInfo({ name: "", phone: "" });
     onClose();
   };
 
@@ -220,6 +258,14 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
 
   const formatDayOfMonth = (date: Date) => {
     return format(date, "dd");
+  };
+  
+  // Check if a day is available based on employee shifts
+  const isDayAvailable = (date: Date) => {
+    if (isLoadingDays || !selectedEmployee) return false;
+    
+    const dayOfWeek = date.getDay(); // 0 for Sunday, 1 for Monday
+    return availableDays[dayOfWeek] === true;
   };
   
   // If dialog is closed, reset state
@@ -243,7 +289,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
           </div>
         </DialogHeader>
 
-        {bookingConfirmed ? (
+        {currentStep === "confirmation" && bookingConfirmed ? (
           <div className="p-6 flex flex-col items-center justify-center space-y-4">
             <div className="h-16 w-16 rounded-full bg-green-500 text-white flex items-center justify-center">
               <Check className="h-8 w-8" />
@@ -265,6 +311,49 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
             >
               Ok, Entendi.
             </Button>
+          </div>
+        ) : currentStep === "clientinfo" ? (
+          <div className="p-6 space-y-4">
+            <h2 className="text-lg font-semibold">Suas informações</h2>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={clientInfo.name}
+                  onChange={handleClientInfoChange}
+                  placeholder="Nome completo"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={clientInfo.phone}
+                  onChange={handleClientInfoChange}
+                  placeholder="(00) 00000-0000"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="mt-6 pt-4 border-t flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={handlePreviousStep}
+              >
+                Voltar
+              </Button>
+              <Button 
+                onClick={handleNextStep}
+                disabled={!clientInfo.name || !clientInfo.phone}
+              >
+                Confirmar Agendamento
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="p-4">
@@ -330,21 +419,28 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
                 </Button>
               </div>
               <div className="grid grid-cols-7 text-center">
-                {weekDays.map((date, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-xs text-gray-500">{formatDayOfWeek(date).slice(0, 3)}</div>
-                    <button
-                      className={`w-10 h-10 rounded-lg mx-auto flex items-center justify-center text-lg ${
-                        selectedDate && date.toDateString() === selectedDate.toDateString()
-                          ? "bg-purple-500 text-white"
-                          : "hover:bg-gray-100"
-                      }`}
-                      onClick={() => handleDateSelect(date)}
-                    >
-                      {formatDayOfMonth(date)}
-                    </button>
-                  </div>
-                ))}
+                {weekDays.map((date, index) => {
+                  const isAvailable = isDayAvailable(date);
+                  
+                  return (
+                    <div key={index} className="text-center">
+                      <div className="text-xs text-gray-500">{formatDayOfWeek(date).slice(0, 3)}</div>
+                      <button
+                        disabled={!isAvailable}
+                        className={`w-10 h-10 rounded-lg mx-auto flex items-center justify-center text-lg ${
+                          selectedDate && date.toDateString() === selectedDate.toDateString()
+                            ? "bg-purple-500 text-white"
+                            : !isAvailable
+                              ? "opacity-30 cursor-not-allowed bg-gray-100"
+                              : "hover:bg-gray-100"
+                        }`}
+                        onClick={() => isAvailable && handleDateSelect(date)}
+                      >
+                        {formatDayOfMonth(date)}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -422,9 +518,9 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
               <Button
                 className="w-full mt-4 bg-purple-500 hover:bg-purple-600"
                 disabled={!selectedEmployee || !selectedDate || !selectedTime}
-                onClick={handleBookingConfirm}
+                onClick={handleNextStep}
               >
-                Agendar
+                Continuar
               </Button>
             </div>
           </div>
