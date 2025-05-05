@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Transaction, FinancialSummary, TransactionFormData, TransactionType } from "@/types/finance";
 import { 
@@ -16,12 +17,12 @@ export function useTransactions() {
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const { user } = useAuth();
 
-  const loadTransactions = async () => {
+  const loadTransactions = async (startDate?: string, endDate?: string) => {
     if (!user) return;
     
     setIsLoading(true);
     try {
-      const data = await fetchTransactions();
+      const data = await fetchTransactions(startDate, endDate);
       // Convert database fields to our Transaction interface
       const mappedTransactions: Transaction[] = data.map(item => ({
         id: item.id,

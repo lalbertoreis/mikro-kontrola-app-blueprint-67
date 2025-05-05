@@ -1,28 +1,59 @@
 
 import React, { useState, useEffect } from "react";
-import { 
-  Table, 
-  TableHeader, 
-  TableRow, 
-  TableHead, 
-  TableBody, 
-  TableCell 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
-  BadgePlus, 
-  Pencil, 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Filter,
   Trash2,
-  ArrowUpRight, 
-  ArrowDownRight,
-  Calendar,
-  Search
+  Edit,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import TransactionDialog from "./TransactionDialog";
+import { useTransactions } from "@/hooks/useTransactions";
+import { Transaction, TransactionType } from "@/types/finance";
+import { useNavigate } from "react-router-dom";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -31,263 +62,368 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Transaction, TransactionFormData, TransactionType } from "@/types/finance";
-import { useTransactions } from "@/hooks/useTransactions";
-import TransactionDialog from "./TransactionDialog";
 
-const TransactionList = () => {
+interface TransactionListProps {
+  startDate?: string;
+  endDate?: string;
+}
+
+const TransactionList = ({ startDate, endDate }: TransactionListProps) => {
+  const navigate = useNavigate();
   const { transactions, isLoading, loadTransactions, removeTransaction } = useTransactions();
+  const [filtered, setFiltered] = useState<Transaction[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [transactionType, setTransactionType] = useState<"all" | TransactionType>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
-  const [activeFilter, setActiveFilter] = useState<"all" | "income" | "expense">("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [startDate, setStartDate] = useState<string>(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]
-  );
-  const [endDate, setEndDate] = useState<string>(
-    new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split("T")[0]
-  );
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
+  const itemsPerPage = 10;
 
-  // Filter transactions based on active filter, date range and search term
+  // Carregar transações quando as datas mudarem
   useEffect(() => {
-    let filtered = [...transactions];
-    
-    // Filter by type
-    if (activeFilter !== "all") {
-      filtered = filtered.filter(transaction => transaction.type === activeFilter);
-    }
-    
-    // Filter by date range
-    if (startDate && endDate) {
-      filtered = filtered.filter(
-        transaction => transaction.date >= startDate && transaction.date <= endDate
-      );
-    }
-    
-    // Filter by search term
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        transaction => 
-          transaction.description.toLowerCase().includes(term) ||
-          transaction.category.toLowerCase().includes(term) ||
-          (transaction.clients?.name?.toLowerCase().includes(term)) ||
-          (transaction.payment_method?.toLowerCase().includes(term))
-      );
-    }
-    
-    setFilteredTransactions(filtered);
-  }, [transactions, activeFilter, searchTerm, startDate, endDate]);
+    loadTransactions(startDate, endDate);
+  }, [startDate, endDate, loadTransactions]);
 
-  const handleAdd = () => {
+  // Filtra as transações com base nos critérios de busca e tipo
+  useEffect(() => {
+    let result = [...transactions];
+
+    if (searchTerm) {
+      result = result.filter(
+        (transaction) =>
+          transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          transaction.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (transaction.notes && transaction.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    if (transactionType !== "all") {
+      result = result.filter((transaction) => transaction.type === transactionType);
+    }
+
+    setFiltered(result);
+    setCurrentPage(1);
+  }, [transactions, searchTerm, transactionType]);
+
+  // Formatar valores como moeda brasileira
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  // Calcular o total de páginas
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  // Obter as transações da página atual
+  const currentTransactions = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleAddTransaction = () => {
     setSelectedTransaction(null);
     setDialogOpen(true);
   };
 
-  const handleEdit = (transaction: Transaction) => {
+  const handleEditTransaction = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    await removeTransaction(id);
+  const handleDeleteTransaction = (id: string) => {
+    setTransactionToDelete(id);
+    setIsDeleteDialogOpen(true);
   };
 
-  // Handle date filter change
-  const handleDateFilterChange = () => {
-    loadTransactions();
-  };
-
-  // Formatar valores como moeda brasileira
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
+  const confirmDelete = async () => {
+    if (transactionToDelete) {
+      await removeTransaction(transactionToDelete);
+      setIsDeleteDialogOpen(false);
+      setTransactionToDelete(null);
+    }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-xl font-semibold">Transações</h2>
-        <Button onClick={handleAdd} className="flex items-center gap-2">
-          <BadgePlus className="h-4 w-4" />
-          Nova Transação
-        </Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-        <Tabs 
-          defaultValue="all" 
-          value={activeFilter}
-          onValueChange={(value) => setActiveFilter(value as "all" | "income" | "expense")}
-          className="w-full md:w-auto"
-        >
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all">Todas</TabsTrigger>
-            <TabsTrigger value="income">Receitas</TabsTrigger>
-            <TabsTrigger value="expense">Despesas</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        
-        <div className="flex flex-col sm:flex-row gap-2 items-center w-full">
-          <div className="relative flex-1 w-full sm:w-auto">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar transações..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-full"
-            />
+    <>
+      <Card>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <CardTitle>Transações</CardTitle>
+            <CardDescription>
+              {isLoading
+                ? "Carregando transações..."
+                : `Total de ${filtered.length} transações encontradas.`}
+            </CardDescription>
           </div>
-          
-          <div className="flex flex-wrap gap-2 items-center">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-[140px]"
-              />
-              <span>-</span>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-[140px]"
-              />
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleDateFilterChange}
-            >
-              Filtrar
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={handleAddTransaction}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Transação
             </Button>
           </div>
-        </div>
-      </div>
+        </CardHeader>
 
-      <Card>
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+        <CardContent className="space-y-4">
+          {/* Filtros e busca */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Buscar transações..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select
+                value={transactionType}
+                onValueChange={(value) =>
+                  setTransactionType(value as "all" | TransactionType)
+                }
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Tipo de transação" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="income">Receitas</SelectItem>
+                  <SelectItem value="expense">Despesas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Tabela de transações */}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                    </div>
-                    <div className="mt-2 text-muted-foreground">Carregando transações...</div>
-                  </TableCell>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead className="w-[100px]">Ações</TableHead>
                 </TableRow>
-              ) : filteredTransactions.length > 0 ? (
-                filteredTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">
-                      {transaction.description}
-                      {transaction.clients && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Cliente: {transaction.clients.name}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>{transaction.category}</TableCell>
-                    <TableCell>
-                      {new Date(transaction.date).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(transaction.amount)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        {transaction.type === "income" ? (
-                          <ArrowUpRight className="h-4 w-4 mr-2 text-green-500" />
-                        ) : (
-                          <ArrowDownRight className="h-4 w-4 mr-2 text-red-500" />
-                        )}
-                        <span className={transaction.type === "income" ? "text-green-600" : "text-red-600"}>
-                          {transaction.type === "income" ? "Receita" : "Despesa"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(transaction)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Editar</TooltipContent>
-                      </Tooltip>
-                      
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(transaction.id)}>
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </TooltipTrigger>
-                        <TooltipContent>Excluir</TooltipContent>
-                      </Tooltip>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="h-24 text-center"
+                    >
+                      Carregando transações...
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                    Nenhuma transação encontrada.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ) : currentTransactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="h-24 text-center"
+                    >
+                      Nenhuma transação encontrada.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  currentTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell>
+                        {new Date(transaction.date).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {transaction.description}
+                      </TableCell>
+                      <TableCell>{transaction.category}</TableCell>
+                      <TableCell className="text-right">
+                        <span
+                          className={
+                            transaction.type === "income"
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }
+                        >
+                          {formatCurrency(transaction.amount)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            transaction.type === "income"
+                              ? "bg-green-50 text-green-700 border-green-200"
+                              : "bg-red-50 text-red-700 border-red-200"
+                          }
+                        >
+                          {transaction.type === "income"
+                            ? "Receita"
+                            : "Despesa"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                            >
+                              <span className="sr-only">Abrir menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleEditTransaction(transaction)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteTransaction(transaction.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Paginação */}
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Mostrando {Math.min(filtered.length, (currentPage - 1) * itemsPerPage + 1)}-
+                {Math.min(currentPage * itemsPerPage, filtered.length)} de{" "}
+                {filtered.length} transações
+              </div>
+              <div className="flex items-center space-x-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Primeira página</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Página anterior</TooltipContent>
+                </Tooltip>
+
+                <Button variant="outline" disabled>
+                  {currentPage} / {totalPages}
+                </Button>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Próxima página</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Última página</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
-      
-      <TransactionDialog 
-        open={dialogOpen} 
-        onOpenChange={setDialogOpen} 
-        transactionId={selectedTransaction?.id}
-        onSuccess={loadTransactions}
-        initialData={selectedTransaction as TransactionFormData}
-      />
-    </div>
+
+      {/* Dialog para adicionar/editar transação */}
+      {dialogOpen && (
+        <TransactionDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          transactionId={selectedTransaction?.id}
+          onSuccess={() => {
+            loadTransactions(startDate, endDate);
+          }}
+          initialData={
+            selectedTransaction
+              ? {
+                  description: selectedTransaction.description,
+                  amount: selectedTransaction.amount,
+                  date: selectedTransaction.date,
+                  type: selectedTransaction.type,
+                  category: selectedTransaction.category,
+                  notes: selectedTransaction.notes || "",
+                  payment_method: selectedTransaction.payment_method,
+                  quantity: selectedTransaction.quantity,
+                  unit_price: selectedTransaction.unit_price,
+                  client_id: selectedTransaction.client_id,
+                  service_id: selectedTransaction.service_id,
+                  package_id: selectedTransaction.package_id,
+                  user_id: selectedTransaction.user_id,
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {/* Dialog de confirmação para excluir transação */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir transação</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

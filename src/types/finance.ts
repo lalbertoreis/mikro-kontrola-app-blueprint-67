@@ -61,6 +61,7 @@ export interface FinancialSummary {
 export interface PaymentMethod {
   id: string;
   name: string;
+  fee?: number;
   is_active: boolean;
   user_id: string;
   created_at: string;

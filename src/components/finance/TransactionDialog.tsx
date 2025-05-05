@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -79,6 +80,7 @@ export function TransactionDialog({
   const { services } = useServices();
   const { packages } = useServicePackages();
   const [serviceTab, setServiceTab] = useState<"service" | "package">("service");
+  const [isServiceSelected, setIsServiceSelected] = useState(false);
   const { user } = useAuth();
   
   const defaultValues: TransactionFormData = {
@@ -120,7 +122,7 @@ export function TransactionDialog({
     }
   }, [quantity, unitPrice, form]);
   
-  // Update unit price when service is selected
+  // Update unit price when service is selected and lock fields
   useEffect(() => {
     if (serviceTab === "service" && serviceId) {
       const selectedService = services.find(s => s.id === serviceId);
@@ -129,11 +131,14 @@ export function TransactionDialog({
         form.setValue("unit_price", selectedService.price);
         // Clear package_id when service is selected
         form.setValue("package_id", undefined);
+        setIsServiceSelected(true);
       }
+    } else if (!serviceId && !packageId) {
+      setIsServiceSelected(false);
     }
-  }, [serviceId, services, form, serviceTab]);
+  }, [serviceId, services, form, serviceTab, packageId]);
   
-  // Update unit price when package is selected
+  // Update unit price when package is selected and lock fields
   useEffect(() => {
     if (serviceTab === "package" && packageId) {
       const selectedPackage = packages.find(p => p.id === packageId);
@@ -142,9 +147,12 @@ export function TransactionDialog({
         form.setValue("unit_price", selectedPackage.price);
         // Clear service_id when package is selected
         form.setValue("service_id", undefined);
+        setIsServiceSelected(true);
       }
+    } else if (!packageId && !serviceId) {
+      setIsServiceSelected(false);
     }
-  }, [packageId, packages, form, serviceTab]);
+  }, [packageId, packages, form, serviceTab, serviceId]);
 
   // Load payment methods
   useEffect(() => {
@@ -163,11 +171,15 @@ export function TransactionDialog({
     if (open && initialData) {
       form.reset(initialData);
       
-      // Determine which tab to select
+      // Determine which tab to select and if fields should be locked
       if (initialData.service_id) {
         setServiceTab("service");
+        setIsServiceSelected(true);
       } else if (initialData.package_id) {
         setServiceTab("package");
+        setIsServiceSelected(true);
+      } else {
+        setIsServiceSelected(false);
       }
     }
   }, [open, initialData, form]);
@@ -346,7 +358,12 @@ export function TransactionDialog({
                 <FormItem>
                   <FormLabel>Descrição</FormLabel>
                   <FormControl>
-                    <Input placeholder="Descrição da transação" {...field} />
+                    <Input 
+                      placeholder="Descrição da transação" 
+                      {...field} 
+                      readOnly={isServiceSelected}
+                      className={isServiceSelected ? "bg-muted" : ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -370,6 +387,8 @@ export function TransactionDialog({
                           field.onChange(value ? parseFloat(value) : 0);
                         }}
                         value={field.value || 0}
+                        readOnly={isServiceSelected}
+                        className={isServiceSelected ? "bg-muted" : ""}
                       />
                     </FormControl>
                     <FormMessage />

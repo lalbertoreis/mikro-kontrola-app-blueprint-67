@@ -3,17 +3,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { Transaction, TransactionFormData } from "@/types/finance";
 import { toast } from "sonner";
 
-export async function fetchTransactions() {
+export async function fetchTransactions(startDate?: string, endDate?: string) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("transactions")
       .select(`
         *,
         clients:client_id(*),
         services:service_id(*),
         packages:package_id(*)
-      `)
-      .order("date", { ascending: false });
+      `);
+    
+    // Adicionar filtros de data se fornecidos
+    if (startDate) {
+      query = query.gte("date", startDate);
+    }
+    
+    if (endDate) {
+      query = query.lte("date", endDate);
+    }
+    
+    const { data, error } = await query.order("date", { ascending: false });
 
     if (error) {
       console.error("Error fetching transactions:", error);
@@ -202,5 +212,74 @@ export async function fetchFinancialSummary(startDate?: string, endDate?: string
       periodStart: startDate || "",
       periodEnd: endDate || "",
     };
+  }
+}
+
+export async function createPaymentMethod(data: { name: string, fee?: number, is_active?: boolean, user_id: string }) {
+  try {
+    const { data: result, error } = await supabase
+      .from("payment_methods")
+      .insert(data)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating payment method:", error);
+      toast.error("Erro ao criar método de pagamento");
+      return null;
+    }
+
+    toast.success("Método de pagamento criado com sucesso");
+    return result;
+  } catch (error) {
+    console.error("Error in createPaymentMethod:", error);
+    toast.error("Erro ao criar método de pagamento");
+    return null;
+  }
+}
+
+export async function updatePaymentMethod(id: string, data: { name: string, fee?: number, is_active?: boolean }) {
+  try {
+    const { data: result, error } = await supabase
+      .from("payment_methods")
+      .update(data)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating payment method:", error);
+      toast.error("Erro ao atualizar método de pagamento");
+      return null;
+    }
+
+    toast.success("Método de pagamento atualizado com sucesso");
+    return result;
+  } catch (error) {
+    console.error("Error in updatePaymentMethod:", error);
+    toast.error("Erro ao atualizar método de pagamento");
+    return null;
+  }
+}
+
+export async function deletePaymentMethod(id: string) {
+  try {
+    const { error } = await supabase
+      .from("payment_methods")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting payment method:", error);
+      toast.error("Erro ao excluir método de pagamento");
+      return false;
+    }
+
+    toast.success("Método de pagamento excluído com sucesso");
+    return true;
+  } catch (error) {
+    console.error("Error in deletePaymentMethod:", error);
+    toast.error("Erro ao excluir método de pagamento");
+    return false;
   }
 }

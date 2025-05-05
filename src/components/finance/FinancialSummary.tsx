@@ -4,8 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, WalletCards } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
 
-const FinancialSummary = () => {
-  const { summary, isLoading } = useTransactions();
+interface FinancialSummaryProps {
+  startDate?: string;
+  endDate?: string;
+}
+
+const FinancialSummary = ({ startDate, endDate }: FinancialSummaryProps) => {
+  const { summary, isLoading, loadSummary } = useTransactions();
+  
+  // Carregar o resumo quando as datas mudarem
+  React.useEffect(() => {
+    loadSummary(startDate, endDate);
+  }, [startDate, endDate, loadSummary]);
   
   // Formatar valores como moeda brasileira
   const formatCurrency = (value: number) => {
