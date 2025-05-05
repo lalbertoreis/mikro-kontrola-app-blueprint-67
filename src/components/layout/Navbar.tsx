@@ -4,9 +4,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, Sun, Moon } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
@@ -14,7 +13,6 @@ import { toast } from "sonner";
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const isMobile = useIsMobile();
-  const { theme, setTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
@@ -44,10 +42,6 @@ const Navbar = () => {
     }
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
-
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
       <div className="kontrola-container">
@@ -63,11 +57,12 @@ const Navbar = () => {
             <nav className="flex space-x-8 items-center">
               <NavLinks />
               <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                  {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                </Button>
                 {user ? (
-                  <UserMenu user={user} onLogout={handleLogout} />
+                  <Link to="/dashboard">
+                    <Button variant="ghost" className="font-medium">
+                      Dashboard
+                    </Button>
+                  </Link>
                 ) : (
                   <AuthButtons />
                 )}
@@ -75,9 +70,6 @@ const Navbar = () => {
             </nav>
           ) : (
             <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
               <Button 
                 variant="ghost" 
                 size="icon"
@@ -144,20 +136,6 @@ const AuthButtons = () => (
         Comece Grátis
       </Button>
     </Link>
-  </div>
-);
-
-const UserMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) => (
-  <div className="flex items-center space-x-4">
-    <Link to="/dashboard">
-      <Button variant="ghost" className="font-medium">
-        Dashboard
-      </Button>
-    </Link>
-    <Button variant="outline" onClick={onLogout} className="flex items-center">
-      <LogOut className="mr-2 h-4 w-4" /> 
-      Sair
-    </Button>
   </div>
 );
 

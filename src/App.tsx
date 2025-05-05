@@ -75,12 +75,14 @@ const App = () => {
         <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
           <AuthProvider>
             <Routes>
-              {/* Rotas públicas */}
+              {/* Rotas públicas com Navbar */}
               <Route path="/" element={<PublicLayout><Index /></PublicLayout>} />
               <Route path="/features" element={<PublicLayout><Features /></PublicLayout>} />
               <Route path="/pricing" element={<PublicLayout><Pricing /></PublicLayout>} />
-              <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
-              <Route path="/register" element={<PublicLayout><Register /></PublicLayout>} />
+              
+              {/* Rotas de autenticação sem Navbar */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
               
               {/* Rotas protegidas */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
