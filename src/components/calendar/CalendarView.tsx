@@ -11,12 +11,14 @@ import { CalendarViewOptions, AppointmentWithDetails } from "@/types/calendar";
 import AppointmentDialog from "./AppointmentDialog";
 import BlockTimeDialog from "./BlockTimeDialog";
 import AppointmentActionsDialog from "./AppointmentActionsDialog";
+import { useAppointments } from "@/hooks/useAppointments";
 
 const CalendarView: React.FC = () => {
   const [view, setView] = useState<CalendarViewOptions["view"]>("week");
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const { employees, isLoading } = useEmployees();
   const [selectedEmployee, setSelectedEmployee] = useState<string | undefined>();
+  const { appointments } = useAppointments();
 
   // Dialog states
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
@@ -75,30 +77,33 @@ const CalendarView: React.FC = () => {
       {view === "week" ? (
         <WeekCalendar
           date={currentDate}
-          onDateChange={setCurrentDate}
-          employeeId={selectedEmployee}
+          appointments={appointments}
+          employees={employees}
           onSelectAppointment={handleSelectAppointment}
         />
       ) : (
         <MonthCalendar
           date={currentDate}
-          onDateChange={setCurrentDate}
-          employeeId={selectedEmployee}
+          appointments={appointments}
+          employees={employees}
           onSelectAppointment={handleSelectAppointment}
         />
       )}
 
       {/* Appointment Dialog */}
       <AppointmentDialog 
-        open={appointmentDialogOpen}
-        onOpenChange={setAppointmentDialogOpen}
-        appointmentId={editMode && selectedAppointment ? selectedAppointment.id : undefined}
+        isOpen={appointmentDialogOpen}
+        onClose={() => setAppointmentDialogOpen(false)}
+        selectedDate={currentDate}
+        selectedEmployeeId={selectedEmployee}
       />
 
       {/* Block Time Dialog */}
       <BlockTimeDialog 
-        open={blockTimeDialogOpen}
-        onOpenChange={setBlockTimeDialogOpen}
+        isOpen={blockTimeDialogOpen}
+        onClose={() => setBlockTimeDialogOpen(false)}
+        selectedDate={currentDate}
+        selectedEmployeeId={selectedEmployee}
       />
 
       {/* Appointment Actions Dialog */}

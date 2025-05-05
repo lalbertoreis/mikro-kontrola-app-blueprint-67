@@ -20,11 +20,12 @@ interface MonthCalendarProps {
   date: Date;
   appointments: AppointmentWithDetails[];
   employees: Employee[];
+  onSelectAppointment: (appointment: AppointmentWithDetails) => void;
 }
 
 const WEEKDAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-const MonthCalendar: React.FC<MonthCalendarProps> = ({ date, appointments, employees }) => {
+const MonthCalendar: React.FC<MonthCalendarProps> = ({ date, appointments, employees, onSelectAppointment }) => {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
@@ -96,6 +97,7 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ date, appointments, emplo
                     key={appointment.id}
                     appointment={appointment}
                     colorClass={getEmployeeColor(appointment.employeeId)}
+                    onClick={() => onSelectAppointment(appointment)}
                   />
                 ))}
                 

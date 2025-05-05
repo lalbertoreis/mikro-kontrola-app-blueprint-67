@@ -9,7 +9,7 @@ import { useClients } from "@/hooks/useClients";
 import { useServices } from "@/hooks/useServices";
 import { useServicePackages } from "@/hooks/useServicePackages";
 import { useEmployees } from "@/hooks/useEmployees";
-import { useAvailableTimeSlots, useAppointments } from "@/hooks/useAppointments";
+import { useAvailableTimeSlots, useAppointments, useAppointmentById } from "@/hooks/useAppointments";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -68,6 +68,7 @@ interface AppointmentDialogProps {
   onClose: () => void;
   selectedDate?: Date;
   selectedEmployeeId?: string;
+  appointmentId?: string;
 }
 
 const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
@@ -75,12 +76,14 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
   onClose,
   selectedDate,
   selectedEmployeeId,
+  appointmentId,
 }) => {
   const { clients } = useClients();
   const { employees } = useEmployees();
   const { services } = useServices();
   const { packages } = useServicePackages();
   const { createAppointment, isCreating } = useAppointments();
+  const { data: existingAppointment, isLoading: isLoadingAppointment } = useAppointmentById(appointmentId);
   
   const [isNewClient, setIsNewClient] = useState(false);
   const [servicesList, setServicesList] = useState<any[]>([]);
@@ -220,9 +223,9 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo Agendamento</DialogTitle>
+          <DialogTitle>{appointmentId ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
           <DialogDescription>
-            Preencha os dados para criar um novo agendamento
+            {appointmentId ? "Atualize os dados do agendamento" : "Preencha os dados para criar um novo agendamento"}
           </DialogDescription>
         </DialogHeader>
         
@@ -561,7 +564,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
                 type="submit"
                 disabled={isCreating}
               >
-                {isCreating ? "Criando..." : "Criar Agendamento"}
+                {isCreating ? "Criando..." : appointmentId ? "Atualizar" : "Criar Agendamento"}
               </Button>
             </DialogFooter>
           </form>

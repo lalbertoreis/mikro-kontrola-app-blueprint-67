@@ -10,12 +10,13 @@ interface WeekCalendarProps {
   date: Date;
   appointments: AppointmentWithDetails[];
   employees: Employee[];
+  onSelectAppointment: (appointment: AppointmentWithDetails) => void;
 }
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8:00 - 20:00
 const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6]; // Sunday - Saturday
 
-const WeekCalendar: React.FC<WeekCalendarProps> = ({ date, appointments, employees }) => {
+const WeekCalendar: React.FC<WeekCalendarProps> = ({ date, appointments, employees, onSelectAppointment }) => {
   // Get the starting date of the week (Sunday)
   const weekStart = startOfWeek(date, { weekStartsOn: 0 });
   
@@ -90,6 +91,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({ date, appointments, employe
                     key={appointment.id}
                     appointment={appointment}
                     colorClass={getEmployeeColor(appointment.employeeId)}
+                    onClick={() => onSelectAppointment(appointment)}
                   />
                 ))}
               </div>
