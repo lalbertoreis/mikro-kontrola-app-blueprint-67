@@ -11,10 +11,7 @@ export interface FixedCost {
   updated_at: string;
 }
 
-export interface FixedCostFormData {
-  name: string;
-  month: number;
-  year: number;
-  amount: number;
-  description?: string;
-}
+// Use the FixedCostFormValues type from the schema instead
+import { FixedCostFormValues } from "@/components/finance/fixedCostSchema";
+export type FixedCostFormData = FixedCostFormValues;
+
