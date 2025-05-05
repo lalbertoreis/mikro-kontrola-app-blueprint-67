@@ -61,6 +61,10 @@ const PublicBooking: React.FC = () => {
             instagram: data.instagram || '',
             whatsapp: data.whatsapp || '',
             address: data.address || '',
+            bookingSimultaneousLimit: data.booking_simultaneous_limit || 3,
+            bookingFutureLimit: data.booking_future_limit || 3,
+            bookingTimeInterval: data.booking_time_interval || 30,
+            bookingCancelMinHours: data.booking_cancel_min_hours || 1,
             createdAt: data.created_at || '',
             updatedAt: data.updated_at || ''
           });

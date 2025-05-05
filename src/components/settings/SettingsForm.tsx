@@ -6,11 +6,12 @@ import { BusinessSettingsFormData } from "@/types/settings";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings } from "lucide-react";
+import { Settings, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { settingsFormSchema } from "./ValidationSchema";
 import BusinessInfoForm from "./BusinessInfoForm";
 import OnlineBookingForm from "./OnlineBookingForm";
+import BookingSettingsForm from "./BookingSettingsForm";
 
 interface SettingsFormProps {
   defaultValues?: Partial<BusinessSettingsFormData>;
@@ -26,6 +27,10 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
     instagram: "",
     whatsapp: "",
     address: "",
+    bookingSimultaneousLimit: 3,
+    bookingFutureLimit: 3,
+    bookingTimeInterval: 30,
+    bookingCancelMinHours: 1,
   },
   onSubmit = () => {},
 }) => {
@@ -39,7 +44,6 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
 
   const handleSubmit = (data: BusinessSettingsFormData) => {
     onSubmit(data);
-    toast.success("Configurações salvas com sucesso!");
   };
 
   return (
@@ -62,14 +66,28 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
         </Card>
 
         {watchEnableOnlineBooking && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações para Agenda Online</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <OnlineBookingForm control={form.control} />
-            </CardContent>
-          </Card>
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações para Agenda Online</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <OnlineBookingForm control={form.control} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  <span>Configurações de Agendamento</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BookingSettingsForm control={form.control} />
+              </CardContent>
+            </Card>
+          </>
         )}
 
         <div className="flex justify-end">

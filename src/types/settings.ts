@@ -9,6 +9,10 @@ export interface BusinessSettings {
   address?: string;
   createdAt: string;
   updatedAt: string;
+  bookingSimultaneousLimit: number;
+  bookingFutureLimit: number;
+  bookingTimeInterval: number;
+  bookingCancelMinHours: number;
 }
 
 export interface BusinessSettingsFormData {
@@ -19,4 +23,8 @@ export interface BusinessSettingsFormData {
   instagram?: string;
   whatsapp?: string;
   address?: string;
+  bookingSimultaneousLimit: number;
+  bookingFutureLimit: number;
+  bookingTimeInterval: number;
+  bookingCancelMinHours: number;
 }

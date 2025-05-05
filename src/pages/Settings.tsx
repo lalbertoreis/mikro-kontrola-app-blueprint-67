@@ -37,6 +37,10 @@ const Settings = () => {
             instagram: data.instagram || '',
             whatsapp: data.whatsapp || '',
             address: data.address || '',
+            bookingSimultaneousLimit: data.booking_simultaneous_limit || 3,
+            bookingFutureLimit: data.booking_future_limit || 3,
+            bookingTimeInterval: data.booking_time_interval || 30,
+            bookingCancelMinHours: data.booking_cancel_min_hours || 1,
           });
         }
       } catch (error) {
@@ -80,6 +84,10 @@ const Settings = () => {
           instagram: updatedData.instagram,
           whatsapp: updatedData.whatsapp,
           address: updatedData.address,
+          booking_simultaneous_limit: updatedData.bookingSimultaneousLimit,
+          booking_future_limit: updatedData.bookingFutureLimit,
+          booking_time_interval: updatedData.bookingTimeInterval,
+          booking_cancel_min_hours: updatedData.bookingCancelMinHours,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -124,6 +132,10 @@ const Settings = () => {
               instagram: settings.instagram,
               whatsapp: settings.whatsapp,
               address: settings.address,
+              bookingSimultaneousLimit: settings.bookingSimultaneousLimit,
+              bookingFutureLimit: settings.bookingFutureLimit,
+              bookingTimeInterval: settings.bookingTimeInterval,
+              bookingCancelMinHours: settings.bookingCancelMinHours,
             }}
             onSubmit={handleSubmit}
           />

@@ -1,12 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { format, addDays } from "date-fns";
+import { format, addDays, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, X, Check } from "lucide-react";
+import { CalendarIcon, X, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Service } from "@/types/service";
 import { Employee } from "@/types/employee";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type Period = "Manhã" | "Tarde" | "Noite";
 type TimeSlot = string;
@@ -36,15 +37,49 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
   const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null);
   const [bookingConfirmed, setBookingConfirmed] = useState<boolean>(false);
+  const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
 
-  // Generate week days (7 days from today)
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
+  // Generate week days (7 days from current week start)
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
 
-  // Sample time slots
-  const timeSlots: Record<Period, TimeSlot[]> = {
-    "Manhã": ["08:00", "09:00", "10:00", "11:00"],
-    "Tarde": ["13:00", "14:00", "15:00", "16:00", "17:00"],
-    "Noite": ["18:00", "19:00", "20:00"]
+  // Navigate to next week
+  const goToNextWeek = () => {
+    setCurrentWeekStart(addDays(currentWeekStart, 7));
+  };
+
+  // Navigate to previous week
+  const goToPreviousWeek = () => {
+    // Prevent going to past weeks
+    const today = new Date();
+    const newDate = addDays(currentWeekStart, -7);
+    if (newDate < today) {
+      setCurrentWeekStart(today);
+    } else {
+      setCurrentWeekStart(newDate);
+    }
+  };
+  
+  // Calculate max future date based on settings (default: 3 months)
+  const maxFutureDate = addMonths(new Date(), 3);
+
+  // Check if can go to next week
+  const canGoNext = addDays(currentWeekStart, 7) <= maxFutureDate;
+
+  // Check if can go to previous week
+  const canGoPrevious = currentWeekStart > new Date();
+
+  // Sample time slots based on selected period
+  // In a real app, these would be dynamically generated based on employee availability
+  const generateTimeSlots = (period: Period): TimeSlot[] => {
+    // These are sample slots, in a real app you'd fetch these from backend
+    // based on employee availability and service duration
+    const slots: Record<Period, TimeSlot[]> = {
+      "Manhã": ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"],
+      "Tarde": ["13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"],
+      "Noite": ["18:00", "18:30", "19:00", "19:30", "20:00"]
+    };
+    
+    return slots[period];
   };
 
   const handleEmployeeSelect = (employee: Employee) => {
@@ -84,6 +119,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setSelectedPeriod(null);
     setSelectedTime(null);
     setBookingConfirmed(false);
+    setCurrentWeekStart(new Date());
     onClose();
   };
 
@@ -94,10 +130,17 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   const formatDayOfMonth = (date: Date) => {
     return format(date, "dd");
   };
+  
+  // If dialog is closed, reset state
+  useEffect(() => {
+    if (!open) {
+      resetDialog();
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={resetDialog}>
-      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-4 border-b">
           <div className="flex justify-between items-center">
             <DialogTitle>{service.name}</DialogTitle>
@@ -134,8 +177,28 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
           </div>
         ) : (
           <div className="p-4">
+            {/* Service Info */}
+            <div className="mb-6 border-b pb-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-sm text-gray-500">Duração</p>
+                  <p className="font-medium">{service.duration} minutos</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Valor</p>
+                  <p className="font-medium">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(service.price)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Employee Selection */}
             <div className="mb-6">
+              <p className="text-sm text-gray-500 mb-2">Escolha o profissional:</p>
               <div className="flex overflow-x-auto space-x-2 pb-2">
                 {employees.map((employee) => (
                   <Button
@@ -154,9 +217,27 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
 
             {/* Calendar */}
             <div className="mb-6">
-              <p className="text-center text-gray-500 mb-2">
-                {format(new Date(), "MMMM yyyy", { locale: ptBR })}
-              </p>
+              <div className="flex justify-between items-center mb-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={goToPreviousWeek}
+                  disabled={!canGoPrevious}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <p className="text-center text-gray-500">
+                  {format(currentWeekStart, "MMMM yyyy", { locale: ptBR })}
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={goToNextWeek}
+                  disabled={!canGoNext}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="grid grid-cols-7 text-center">
                 {weekDays.map((date, index) => (
                   <div key={index} className="text-center">
@@ -179,30 +260,32 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
             {/* Period Selection */}
             {selectedDate && (
               <div className="mb-6">
-                <div className="flex justify-center space-x-2">
+                <p className="text-sm text-gray-500 mb-2">Escolha o período:</p>
+                <ToggleGroup 
+                  type="single" 
+                  className="justify-start" 
+                  value={selectedPeriod || ''} 
+                  onValueChange={value => value && handlePeriodSelect(value as Period)}
+                >
                   {(["Manhã", "Tarde", "Noite"] as Period[]).map((period) => (
-                    <Button
-                      key={period}
-                      variant={selectedPeriod === period ? "default" : "outline"}
-                      className={selectedPeriod === period ? "bg-purple-500 hover:bg-purple-600" : ""}
-                      onClick={() => handlePeriodSelect(period)}
-                    >
+                    <ToggleGroupItem key={period} value={period} className="px-4">
                       {period}
-                    </Button>
+                    </ToggleGroupItem>
                   ))}
-                </div>
+                </ToggleGroup>
               </div>
             )}
 
             {/* Time Slots */}
             {selectedDate && selectedPeriod && (
               <div className="mb-6">
-                <div className="flex overflow-x-auto space-x-2 pb-2">
-                  {timeSlots[selectedPeriod].map((time) => (
+                <p className="text-sm text-gray-500 mb-2">Horários disponíveis:</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {generateTimeSlots(selectedPeriod).map((time) => (
                     <Button
                       key={time}
                       variant={selectedTime === time ? "default" : "outline"}
-                      className={`whitespace-nowrap ${
+                      className={`${
                         selectedTime === time ? "bg-purple-500 hover:bg-purple-600" : ""
                       }`}
                       onClick={() => handleTimeSelect(time)}

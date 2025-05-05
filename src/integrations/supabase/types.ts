@@ -302,6 +302,10 @@ export type Database = {
         Row: {
           address: string | null
           avatar_url: string | null
+          booking_cancel_min_hours: number | null
+          booking_future_limit: number | null
+          booking_simultaneous_limit: number | null
+          booking_time_interval: number | null
           business_logo: string | null
           business_name: string | null
           created_at: string | null
@@ -318,6 +322,10 @@ export type Database = {
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          booking_cancel_min_hours?: number | null
+          booking_future_limit?: number | null
+          booking_simultaneous_limit?: number | null
+          booking_time_interval?: number | null
           business_logo?: string | null
           business_name?: string | null
           created_at?: string | null
@@ -334,6 +342,10 @@ export type Database = {
         Update: {
           address?: string | null
           avatar_url?: string | null
+          booking_cancel_min_hours?: number | null
+          booking_future_limit?: number | null
+          booking_simultaneous_limit?: number | null
+          booking_time_interval?: number | null
           business_logo?: string | null
           business_name?: string | null
           created_at?: string | null
