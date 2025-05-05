@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Service, ServicePackageFormData } from "@/types/service";
+import { Service, ServicePackage, ServicePackageFormData } from "@/types/service";
 import { Search, Check, CircleHelp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,31 +41,58 @@ const formSchema = z.object({
 });
 
 interface ServicePackageFormProps {
-  packageId?: string;
-  onSuccess: () => void;
+  servicePackage?: ServicePackage | null;
+  onFormChange?: () => void;
+  onClose?: () => void;
 }
 
 const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
-  packageId,
-  onSuccess,
+  servicePackage,
+  onFormChange,
+  onClose
 }) => {
   const { toast } = useToast();
   const { services } = useServices();
-  const isEditing = Boolean(packageId);
+  const isEditing = Boolean(servicePackage?.id);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedServices, setSelectedServices] = useState<string[]>(
+    servicePackage?.services || []
+  );
   const [editMode, setEditMode] = useState<"discount" | "price">("discount");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      discount: 0,
-      showInOnlineBooking: true,
-    },
+    defaultValues: servicePackage
+      ? {
+          name: servicePackage.name,
+          description: servicePackage.description || "",
+          price: servicePackage.price,
+          discount: servicePackage.discount,
+          showInOnlineBooking: servicePackage.showInOnlineBooking,
+        }
+      : {
+          name: "",
+          description: "",
+          price: 0,
+          discount: 0,
+          showInOnlineBooking: true,
+        },
   });
+
+  // Set up form change watcher
+  useEffect(() => {
+    if (onFormChange) {
+      const subscription = form.watch(() => onFormChange());
+      return () => subscription.unsubscribe();
+    }
+  }, [form, onFormChange]);
+
+  // Notify parent when selected services change
+  useEffect(() => {
+    if (onFormChange) {
+      onFormChange();
+    }
+  }, [selectedServices, onFormChange]);
 
   // Filtrar serviços com base no termo de pesquisa
   const filteredServices = services.filter((service) =>
@@ -137,7 +164,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
           isEditing ? "atualizado" : "cadastrado"
         } com sucesso.`,
       });
-      onSuccess();
+      if (onClose) onClose();
     }, 1000);
   };
 

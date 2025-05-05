@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -76,9 +77,14 @@ const formSchema = z.object({
 interface HolidayFormProps {
   defaultValues?: Holiday | null;
   onCancel: () => void;
+  onFormChange?: () => void;
 }
 
-const HolidayForm: React.FC<HolidayFormProps> = ({ defaultValues, onCancel }) => {
+const HolidayForm: React.FC<HolidayFormProps> = ({ 
+  defaultValues, 
+  onCancel,
+  onFormChange
+}) => {
   const navigate = useNavigate();
   const { createHoliday, updateHoliday, isCreating, isUpdating } = useHolidays();
   const isEditing = Boolean(defaultValues?.id);
@@ -108,6 +114,14 @@ const HolidayForm: React.FC<HolidayFormProps> = ({ defaultValues, onCancel }) =>
           customEndTime: "18:00",
         },
   });
+
+  // Set up the form change watcher
+  useEffect(() => {
+    if (onFormChange) {
+      const subscription = form.watch(() => onFormChange());
+      return () => subscription.unsubscribe();
+    }
+  }, [form, onFormChange]);
 
   // Watch the blocking type to conditionally show time inputs
   const blockingType = form.watch("blockingType");
