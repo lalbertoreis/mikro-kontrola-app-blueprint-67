@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -26,9 +25,10 @@ import { toast } from "sonner";
 interface ShiftSelectorProps {
   shifts: Shift[];
   onChange: (shifts: Shift[]) => void;
+  showInlineErrors?: boolean;
 }
 
-const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange }) => {
+const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange, showInlineErrors = false }) => {
   const [newDay, setNewDay] = useState<string>("0");
   const [newStart, setNewStart] = useState<string>("09:00");
   const [newEnd, setNewEnd] = useState<string>("18:00");
@@ -69,8 +69,15 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange }) => {
 
     // Verificar sobreposição antes de adicionar
     if (checkOverlappingShifts(newShift)) {
-      toast.error("Já existe um turno com horários sobrepostos neste dia.");
-      return;
+      if (showInlineErrors) {
+        // If we're showing inline errors, return the error to parent component
+        onChange([...shifts]); // Trigger onChange to register the form as dirty
+        return;
+      } else {
+        // Otherwise show toast notification
+        toast.error("Já existe um turno com horários sobrepostos neste dia.");
+        return;
+      }
     }
 
     onChange([...shifts, newShift]);

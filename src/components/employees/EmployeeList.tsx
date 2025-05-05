@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useEmployees } from "@/hooks/useEmployees";
@@ -24,14 +23,22 @@ import { Loader2, MoreHorizontal, UserPlus, Pencil, Trash } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import EmployeeDialog from "./EmployeeDialog";
 
-const EmployeeList: React.FC = () => {
+interface EmployeeListProps {
+  onEdit?: (id: string) => void;
+}
+
+const EmployeeList: React.FC<EmployeeListProps> = ({ onEdit }) => {
   const { employees, isLoading, deleteEmployee, isDeleting } = useEmployees();
   const [open, setOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined);
 
   const handleEditEmployee = (id: string) => {
-    setSelectedEmployeeId(id);
-    setOpen(true);
+    if (onEdit) {
+      onEdit(id);
+    } else {
+      setSelectedEmployeeId(id);
+      setOpen(true);
+    }
   };
 
   const handleNewEmployee = () => {
@@ -178,11 +185,13 @@ const EmployeeList: React.FC = () => {
         </CardContent>
       </Card>
 
-      <EmployeeDialog 
-        open={open} 
-        onOpenChange={setOpen} 
-        employeeId={selectedEmployeeId} 
-      />
+      {!onEdit && (
+        <EmployeeDialog 
+          open={open} 
+          onOpenChange={setOpen} 
+          employeeId={selectedEmployeeId} 
+        />
+      )}
     </>
   );
 };
