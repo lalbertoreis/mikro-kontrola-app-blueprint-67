@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Business404 } from "@/pages/Business404";
 import { usePublicBooking } from "@/hooks/booking/usePublicBooking";
@@ -13,8 +13,6 @@ import ConfirmationScreen from "@/components/booking/dialog/ConfirmationScreen";
 const PublicBooking: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [confirmationDate, setConfirmationDate] = useState<Date | null>(null);
-  const [confirmationTime, setConfirmationTime] = useState<string | null>(null);
   
   const {
     businessProfile,
@@ -40,21 +38,14 @@ const PublicBooking: React.FC = () => {
     handleServiceClick,
     handlePackageClick,
     handleBookingConfirm,
+    handleLogin,
     handleLogout,
     handleCancelAppointment,
     bookingConfirmed,
-    setBookingConfirmed
+    setBookingConfirmed,
+    confirmationDate,
+    confirmationTime
   } = usePublicBooking(slug, navigate);
-
-  // Modified booking confirmation handler to capture date/time for confirmation screen
-  const handleBookingConfirmWithDetails = async (bookingData: any) => {
-    // Store the date and time for the confirmation screen
-    setConfirmationDate(bookingData.date);
-    setConfirmationTime(bookingData.time);
-    
-    // Call the original handler
-    await handleBookingConfirm(bookingData);
-  };
 
   if (isLoadingBusiness) {
     return (
@@ -110,8 +101,8 @@ const PublicBooking: React.FC = () => {
         onCloseBookingDialog={() => setIsBookingDialogOpen(false)}
         onCloseLoginDialog={() => setIsLoginDialogOpen(false)}
         onCloseAppointmentsDialog={() => setIsMyAppointmentsDialogOpen(false)}
-        onBookingConfirm={handleBookingConfirmWithDetails}
-        onLogin={() => {}}
+        onBookingConfirm={handleBookingConfirm}
+        onLogin={handleLogin}
         onCancelAppointment={handleCancelAppointment}
       />
       

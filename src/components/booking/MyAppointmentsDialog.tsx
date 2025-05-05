@@ -1,19 +1,21 @@
-
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Calendar } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Card } from "@/components/ui/card";
+import { Calendar, Clock, User } from "lucide-react";
 
 export interface BookingAppointment {
   id: string;
   serviceName: string;
   employeeName: string;
-  date: string;  // Changed from Date to string to match how it's actually used
+  date: string; // Changed from Date to string for consistency
   time: string;
-  status?: string; // Make status optional
+  status: string;
 }
 
 interface MyAppointmentsDialogProps {
@@ -29,54 +31,36 @@ const MyAppointmentsDialog: React.FC<MyAppointmentsDialogProps> = ({
   appointments,
   onCancelAppointment,
 }) => {
-  // Updated to handle string dates instead of Date objects
-  const formatAppointmentDate = (date: string) => {
-    try {
-      // Try to parse the date string (in case it's a formatted date already)
-      const dateObj = new Date(date);
-      if (isNaN(dateObj.getTime())) {
-        // If it's not a valid date, just return the string as is
-        return date;
-      }
-      return format(dateObj, "dd 'de' MMMM", { locale: ptBR });
-    } catch (error) {
-      // If there's an error formatting, just return the original string
-      return date;
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader className="space-y-2">
-          <div className="flex justify-between items-center">
-            <DialogTitle>Meus Agendamentos</DialogTitle>
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon">
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Veja todos os seus agendamentos futuros.
-          </p>
+        <DialogHeader>
+          <DialogTitle>Meus Agendamentos</DialogTitle>
+          <DialogDescription>
+            Veja seus agendamentos e gerencie-os.
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-4 mt-4">
-          {appointments.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500">Você não possui agendamentos.</p>
-            </div>
-          ) : (
+        <div className="divide-y divide-gray-200">
+          {appointments.length > 0 ? (
             appointments.map((appointment) => (
-              <Card key={appointment.id} className="p-4">
-                <div className="flex justify-between">
+              <div key={appointment.id} className="py-4">
+                <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="font-medium">{appointment.serviceName}</h3>
-                    <p className="text-sm text-gray-500">com {appointment.employeeName}</p>
-                    <p className="text-sm mt-1">
-                      {formatAppointmentDate(appointment.date)} • {appointment.time}
+                    <p className="font-semibold">{appointment.serviceName}</p>
+                    <div className="flex items-center text-gray-500 space-x-2">
+                      <User className="h-4 w-4" />
+                      <span>{appointment.employeeName}</span>
+                    </div>
+                    <div className="flex items-center text-gray-500 space-x-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{appointment.date}</span>
+                    </div>
+                    <div className="flex items-center text-gray-500 space-x-2">
+                      <Clock className="h-4 w-4" />
+                      <span>{appointment.time}</span>
+                    </div>
+                    <p className="text-sm text-gray-400">
+                      Status: {appointment.status}
                     </p>
                   </div>
                   <Button
@@ -87,9 +71,18 @@ const MyAppointmentsDialog: React.FC<MyAppointmentsDialogProps> = ({
                     Cancelar
                   </Button>
                 </div>
-              </Card>
+              </div>
             ))
+          ) : (
+            <div className="py-4 text-center">
+              <p className="text-gray-500">Nenhum agendamento encontrado.</p>
+            </div>
           )}
+        </div>
+        <div className="mt-4">
+          <Button variant="outline" className="w-full" onClick={onClose}>
+            Fechar
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
