@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { z } from "zod";
@@ -68,8 +68,6 @@ const BlockTimeDialog: React.FC<BlockTimeDialogProps> = ({
   const { employees } = useEmployees();
   const { blockTimeSlot, isBlocking } = useAppointments();
   
-  const timeOptions = generateTimeOptions();
-  
   const form = useForm<BlockTimeFormValues>({
     resolver: zodResolver(blockTimeSchema),
     defaultValues: {
@@ -98,21 +96,6 @@ const BlockTimeDialog: React.FC<BlockTimeDialogProps> = ({
       console.error("Error blocking time slot:", error);
     }
   };
-  
-  // Generate time options in 15-minute increments
-  function generateTimeOptions() {
-    const options = [];
-    
-    for (let hour = 7; hour <= 22; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
-        const hourStr = hour.toString().padStart(2, '0');
-        const minuteStr = minute.toString().padStart(2, '0');
-        options.push(`${hourStr}:${minuteStr}`);
-      }
-    }
-    
-    return options;
-  }
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -198,7 +181,7 @@ const BlockTimeDialog: React.FC<BlockTimeDialogProps> = ({
               )}
             />
             
-            {/* Time selection */}
+            {/* Time selection - using Input instead of Select */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -206,23 +189,9 @@ const BlockTimeDialog: React.FC<BlockTimeDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Hora de início</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um horário" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {timeOptions.map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -234,23 +203,9 @@ const BlockTimeDialog: React.FC<BlockTimeDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Hora de término</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um horário" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {timeOptions.map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

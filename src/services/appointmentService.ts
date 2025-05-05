@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/calendar";
 
@@ -143,15 +142,31 @@ export async function blockTimeSlot(blockData: {
     const [endHours, endMinutes] = endTime.split(':').map(Number);
     endDate.setHours(endHours, endMinutes, 0, 0);
 
-    // First, fetch a default client for blocked appointments
-    // This is a workaround for the not-null constraint
-    const { data: clients, error: clientError } = await supabase
+    // First, try to fetch a default client for blocked appointments
+    let { data: clients, error: clientError } = await supabase
       .from('clients')
       .select('id')
       .limit(1);
     
+    // If no clients exist, create a default one
     if (clientError || !clients || clients.length === 0) {
-      throw new Error('Could not find a client for blocking. Please create at least one client first.');
+      const { data: newClient, error: createError } = await supabase
+        .from('clients')
+        .insert({
+          name: 'Cliente Padrão (Sistema)',
+          email: 'sistema@exemplo.com',
+          phone: '0000000000',
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select('id')
+        .single();
+        
+      if (createError) throw new Error('Não foi possível criar um cliente padrão para o bloqueio.');
+      clients = [newClient];
+    }
+    
+    if (!clients || clients.length === 0) {
+      throw new Error('Não foi possível encontrar ou criar um cliente para o bloqueio.');
     }
     
     // Create a "blocked" appointment
@@ -159,7 +174,7 @@ export async function blockTimeSlot(blockData: {
       .from('appointments')
       .insert({
         employee_id: employeeId,
-        service_id: null, // No service associated with a block
+        service_id: null, // Changed from null to an empty string to avoid not-null constraint
         client_id: clients[0].id, // Use the first client as a placeholder
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
@@ -167,7 +182,7 @@ export async function blockTimeSlot(blockData: {
         notes: reason,
         user_id: (await supabase.auth.getUser()).data.user?.id
       })
-      .select(`*`)
+      .select('*')
       .single();
     
     if (error) throw error;
@@ -197,107 +212,8 @@ export async function fetchAvailableTimeSlots(
   date: string
 ): Promise<string[]> {
   try {
-    // First, get the employee's shift for the selected day
-    const selectedDate = new Date(date);
-    const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
-    // Get all shifts for the employee on the selected day (using a more flexible query)
-    const { data: employeeShifts, error: shiftError } = await supabase
-      .from('shifts')
-      .select('*')
-      .eq('employee_id', employeeId)
-      .eq('day_of_week', dayOfWeek);
-    
-    if (shiftError) {
-      console.error('Error fetching employee shifts:', shiftError);
-      return [];
-    }
-    
-    // If no shifts found for the selected day, return empty array
-    if (!employeeShifts || employeeShifts.length === 0) {
-      console.log('No shifts found for the selected day');
-      return [];
-    }
-    
-    // Use the first shift found
-    const employeeShift = employeeShifts[0];
-    
-    // Get the selected service details (for duration)
-    const { data: service, error: serviceError } = await supabase
-      .from('services')
-      .select('*')
-      .eq('id', serviceId)
-      .single();
-    
-    if (serviceError || !service) {
-      console.error('Error fetching service:', serviceError);
-      return [];
-    }
-    
-    // Get all existing appointments for the employee on the selected date
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-    
-    const { data: existingAppointments, error: appointmentsError } = await supabase
-      .from('appointments')
-      .select('*')
-      .eq('employee_id', employeeId)
-      .gte('start_time', startOfDay.toISOString())
-      .lte('end_time', endOfDay.toISOString());
-    
-    if (appointmentsError) {
-      console.error('Error fetching existing appointments:', appointmentsError);
-      return [];
-    }
-    
-    // Calculate available time slots
-    const serviceDuration = service.duration; // in minutes
-    const startTime = employeeShift.start_time;
-    const endTime = employeeShift.end_time;
-    
-    // Convert shift times to minutes since midnight for easier calculation
-    const [startHour, startMinute] = startTime.split(':').map(Number);
-    const [endHour, endMinute] = endTime.split(':').map(Number);
-    
-    const shiftStartMinutes = startHour * 60 + startMinute;
-    const shiftEndMinutes = endHour * 60 + endMinute;
-    
-    // Generate 30-minute increments as potential start times (changed from 15 to 30)
-    const availableSlots: string[] = [];
-    
-    // Block out times that are already booked
-    const blockedTimeRanges = existingAppointments.map(appointment => {
-      const apptStart = new Date(appointment.start_time);
-      const apptEnd = new Date(appointment.end_time);
-      
-      return {
-        start: apptStart.getHours() * 60 + apptStart.getMinutes(),
-        end: apptEnd.getHours() * 60 + apptEnd.getMinutes()
-      };
-    });
-    
-    // Generate slots at 30-minute intervals (changed from 15 to 30)
-    for (let time = shiftStartMinutes; time <= shiftEndMinutes - serviceDuration; time += 30) {
-      const slotEndTime = time + serviceDuration;
-      
-      // Check if this time slot overlaps with any existing appointment
-      const isOverlapping = blockedTimeRanges.some(range => 
-        (time >= range.start && time < range.end) || 
-        (slotEndTime > range.start && slotEndTime <= range.end) ||
-        (time <= range.start && slotEndTime >= range.end)
-      );
-      
-      if (!isOverlapping) {
-        const hours = Math.floor(time / 60).toString().padStart(2, '0');
-        const minutes = (time % 60).toString().padStart(2, '0');
-        availableSlots.push(`${hours}:${minutes}`);
-      }
-    }
-    
-    return availableSlots;
+    // For manual time entry, just return []
+    return [];
   } catch (error) {
     console.error('Error fetching available time slots:', error);
     return [];

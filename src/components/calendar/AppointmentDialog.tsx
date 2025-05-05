@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -87,6 +86,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
   const [servicesList, setServicesList] = useState<any[]>([]);
   const [packagesList, setPackagesList] = useState<any[]>([]);
   const [serviceType, setServiceType] = useState<"service" | "package">("service");
+  const [manualTimeInput, setManualTimeInput] = useState(true);
   
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentSchema),
@@ -493,7 +493,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
               />
             )}
             
-            {/* Time selection - only enabled after service/package is selected */}
+            {/* Time selection - allow manual entry */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -501,32 +501,15 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Horário</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      disabled={!((serviceType === "service" ? selectedService : selectedPackage) && selectedDate2)}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={
-                            (serviceType === "service" ? selectedService : selectedPackage) && selectedDate2
-                              ? "Selecione um horário" 
-                              : "Selecione serviço e data primeiro"
-                          } />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableSlots.map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input 
+                        type="time" 
+                        {...field} 
+                        disabled={!((serviceType === "service" ? selectedService : selectedPackage) && selectedDate2)}
+                      />
+                    </FormControl>
                     <FormDescription>
-                      {(serviceType === "service" ? selectedService : selectedPackage) && selectedDate2 && availableSlots.length === 0 && 
-                        "Não há horários disponíveis para esta data"
-                      }
+                      Insira um horário no formato HH:MM
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
