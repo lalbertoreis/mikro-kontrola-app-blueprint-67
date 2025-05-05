@@ -21,13 +21,11 @@ export async function cancelAppointment(appointmentId: string): Promise<boolean>
     // Default to 1 hour if profileData is null or doesn't have booking_cancel_min_hours
     let cancelMinHours = 1; // default value
     
-    // Properly check if profileData exists and has the booking_cancel_min_hours property
-    if (profileData !== null && 
-        profileData !== undefined && 
-        typeof profileData === 'object' && 
-        'booking_cancel_min_hours' in profileData && 
-        profileData.booking_cancel_min_hours !== null) {
-      cancelMinHours = profileData.booking_cancel_min_hours;
+    // Using optional chaining and nullish coalescing for safer access
+    if (profileData && typeof profileData === 'object') {
+      // Type assertion to avoid TypeScript error
+      const profile = profileData as { booking_cancel_min_hours?: number | null };
+      cancelMinHours = profile.booking_cancel_min_hours ?? 1;
     }
     
     const appointmentStartTime = new Date(appointment.start_time);
