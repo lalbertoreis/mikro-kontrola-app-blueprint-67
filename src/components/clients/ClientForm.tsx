@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,12 +42,14 @@ interface ClientFormProps {
   client?: Client | null;
   onFormChange?: () => void;
   onClose?: () => void;
+  onSubmit?: () => void;
 }
 
 const ClientForm: React.FC<ClientFormProps> = ({
   client,
   onFormChange,
   onClose,
+  onSubmit,
 }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -133,8 +134,13 @@ const ClientForm: React.FC<ClientFormProps> = ({
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmitForm = async (values: z.infer<typeof formSchema>) => {
     try {
+      // Notify parent component that form is being submitted
+      if (onSubmit) {
+        onSubmit();
+      }
+      
       const clientData: ClientFormData = {
         name: values.name,
         email: values.email,
@@ -174,7 +180,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
   if (isInDialogMode) {
     return (
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-6">
           <FormField
             control={form.control}
             name="name"
@@ -309,7 +315,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
     );
   }
 
-  // Full page mode
+  // Full page mode (não está no diálogo)
   return (
     <Card>
       <CardHeader>
@@ -317,7 +323,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-6">
             <FormField
               control={form.control}
               name="name"

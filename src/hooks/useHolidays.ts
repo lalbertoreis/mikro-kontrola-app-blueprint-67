@@ -23,6 +23,11 @@ export function useHolidays() {
     mutationFn: (newHoliday: HolidayFormData) => createHoliday(newHoliday),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
+      toast.success("Feriado adicionado com sucesso!");
+    },
+    onError: (error) => {
+      console.error("Erro ao adicionar feriado:", error);
+      toast.error("Erro ao adicionar feriado. Tente novamente.");
     },
   });
 
@@ -31,6 +36,11 @@ export function useHolidays() {
       updateHoliday(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
+      toast.success("Feriado atualizado com sucesso!");
+    },
+    onError: (error) => {
+      console.error("Erro ao atualizar feriado:", error);
+      toast.error("Erro ao atualizar feriado. Tente novamente.");
     },
   });
 
@@ -38,6 +48,11 @@ export function useHolidays() {
     mutationFn: deleteHoliday,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
+      toast.success("Feriado excluído com sucesso!");
+    },
+    onError: (error) => {
+      console.error("Erro ao excluir feriado:", error);
+      toast.error("Erro ao excluir feriado. Tente novamente.");
     },
   });
 
@@ -45,6 +60,11 @@ export function useHolidays() {
     mutationFn: (year: number) => importHolidays(year),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
+      toast.success("Feriados importados com sucesso!");
+    },
+    onError: (error) => {
+      console.error("Erro ao importar feriados:", error);
+      toast.error("Erro ao importar feriados. Tente novamente.");
     },
   });
 

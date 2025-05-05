@@ -22,6 +22,7 @@ export function useClients() {
     mutationFn: (newClient: ClientFormData) => createClient(newClient),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success("Cliente adicionado com sucesso!");
     },
     onError: (error) => {
       console.error("Erro ao adicionar cliente:", error);
@@ -34,6 +35,7 @@ export function useClients() {
       updateClient(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success("Cliente atualizado com sucesso!");
     },
     onError: (error) => {
       console.error("Erro ao atualizar cliente:", error);
@@ -45,6 +47,7 @@ export function useClients() {
     mutationFn: deleteClient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success("Cliente excluído com sucesso!");
     },
     onError: (error) => {
       console.error("Erro ao excluir cliente:", error);

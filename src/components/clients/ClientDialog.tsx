@@ -42,22 +42,33 @@ const ClientDialog: React.FC<ClientDialogProps> = ({
   const [formDirty, setFormDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
-    if (open) setFormDirty(false);
+    if (open) {
+      setFormDirty(false);
+      setIsSubmitting(false);
+    }
   }, [open]);
 
   const handleFormChange = () => {
-    setFormDirty(true);
+    if (!isSubmitting) {
+      setFormDirty(true);
+    }
   };
 
   const handleCloseAttempt = () => {
-    if (formDirty) {
+    if (formDirty && !isSubmitting) {
       setShowUnsavedDialog(true);
       setPendingClose(true);
     } else {
       onOpenChange(false);
     }
+  };
+
+  const handleFormSubmit = () => {
+    setIsSubmitting(true);
+    setFormDirty(false);
   };
 
   const handleDiscardChanges = () => {
@@ -79,7 +90,7 @@ const ClientDialog: React.FC<ClientDialogProps> = ({
       <Dialog 
         open={open} 
         onOpenChange={(state) => {
-          if (!state && formDirty) {
+          if (!state && formDirty && !isSubmitting) {
             setShowUnsavedDialog(true);
             setPendingClose(true);
           } else {
@@ -105,6 +116,7 @@ const ClientDialog: React.FC<ClientDialogProps> = ({
             client={client} 
             onFormChange={handleFormChange}
             onClose={handleCloseAttempt}
+            onSubmit={handleFormSubmit}
           />
         </DialogContent>
       </Dialog>
