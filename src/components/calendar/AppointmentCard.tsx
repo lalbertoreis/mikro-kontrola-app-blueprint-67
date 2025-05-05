@@ -38,6 +38,11 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
     }
   };
 
+  // Safely access service name, client name, and employee name
+  const serviceName = appointment.service?.name || "Serviço não especificado";
+  const clientName = appointment.client?.name || "Cliente não especificado";
+  const employeeName = appointment.employee?.name || "Profissional não especificado";
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -48,11 +53,11 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
           )}
           onClick={onClick}
         >
-          <div className="font-medium truncate">{appointment.service.name}</div>
+          <div className="font-medium truncate">{serviceName}</div>
           <div className="flex items-center mt-1 justify-between">
             <div className="flex items-center">
               <User className="h-3 w-3 mr-1" />
-              <span className="truncate">{appointment.client.name}</span>
+              <span className="truncate">{clientName}</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-3 w-3 mr-1" />
@@ -64,9 +69,9 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
       </TooltipTrigger>
       <TooltipContent side="right">
         <div className="space-y-1">
-          <div className="font-bold">{appointment.service.name}</div>
-          <div className="text-sm">Cliente: {appointment.client.name}</div>
-          <div className="text-sm">Profissional: {appointment.employee.name}</div>
+          <div className="font-bold">{serviceName}</div>
+          <div className="text-sm">Cliente: {clientName}</div>
+          <div className="text-sm">Profissional: {employeeName}</div>
           <div className="text-sm">Horário: {startTime} - {endTime}</div>
           <div className="text-sm capitalize">Status: {appointment.status.replace('-', ' ')}</div>
           {appointment.notes && (
