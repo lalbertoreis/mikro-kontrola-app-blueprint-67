@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useServices } from "@/hooks/useServices";
 import { useServicePackages } from "@/hooks/useServicePackages";
 import { useEmployees } from "@/hooks/useEmployees";
@@ -14,9 +15,12 @@ import { Service, ServicePackage } from "@/types/service";
 import { Business404 } from "@/pages/Business404";
 import { mockSettings } from "@/data/mockSettings";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { BusinessSettings } from "@/types/settings";
 
 const PublicBooking: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { services, isLoading: isServicesLoading } = useServices();
   const { packages, isLoading: isPackagesLoading } = useServicePackages();
   const { employees, isLoading: isEmployeesLoading } = useEmployees();
@@ -29,9 +33,56 @@ const PublicBooking: React.FC = () => {
   const [userProfile, setUserProfile] = useState<{ name: string; phone: string } | null>(null);
   const [appointments, setAppointments] = useState<BookingAppointment[]>([]);
   const [tempBookingData, setTempBookingData] = useState<any>(null);
+  const [businessProfile, setBusinessProfile] = useState<BusinessSettings | null>(null);
+  const [isLoadingBusiness, setIsLoadingBusiness] = useState(true);
 
-  // Check if the business exists (mock implementation)
-  const businessExists = mockSettings.slug === slug && mockSettings.enableOnlineBooking;
+  // Fetch business settings based on slug
+  useEffect(() => {
+    const fetchBusinessBySlug = async () => {
+      try {
+        setIsLoadingBusiness(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('slug', slug)
+          .eq('enable_online_booking', true)
+          .single();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          setBusinessProfile({
+            businessName: data.business_name || '',
+            businessLogo: data.business_logo || '',
+            enableOnlineBooking: data.enable_online_booking || false,
+            slug: data.slug || '',
+            instagram: data.instagram || '',
+            whatsapp: data.whatsapp || '',
+            address: data.address || '',
+            createdAt: data.created_at || '',
+            updatedAt: data.updated_at || ''
+          });
+        } else {
+          // No business found with this slug
+          navigate('/booking/404');
+        }
+      } catch (error) {
+        console.error("Error fetching business:", error);
+        navigate('/booking/404');
+      } finally {
+        setIsLoadingBusiness(false);
+      }
+    };
+
+    if (slug) {
+      fetchBusinessBySlug();
+    }
+  }, [slug, navigate]);
+
+  // Check if the business exists
+  const businessExists = businessProfile && businessProfile.enableOnlineBooking;
 
   // Filter active services
   const activeServices = services.filter((service) => service.isActive);
@@ -120,6 +171,14 @@ const PublicBooking: React.FC = () => {
     }
   }, []);
 
+  if (isLoadingBusiness) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p>Carregando informações do negócio...</p>
+      </div>
+    );
+  }
+
   if (!businessExists) {
     return <Business404 />;
   }
@@ -129,7 +188,7 @@ const PublicBooking: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <BookingHeader 
-        settings={mockSettings} 
+        settings={businessProfile || mockSettings}
         onMyAppointmentsClick={() => setIsMyAppointmentsDialogOpen(true)}
         onLogoutClick={handleLogout}
         isLoggedIn={isLoggedIn}

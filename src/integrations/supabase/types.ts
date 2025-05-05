@@ -300,31 +300,52 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          business_logo: string | null
+          business_name: string | null
           created_at: string | null
           email: string | null
+          enable_online_booking: boolean | null
           first_name: string | null
           id: string
+          instagram: string | null
           last_name: string | null
+          slug: string | null
           updated_at: string | null
+          whatsapp: string | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          business_logo?: string | null
+          business_name?: string | null
           created_at?: string | null
           email?: string | null
+          enable_online_booking?: boolean | null
           first_name?: string | null
           id: string
+          instagram?: string | null
           last_name?: string | null
+          slug?: string | null
           updated_at?: string | null
+          whatsapp?: string | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          business_logo?: string | null
+          business_name?: string | null
           created_at?: string | null
           email?: string | null
+          enable_online_booking?: boolean | null
           first_name?: string | null
           id?: string
+          instagram?: string | null
           last_name?: string | null
+          slug?: string | null
           updated_at?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
