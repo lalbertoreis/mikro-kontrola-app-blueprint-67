@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/calendar";
 
@@ -70,6 +69,35 @@ export async function fetchAppointmentById(id: string): Promise<Appointment | nu
   }
 }
 
+// Check if there are overlapping appointments for this employee
+async function checkOverlappingAppointments(
+  employeeId: string, 
+  startTime: string, 
+  endTime: string,
+  appointmentId?: string // Optional: exclude current appointment when updating
+): Promise<boolean> {
+  let query = supabase
+    .from('appointments')
+    .select('id')
+    .eq('employee_id', employeeId)
+    .lt('start_time', endTime) // appointment starts before the new end time
+    .gt('end_time', startTime); // appointment ends after the new start time
+
+  // If we're updating an existing appointment, exclude it from the check
+  if (appointmentId) {
+    query = query.neq('id', appointmentId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error checking for overlapping appointments:', error);
+    throw error;
+  }
+
+  return data && data.length > 0;
+}
+
 export async function createAppointment(appointmentData: AppointmentFormData): Promise<Appointment> {
   try {
     const { employee, service, client, date, startTime, endTime, notes } = appointmentData;
@@ -82,6 +110,12 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     const endDate = new Date(date);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
     endDate.setHours(endHours, endMinutes, 0, 0);
+
+    // Check for overlapping appointments
+    const hasOverlap = await checkOverlappingAppointments(employee, startDate.toISOString(), endDate.toISOString());
+    if (hasOverlap) {
+      throw new Error('Já existe um agendamento ou bloqueio para este profissional neste horário.');
+    }
     
     const { data, error } = await supabase
       .from('appointments')
@@ -142,6 +176,12 @@ export async function blockTimeSlot(blockData: {
     const endDate = new Date(date);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
     endDate.setHours(endHours, endMinutes, 0, 0);
+
+    // Check for overlapping appointments
+    const hasOverlap = await checkOverlappingAppointments(employeeId, startDate.toISOString(), endDate.toISOString());
+    if (hasOverlap) {
+      throw new Error('Já existe um agendamento ou bloqueio para este profissional neste horário.');
+    }
 
     // First, try to fetch a default client for blocked appointments
     let { data: clients, error: clientError } = await supabase
@@ -257,5 +297,71 @@ export async function fetchAvailableTimeSlots(
   } catch (error) {
     console.error('Error fetching available time slots:', error);
     return [];
+  }
+}
+
+// New function to register payment for an appointment
+export async function registerAppointmentPayment(
+  appointmentId: string, 
+  paymentMethod: string
+): Promise<boolean> {
+  try {
+    // First get the appointment details
+    const appointment = await fetchAppointmentById(appointmentId);
+    
+    if (!appointment || !appointment.serviceId || !appointment.clientId) {
+      throw new Error('Detalhes do agendamento não encontrados ou incompletos');
+    }
+    
+    // Fetch the service to get the price
+    const { data: service, error: serviceError } = await supabase
+      .from('services')
+      .select('name, price')
+      .eq('id', appointment.serviceId)
+      .single();
+    
+    if (serviceError || !service) {
+      throw new Error('Não foi possível obter os detalhes do serviço');
+    }
+    
+    // Create the transaction
+    const { data: transaction, error: transactionError } = await supabase
+      .from('transactions')
+      .insert({
+        description: `Pagamento: ${service.name}`,
+        amount: service.price,
+        date: new Date().toISOString().split('T')[0], // Current date
+        type: 'income',
+        category: 'Serviços',
+        payment_method: paymentMethod,
+        quantity: 1,
+        unit_price: service.price,
+        client_id: appointment.clientId,
+        service_id: appointment.serviceId,
+        user_id: (await supabase.auth.getUser()).data.user?.id
+      })
+      .select()
+      .single();
+      
+    if (transactionError) {
+      console.error("Error registering payment:", transactionError);
+      throw new Error('Não foi possível registrar o pagamento');
+    }
+    
+    // Update appointment status to completed (optional)
+    const { error: updateError } = await supabase
+      .from('appointments')
+      .update({ status: 'completed' })
+      .eq('id', appointmentId);
+      
+    if (updateError) {
+      console.error("Error updating appointment status:", updateError);
+      // Don't throw error here, payment was already registered
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error registering appointment payment:', error);
+    throw error;
   }
 }

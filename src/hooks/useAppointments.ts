@@ -6,7 +6,8 @@ import {
   fetchAppointmentById, 
   createAppointment, 
   blockTimeSlot,
-  fetchAvailableTimeSlots
+  fetchAvailableTimeSlots,
+  registerAppointmentPayment
 } from "@/services/appointmentService";
 import type { Appointment, AppointmentFormData } from "@/types/calendar";
 
@@ -24,9 +25,9 @@ export function useAppointments() {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast.success("Agendamento criado com sucesso!");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Erro ao criar agendamento:", error);
-      toast.error("Erro ao criar agendamento. Tente novamente.");
+      toast.error(error.message || "Erro ao criar agendamento. Tente novamente.");
     },
   });
 
@@ -42,9 +43,22 @@ export function useAppointments() {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast.success("Horário bloqueado com sucesso!");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Erro ao bloquear horário:", error);
-      toast.error("Erro ao bloquear horário. Tente novamente.");
+      toast.error(error.message || "Erro ao bloquear horário. Tente novamente.");
+    },
+  });
+
+  const paymentMutation = useMutation({
+    mutationFn: ({ appointmentId, paymentMethod }: { appointmentId: string, paymentMethod: string }) => 
+      registerAppointmentPayment(appointmentId, paymentMethod),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Pagamento registrado com sucesso!");
+    },
+    onError: (error: any) => {
+      console.error("Erro ao registrar pagamento:", error);
+      toast.error(error.message || "Erro ao registrar pagamento. Tente novamente.");
     },
   });
 
@@ -54,8 +68,10 @@ export function useAppointments() {
     error,
     createAppointment: createMutation.mutate,
     blockTimeSlot: blockTimeMutation.mutate,
+    registerPayment: paymentMutation.mutate,
     isCreating: createMutation.isPending,
     isBlocking: blockTimeMutation.isPending,
+    isRegisteringPayment: paymentMutation.isPending
   };
 }
 

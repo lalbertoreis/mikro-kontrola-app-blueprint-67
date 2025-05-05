@@ -46,3 +46,4 @@ export interface AppointmentFormData {
   endTime: string;
   notes?: string;
 }
+
