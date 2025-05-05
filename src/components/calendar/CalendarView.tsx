@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, Filter } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, CalendarPlus, CalendarX } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -9,49 +9,22 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmployeeFilter from "./EmployeeFilter";
 import WeekCalendar from "./WeekCalendar";
 import MonthCalendar from "./MonthCalendar";
-import NotificationIndicator from "@/components/notifications/NotificationIndicator";
-
-// Mock data for calendar appointments (until backend is implemented)
-import { mockAppointments } from "@/data/mockAppointments";
-import { Employee } from "@/types/employee";
-
-// Mock data for employees (until we implement backend)
-const mockEmployees: Employee[] = [
-  {
-    id: "1",
-    name: "João Silva",
-    role: "Barbeiro",
-    services: ["1"],
-    shifts: [
-      { dayOfWeek: 1, startTime: "08:00", endTime: "18:00", lunchBreakStart: "12:00", lunchBreakEnd: "13:00" },
-      { dayOfWeek: 2, startTime: "08:00", endTime: "18:00", lunchBreakStart: "12:00", lunchBreakEnd: "13:00" },
-      { dayOfWeek: 3, startTime: "08:00", endTime: "18:00", lunchBreakStart: "12:00", lunchBreakEnd: "13:00" },
-      { dayOfWeek: 4, startTime: "08:00", endTime: "18:00", lunchBreakStart: "12:00", lunchBreakEnd: "13:00" },
-      { dayOfWeek: 5, startTime: "08:00", endTime: "18:00", lunchBreakStart: "12:00", lunchBreakEnd: "13:00" },
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Maria Souza",
-    role: "Manicure",
-    services: ["2"],
-    shifts: [
-      { dayOfWeek: 1, startTime: "09:00", endTime: "17:00" },
-      { dayOfWeek: 3, startTime: "09:00", endTime: "17:00" },
-      { dayOfWeek: 5, startTime: "09:00", endTime: "17:00" },
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-];
+import AppointmentDialog from "./AppointmentDialog";
+import BlockTimeDialog from "./BlockTimeDialog";
+import { useAppointments } from "@/hooks/useAppointments";
+import { useEmployees } from "@/hooks/useEmployees";
 
 const CalendarView: React.FC = () => {
   const [calendarOptions, setCalendarOptions] = useState<CalendarViewOptions>({
     view: 'week',
     date: new Date(),
   });
+  
+  const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
+  const [isBlockTimeDialogOpen, setIsBlockTimeDialogOpen] = useState(false);
+
+  const { appointments, isLoading } = useAppointments();
+  const { employees } = useEmployees();
 
   const handleViewChange = (view: 'week' | 'month') => {
     setCalendarOptions((prev) => ({ ...prev, view }));
@@ -92,6 +65,8 @@ const CalendarView: React.FC = () => {
 
   // Filter appointments based on current view and filters
   const getFilteredAppointments = () => {
+    if (isLoading) return [];
+    
     const { view, date, employeeId } = calendarOptions;
     let startDate: Date;
     let endDate: Date;
@@ -104,12 +79,52 @@ const CalendarView: React.FC = () => {
       endDate = endOfMonth(date);
     }
 
-    return mockAppointments.filter(appointment => {
+    return appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.start);
       const isInDateRange = appointmentDate >= startDate && appointmentDate <= endDate;
       const matchesEmployee = !employeeId || appointment.employeeId === employeeId;
       
       return isInDateRange && matchesEmployee;
+    });
+  };
+
+  // Convert appointments to format expected by calendar components  
+  const convertToAppointmentWithDetails = () => {
+    return getFilteredAppointments().map(appointment => {
+      const employee = employees.find(e => e.id === appointment.employeeId) || {
+        id: appointment.employeeId,
+        name: "Desconhecido",
+        role: "",
+        shifts: [],
+        services: [],
+        createdAt: "",
+        updatedAt: "",
+      };
+
+      return {
+        ...appointment,
+        employee,
+        service: {
+          id: appointment.serviceId || "",
+          name: appointment.title,
+          price: 0,
+          duration: 0,
+          multipleAttendees: false,
+          isActive: true,
+          createdAt: "",
+          updatedAt: "",
+        },
+        client: {
+          id: appointment.clientId || "",
+          name: "Cliente",
+          email: "",
+          phone: "",
+          cep: "",
+          address: "",
+          createdAt: "",
+          updatedAt: "",
+        }
+      };
     });
   };
 
@@ -123,7 +138,7 @@ const CalendarView: React.FC = () => {
         
         <div className="flex flex-wrap items-center gap-2">
           <EmployeeFilter 
-            employees={mockEmployees}
+            employees={employees}
             selectedEmployeeId={calendarOptions.employeeId}
             onChange={handleEmployeeFilter}
           />
@@ -163,23 +178,58 @@ const CalendarView: React.FC = () => {
             </TabsList>
           </Tabs>
           
-          <NotificationIndicator />
+          <div className="flex items-center space-x-2">
+            <Button 
+              size="sm"
+              onClick={() => setIsAppointmentDialogOpen(true)}
+            >
+              <CalendarPlus className="mr-2 h-4 w-4" />
+              Novo Agendamento
+            </Button>
+            
+            <Button 
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsBlockTimeDialogOpen(true)}
+            >
+              <CalendarX className="mr-2 h-4 w-4" />
+              Bloquear Horário
+            </Button>
+          </div>
         </div>
       </div>
       
-      {calendarOptions.view === 'week' ? (
+      {isLoading ? (
+        <div className="flex justify-center items-center py-10">
+          <p>Carregando agenda...</p>
+        </div>
+      ) : calendarOptions.view === 'week' ? (
         <WeekCalendar 
           date={calendarOptions.date} 
-          appointments={getFilteredAppointments()}
-          employees={mockEmployees}
+          appointments={convertToAppointmentWithDetails()}
+          employees={employees}
         />
       ) : (
         <MonthCalendar 
           date={calendarOptions.date} 
-          appointments={getFilteredAppointments()}
-          employees={mockEmployees}
+          appointments={convertToAppointmentWithDetails()}
+          employees={employees}
         />
       )}
+      
+      <AppointmentDialog 
+        isOpen={isAppointmentDialogOpen}
+        onClose={() => setIsAppointmentDialogOpen(false)}
+        selectedDate={calendarOptions.date}
+        selectedEmployeeId={calendarOptions.employeeId}
+      />
+      
+      <BlockTimeDialog
+        isOpen={isBlockTimeDialogOpen}
+        onClose={() => setIsBlockTimeDialogOpen(false)}
+        selectedDate={calendarOptions.date}
+        selectedEmployeeId={calendarOptions.employeeId}
+      />
     </div>
   );
 };

@@ -9,8 +9,8 @@ export interface Appointment {
   start: Date;
   end: Date;
   employeeId: string;
-  serviceId: string;
-  clientId: string;
+  serviceId: string | null;
+  clientId: string | null;
   status: AppointmentStatus;
   notes?: string;
   createdAt: string;
@@ -22,7 +22,8 @@ export type AppointmentStatus =
   | 'confirmed'  // Confirmado
   | 'completed'  // Concluído
   | 'canceled'   // Cancelado
-  | 'no-show';   // Não compareceu
+  | 'no-show'    // Não compareceu
+  | 'blocked';   // Bloqueado
 
 export interface AppointmentWithDetails extends Appointment {
   employee: Employee;
@@ -34,4 +35,14 @@ export interface CalendarViewOptions {
   view: 'week' | 'month';
   date: Date;
   employeeId?: string;
+}
+
+export interface AppointmentFormData {
+  employee: string;
+  service: string;
+  client: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  notes?: string;
 }
