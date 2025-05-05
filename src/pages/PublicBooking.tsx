@@ -102,31 +102,25 @@ const PublicBooking: React.FC = () => {
   };
 
   const handleBookingConfirm = (bookingData: any) => {
-    // If user is not logged in, prompt for login first
-    if (!isLoggedIn) {
-      // Check if client info exists in the booking data
-      if (bookingData.clientInfo) {
-        // Use the client info provided in the booking form
-        const userData = {
-          name: bookingData.clientInfo.name,
-          phone: bookingData.clientInfo.phone
-        };
-        
-        // Store user info and process booking directly
-        localStorage.setItem("bookingUser", JSON.stringify(userData));
-        setUserProfile(userData);
-        setIsLoggedIn(true);
-        processBooking(bookingData);
-      } else {
-        // For old version compatibility where client info isn't included
-        setTempBookingData(bookingData);
-        setIsLoginDialogOpen(true);
-      }
-      return;
+    console.log("Booking data:", bookingData);
+    
+    // The flow has changed - now we always receive client info directly in bookingData
+    if (bookingData.clientInfo) {
+      // Use the client info provided in the booking form
+      const userData = {
+        name: bookingData.clientInfo.name,
+        phone: bookingData.clientInfo.phone
+      };
+      
+      // Store user info and process booking directly
+      localStorage.setItem("bookingUser", JSON.stringify(userData));
+      setUserProfile(userData);
+      setIsLoggedIn(true);
+      processBooking(bookingData);
+    } else {
+      // This case shouldn't happen anymore with the new flow but keeping as fallback
+      toast.error("Informações de cliente não fornecidas");
     }
-
-    // Otherwise, process the booking directly
-    processBooking(bookingData);
   };
 
   const handleLogin = (userData: { name: string; phone: string }) => {
@@ -135,12 +129,6 @@ const PublicBooking: React.FC = () => {
     setUserProfile(userData);
     setIsLoggedIn(true);
     setIsLoginDialogOpen(false);
-
-    // If there was a pending booking, process it
-    if (tempBookingData) {
-      processBooking(tempBookingData);
-      setTempBookingData(null);
-    }
   };
 
   const handleLogout = () => {
@@ -163,8 +151,7 @@ const PublicBooking: React.FC = () => {
     };
 
     setAppointments((prev) => [...prev, newAppointment]);
-    
-    // Close the booking dialog (the confirmation is shown inside the dialog)
+    toast.success("Agendamento realizado com sucesso!");
   };
 
   const handleCancelAppointment = (id: string) => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BusinessSettings } from "@/types/settings";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { checkEmployeeAvailability, getEmployeeShiftHours, getEmployeeAvailableDays } from "@/services/appointment/utils";
 
 type Period = "Manhã" | "Tarde" | "Noite";
 type TimeSlot = string;
@@ -89,65 +89,84 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   // Check if can go to previous week
   const canGoPrevious = currentWeekStart > new Date();
 
-  // Fetch employee shift information to determine available days
+  // Fetch employee's available days when employee is selected
   useEffect(() => {
-    const fetchEmployeeShifts = async () => {
+    const fetchEmployeeAvailableDays = async () => {
       if (!selectedEmployee) return;
       
       setIsLoadingDays(true);
       try {
-        const { data: shifts, error } = await supabase
-          .from('shifts')
-          .select('day_of_week')
-          .eq('employee_id', selectedEmployee.id);
-          
-        if (error) {
-          console.error('Error fetching employee shifts:', error);
-          return;
-        }
+        // Get all available days for the employee
+        const days = await getEmployeeAvailableDays(selectedEmployee.id);
         
         // Create a map of available days
         const availableDaysMap: { [key: number]: boolean } = {};
         
         // Initialize all days as unavailable
         for (let i = 0; i < 7; i++) {
-          availableDaysMap[i] = false;
+          availableDaysMap[i] = days.includes(i);
         }
         
-        // Set days with shifts as available
-        shifts?.forEach(shift => {
-          availableDaysMap[shift.day_of_week] = true;
-        });
-        
         setAvailableDays(availableDaysMap);
+        console.log("Available days:", availableDaysMap);
       } catch (err) {
-        console.error('Error in fetchEmployeeShifts:', err);
+        console.error('Error in fetchEmployeeAvailableDays:', err);
       } finally {
         setIsLoadingDays(false);
       }
     };
     
-    fetchEmployeeShifts();
+    fetchEmployeeAvailableDays();
   }, [selectedEmployee]);
 
-  // Create time slot intervals based on settings
-  const generateTimeIntervals = (period: Period): TimeSlot[] => {
-    const intervals: Record<Period, { start: number; end: number }> = {
-      "Manhã": { start: 8, end: 12 },
-      "Tarde": { start: 13, end: 18 },
-      "Noite": { start: 18, end: 21 }
+  // Create time slot intervals based on settings and employee shift
+  const generateTimeIntervals = async (employee: Employee, date: Date, period: Period): Promise<TimeSlot[]> => {
+    if (!employee || !date) return [];
+    
+    const dayOfWeek = date.getDay();
+    
+    // Get employee shift hours for this day
+    const shiftHours = await getEmployeeShiftHours(employee.id, dayOfWeek);
+    if (!shiftHours) return [];
+    
+    const { startTime: shiftStart, endTime: shiftEnd } = shiftHours;
+    
+    // Define period time ranges
+    const periodRanges = {
+      "Manhã": { start: "06:00", end: "12:00" },
+      "Tarde": { start: "12:00", end: "18:00" },
+      "Noite": { start: "18:00", end: "23:59" }
     };
     
-    const { start, end } = intervals[period];
-    const slots: TimeSlot[] = [];
+    const periodRange = periodRanges[period];
     
-    // Generate slots based on the time interval from settings
-    for (let hour = start; hour < end; hour++) {
-      for (let minute = 0; minute < 60; minute += timeInterval) {
-        const formattedHour = hour.toString().padStart(2, '0');
-        const formattedMinute = minute.toString().padStart(2, '0');
-        slots.push(`${formattedHour}:${formattedMinute}`);
-      }
+    // Parse shift times to calculate overlap with period
+    const [shiftStartHour, shiftStartMinute] = shiftStart.split(':').map(Number);
+    const [shiftEndHour, shiftEndMinute] = shiftEnd.split(':').map(Number);
+    const [periodStartHour, periodStartMinute] = periodRange.start.split(':').map(Number);
+    const [periodEndHour, periodEndMinute] = periodRange.end.split(':').map(Number);
+    
+    // Convert to minutes for easier comparison
+    const shiftStartInMinutes = shiftStartHour * 60 + shiftStartMinute;
+    const shiftEndInMinutes = shiftEndHour * 60 + shiftEndMinute;
+    const periodStartInMinutes = periodStartHour * 60 + periodStartMinute;
+    const periodEndInMinutes = periodEndHour * 60 + periodEndMinute;
+    
+    // Find the overlap between shift and period
+    const startMinutes = Math.max(shiftStartInMinutes, periodStartInMinutes);
+    const endMinutes = Math.min(shiftEndInMinutes, periodEndInMinutes);
+    
+    // If there's no overlap, return empty array
+    if (startMinutes >= endMinutes) return [];
+    
+    // Generate time slots within the overlap
+    const slots: TimeSlot[] = [];
+    const interval = timeInterval || 30; // Default to 30 minutes
+    
+    for (let minutes = startMinutes; minutes < endMinutes; minutes += interval) {
+      const hour = Math.floor(minutes / 60).toString().padStart(2, '0');
+      const minute = (minutes % 60).toString().padStart(2, '0');
+      slots.push(`${hour}:${minute}`);
     }
     
     return slots;
@@ -155,23 +174,35 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
 
   // Fetch available time slots based on employee, service duration, and date
   const fetchAvailableTimeSlots = async (employee: Employee, date: Date, period: Period) => {
-    if (!employee || !date) return [];
+    if (!employee || !date || !period) return [];
     
     setIsLoadingSlots(true);
     
     try {
       const formattedDate = format(date, 'yyyy-MM-dd');
       
-      // Use the updated service to fetch available slots considering existing appointments
-      const slots = await import("@/services/appointment").then(
+      // Generate all potential time slots for this period
+      const allPeriodSlots = await generateTimeIntervals(employee, date, period);
+      
+      if (allPeriodSlots.length === 0) {
+        console.log("No time slots available in this period within employee's shift");
+        return [];
+      }
+      
+      // Use the service to fetch available slots considering existing appointments
+      const availableSlots = await import("@/services/appointment").then(
         module => module.fetchAvailableTimeSlots(employee.id, service.id, formattedDate)
       );
       
-      // Filter slots by period
-      const periodSlots = generateTimeIntervals(period);
-      const availableSlots = slots.filter(slot => periodSlots.includes(slot));
+      console.log("All period slots:", allPeriodSlots);
+      console.log("Available slots from service:", availableSlots);
       
-      return availableSlots;
+      // Filter slots that are both in the period and available according to appointments
+      const finalAvailableSlots = allPeriodSlots.filter(slot => availableSlots.includes(slot));
+      
+      console.log("Final available slots:", finalAvailableSlots);
+      
+      return finalAvailableSlots;
     } catch (err) {
       console.error('Error in fetchAvailableTimeSlots:', err);
       return [];

@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 
 export async function fetchAvailableTimeSlots(
   employeeId: string,
@@ -65,6 +65,8 @@ export async function fetchAvailableTimeSlots(
       return [];
     }
     
+    console.log('Existing appointments:', appointments);
+    
     // Step 4: Get business settings for time interval
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -89,6 +91,9 @@ export async function fetchAvailableTimeSlots(
     const shiftStartInMinutes = shiftStartHour * 60 + shiftStartMinute;
     const shiftEndInMinutes = shiftEndHour * 60 + shiftEndMinute;
     
+    console.log(`Shift hours: ${shiftStartTime} to ${shiftEndTime}`);
+    console.log(`Service duration: ${serviceDuration} minutes`);
+    
     // Generate slots based on the time interval from settings
     for (let minutes = shiftStartInMinutes; minutes <= shiftEndInMinutes - serviceDuration; minutes += timeInterval) {
       const hour = Math.floor(minutes / 60);
@@ -112,6 +117,8 @@ export async function fetchAvailableTimeSlots(
         availableSlots.push(timeSlot);
       }
     }
+    
+    console.log('Available slots:', availableSlots);
     
     return availableSlots;
   } catch (error) {
