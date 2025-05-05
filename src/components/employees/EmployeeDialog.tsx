@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -242,20 +241,18 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
         }}
       >
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
-          <DialogHeader className="sticky top-0 z-40 bg-background pb-4">
-            <div className="flex items-center justify-between">
-              <DialogTitle>
-                {isEditing ? "Editar Funcionário" : "Novo Funcionário"}
-              </DialogTitle>
-              <DialogClose asChild onClick={(e) => {
-                e.preventDefault();
-                handleCloseAttempt();
-              }}>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
-                  <X className="h-4 w-4" />
-                </Button>
-              </DialogClose>
-            </div>
+          <DialogHeader className="flex items-center justify-between">
+            <DialogTitle className="text-xl font-semibold">
+              {isEditing ? "Editar Funcionário" : "Novo Funcionário"}
+            </DialogTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 rounded-full"
+              onClick={handleCloseAttempt}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </DialogHeader>
 
           {isEmployeeLoading && isEditing ? (

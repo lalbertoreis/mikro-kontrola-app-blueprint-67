@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+
+import React from "react";
 import { useEmployees } from "@/hooks/useEmployees";
 import { Employee } from "@/types/employee";
 import { formatDayOfWeek } from "@/utils/dateUtils";
@@ -13,15 +13,8 @@ import {
   TableCell 
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Loader2, MoreHorizontal, UserPlus, Pencil, Trash } from "lucide-react";
+import { Loader2, Pencil, Trash, UserPlus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import EmployeeDialog from "./EmployeeDialog";
 
 interface EmployeeListProps {
   onEdit?: (id: string) => void;
@@ -29,21 +22,11 @@ interface EmployeeListProps {
 
 const EmployeeList: React.FC<EmployeeListProps> = ({ onEdit }) => {
   const { employees, isLoading, deleteEmployee, isDeleting } = useEmployees();
-  const [open, setOpen] = useState(false);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined);
 
   const handleEditEmployee = (id: string) => {
     if (onEdit) {
       onEdit(id);
-    } else {
-      setSelectedEmployeeId(id);
-      setOpen(true);
     }
-  };
-
-  const handleNewEmployee = () => {
-    setSelectedEmployeeId(undefined);
-    setOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -114,14 +97,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ onEdit }) => {
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Lista de Funcionários</h2>
-        <Button onClick={handleNewEmployee}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Novo Funcionário
-        </Button>
-      </div>
-
       <Card>
         <CardContent className="p-0">
           <div className="rounded-md border">
@@ -184,14 +159,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ onEdit }) => {
           </div>
         </CardContent>
       </Card>
-
-      {!onEdit && (
-        <EmployeeDialog 
-          open={open} 
-          onOpenChange={setOpen} 
-          employeeId={selectedEmployeeId} 
-        />
-      )}
     </>
   );
 };
