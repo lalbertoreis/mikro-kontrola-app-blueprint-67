@@ -26,7 +26,6 @@ import Calendar from "@/pages/Calendar";
 import ServicePackages from "@/pages/ServicePackages";
 import Finance from "@/pages/Finance";
 import TransactionForm from "@/pages/TransactionForm";
-import Notifications from "@/pages/Notifications";
 import Holidays from "@/pages/Holidays";
 import HolidayForm from "@/pages/HolidayForm";
 import PaymentMethods from "@/pages/PaymentMethods";
@@ -106,7 +105,6 @@ const App = () => {
               <Route path="/dashboard/holidays" element={<ProtectedRoute><Holidays /></ProtectedRoute>} />
               <Route path="/dashboard/holidays/new" element={<ProtectedRoute><HolidayForm /></ProtectedRoute>} />
               <Route path="/dashboard/holidays/:id" element={<ProtectedRoute><HolidayForm /></ProtectedRoute>} />
-              <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               
               {/* Rota 404 */}
               <Route path="*" element={<NotFound />} />
