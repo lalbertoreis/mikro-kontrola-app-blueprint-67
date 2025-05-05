@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -432,7 +431,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => onSuccess()}
+                    onClick={() => onClose && onClose()}
                   >
                     Cancelar
                   </Button>
