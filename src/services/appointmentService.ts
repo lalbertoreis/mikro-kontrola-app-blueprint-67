@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/calendar";
 
@@ -347,11 +346,13 @@ export async function cancelAppointment(appointmentId: string): Promise<boolean>
     // Check if there's a time limit for cancellation
     // Safely access the booking_cancel_min_hours property with proper null checks
     const profileData = appointment?.profiles;
+    // Default to 1 hour if profileData is null or doesn't have booking_cancel_min_hours
     const cancelMinHours = profileData && 
       typeof profileData === 'object' && 
-      profileData !== null &&
-      'booking_cancel_min_hours' in profileData ? 
-      (profileData as any).booking_cancel_min_hours : 1;
+      profileData !== null && 
+      'booking_cancel_min_hours' in profileData && 
+      profileData.booking_cancel_min_hours !== null ? 
+      profileData.booking_cancel_min_hours : 1;
     
     const appointmentStartTime = new Date(appointment.start_time);
     const now = new Date();
