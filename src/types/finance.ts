@@ -16,8 +16,8 @@ export interface Transaction {
   service_id?: string;
   package_id?: string;
   user_id: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
   clients?: {
     id: string;
     name: string;
@@ -47,7 +47,7 @@ export interface TransactionFormData {
   client_id?: string;
   service_id?: string;
   package_id?: string;
-  user_id?: string;
+  user_id: string;
 }
 
 export interface FinancialSummary {

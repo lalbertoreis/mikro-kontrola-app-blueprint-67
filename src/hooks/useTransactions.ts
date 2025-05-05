@@ -23,7 +23,29 @@ export function useTransactions() {
     setIsLoading(true);
     try {
       const data = await fetchTransactions();
-      setTransactions(data as Transaction[]);
+      // Convert database fields to our Transaction interface
+      const mappedTransactions: Transaction[] = data.map(item => ({
+        id: item.id,
+        description: item.description,
+        amount: Number(item.amount),
+        date: item.date,
+        type: item.type as TransactionType,
+        category: item.category,
+        notes: item.notes,
+        payment_method: item.payment_method,
+        quantity: item.quantity,
+        unit_price: item.unit_price ? Number(item.unit_price) : undefined,
+        client_id: item.client_id,
+        service_id: item.service_id,
+        package_id: item.package_id,
+        user_id: item.user_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        clients: item.clients,
+        services: item.services,
+        packages: item.packages
+      }));
+      setTransactions(mappedTransactions);
     } finally {
       setIsLoading(false);
     }

@@ -60,7 +60,7 @@ export async function createTransaction(formData: TransactionFormData) {
   try {
     const { data, error } = await supabase
       .from("transactions")
-      .insert([formData])
+      .insert(formData)
       .select()
       .single();
 

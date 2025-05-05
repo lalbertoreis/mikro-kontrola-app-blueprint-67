@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { z } from "zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { 
   Dialog,
@@ -34,6 +34,7 @@ import { useClients } from "@/hooks/useClients";
 import { useServices } from "@/hooks/useServices";
 import { useServicePackages } from "@/hooks/useServicePackages";
 import { fetchPaymentMethods } from "@/services/transactionService";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Define categories for income and expense
 const incomeCategories = ["Serviços", "Vendas", "Investimentos", "Outros"];
@@ -54,6 +55,7 @@ const transactionSchema = z.object({
   client_id: z.string().optional(),
   service_id: z.string().optional(),
   package_id: z.string().optional(),
+  user_id: z.string().optional(),
 });
 
 interface TransactionDialogProps {
@@ -75,19 +77,24 @@ export function TransactionDialog({
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const { clients } = useClients();
   const { services } = useServices();
-  const { servicePackages } = useServicePackages();
+  const { packages } = useServicePackages();
   const [serviceTab, setServiceTab] = useState<"service" | "package">("service");
+  const { user } = useAuth();
   
-  const defaultValues: TransactionFormData = initialData || {
-    description: "",
-    amount: 0,
-    date: new Date().toISOString().split('T')[0],
-    type: "income",
-    category: "",
-    notes: "",
-    payment_method: "",
-    quantity: 1,
-    unit_price: 0,
+  const defaultValues: TransactionFormData = {
+    description: initialData?.description || "",
+    amount: initialData?.amount || 0,
+    date: initialData?.date || new Date().toISOString().split('T')[0],
+    type: initialData?.type || "income",
+    category: initialData?.category || "",
+    notes: initialData?.notes || "",
+    payment_method: initialData?.payment_method || "",
+    quantity: initialData?.quantity || 1,
+    unit_price: initialData?.unit_price || 0,
+    client_id: initialData?.client_id || undefined,
+    service_id: initialData?.service_id || undefined,
+    package_id: initialData?.package_id || undefined,
+    user_id: user?.id || ""
   };
 
   const form = useForm<TransactionFormData>({
@@ -129,7 +136,7 @@ export function TransactionDialog({
   // Update unit price when package is selected
   useEffect(() => {
     if (serviceTab === "package" && packageId) {
-      const selectedPackage = servicePackages.find(p => p.id === packageId);
+      const selectedPackage = packages.find(p => p.id === packageId);
       if (selectedPackage) {
         form.setValue("description", selectedPackage.name);
         form.setValue("unit_price", selectedPackage.price);
@@ -137,7 +144,7 @@ export function TransactionDialog({
         form.setValue("service_id", undefined);
       }
     }
-  }, [packageId, servicePackages, form, serviceTab]);
+  }, [packageId, packages, form, serviceTab]);
 
   // Load payment methods
   useEffect(() => {
@@ -166,8 +173,13 @@ export function TransactionDialog({
   }, [open, initialData, form]);
 
   const onSubmit = (data: TransactionFormData) => {
+    // Ensure user_id is set
+    const finalData: TransactionFormData = {
+      ...data,
+      user_id: user?.id || ""
+    };
+    
     // Keep only service_id or package_id based on the selected tab
-    const finalData = { ...data };
     if (serviceTab === "service") {
       finalData.package_id = undefined;
     } else {
@@ -312,7 +324,7 @@ export function TransactionDialog({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {servicePackages.map((pkg) => (
+                            {packages.map((pkg) => (
                               <SelectItem key={pkg.id} value={pkg.id}>
                                 {pkg.name} - R${pkg.price.toFixed(2)}
                               </SelectItem>

@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Transaction, TransactionType } from "@/types/finance";
+import { Transaction, TransactionFormData, TransactionType } from "@/types/finance";
 import { useTransactions } from "@/hooks/useTransactions";
 import TransactionDialog from "./TransactionDialog";
 
