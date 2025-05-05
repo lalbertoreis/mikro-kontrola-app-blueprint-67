@@ -19,6 +19,10 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({ appointment, colorCla
   // Format start time
   const startTime = format(new Date(appointment.start), "HH:mm");
   
+  // Verificar se é um bloqueio e ajustar classe CSS
+  const isBlocked = appointment.status === 'blocked';
+  const chipColorClass = isBlocked ? "bg-red-200 text-red-800" : colorClass;
+  
   // Safely access service name, client name, and employee name
   const serviceName = appointment.service?.name || "Serviço não especificado";
   const clientName = appointment.client?.name || "Cliente não especificado";
@@ -28,18 +32,21 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({ appointment, colorCla
     <Tooltip>
       <TooltipTrigger asChild>
         <div 
-          className={cn("text-xs px-2 py-1 rounded-sm truncate cursor-pointer", colorClass)}
+          className={cn("text-xs px-2 py-1 rounded-sm truncate cursor-pointer", chipColorClass)}
           onClick={onClick}
         >
-          {startTime} - {serviceName}
+          {startTime} - {isBlocked ? "BLOQUEADO" : serviceName}
         </div>
       </TooltipTrigger>
       <TooltipContent side="right">
         <div className="space-y-1">
-          <div className="font-bold">{serviceName}</div>
-          <div className="text-sm">Cliente: {clientName}</div>
+          <div className="font-bold">{isBlocked ? "HORÁRIO BLOQUEADO" : serviceName}</div>
+          {!isBlocked && <div className="text-sm">Cliente: {clientName}</div>}
           <div className="text-sm">Horário: {startTime}</div>
           <div className="text-sm">Profissional: {employeeName}</div>
+          {appointment.notes && (
+            <div className="text-sm">Motivo: {appointment.notes}</div>
+          )}
         </div>
       </TooltipContent>
     </Tooltip>

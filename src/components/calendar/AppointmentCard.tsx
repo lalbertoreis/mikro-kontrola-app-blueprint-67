@@ -33,10 +33,16 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
         return "bg-amber-500";
       case 'completed':
         return "bg-blue-500";
+      case 'blocked':
+        return "bg-red-500";
       default:
         return "bg-gray-500";
     }
   };
+
+  // Verificar se é um bloqueio e ajustar classe CSS
+  const isBlocked = appointment.status === 'blocked';
+  const cardColorClass = isBlocked ? "bg-red-100 border-red-600 text-red-800" : colorClass;
 
   // Safely access service name, client name, and employee name
   const serviceName = appointment.service?.name || "Serviço não especificado";
@@ -49,15 +55,15 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
         <div
           className={cn(
             "p-2 mb-1 rounded text-xs overflow-hidden cursor-pointer",
-            colorClass
+            cardColorClass
           )}
           onClick={onClick}
         >
-          <div className="font-medium truncate">{serviceName}</div>
+          <div className="font-medium truncate">{isBlocked ? "BLOQUEADO" : serviceName}</div>
           <div className="flex items-center mt-1 justify-between">
             <div className="flex items-center">
               <User className="h-3 w-3 mr-1" />
-              <span className="truncate">{clientName}</span>
+              <span className="truncate">{isBlocked ? "Indisponível" : clientName}</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-3 w-3 mr-1" />
@@ -69,8 +75,8 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
       </TooltipTrigger>
       <TooltipContent side="right">
         <div className="space-y-1">
-          <div className="font-bold">{serviceName}</div>
-          <div className="text-sm">Cliente: {clientName}</div>
+          <div className="font-bold">{isBlocked ? "HORÁRIO BLOQUEADO" : serviceName}</div>
+          {!isBlocked && <div className="text-sm">Cliente: {clientName}</div>}
           <div className="text-sm">Profissional: {employeeName}</div>
           <div className="text-sm">Horário: {startTime} - {endTime}</div>
           <div className="text-sm capitalize">Status: {appointment.status.replace('-', ' ')}</div>
