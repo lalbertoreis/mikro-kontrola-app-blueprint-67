@@ -75,37 +75,44 @@ const CalendarView: React.FC = () => {
   // As the AppointmentWithDetails type requires employee, service, and client objects,
   // let's ensure our appointments data has these properties before passing them to the components
   const appointmentsWithDetails = appointments.map(appointment => {
+    // Create objects for employee, service, and client with default values if they don't exist
+    const employeeObject = {
+      id: appointment.employeeId,
+      name: "Profissional não especificado",
+      role: "",
+      shifts: [],
+      services: [],
+      createdAt: "",
+      updatedAt: ""
+    };
+    
+    const serviceObject = {
+      id: appointment.serviceId || "",
+      name: "Serviço não especificado",
+      price: 0,
+      duration: 0,
+      multipleAttendees: false,
+      isActive: true,
+      createdAt: "",
+      updatedAt: ""
+    };
+    
+    const clientObject = {
+      id: appointment.clientId || "",
+      name: "Cliente não especificado",
+      email: "",
+      phone: "",
+      cep: "",
+      address: "",
+      createdAt: "",
+      updatedAt: ""
+    };
+
     return {
       ...appointment,
-      employee: appointment.employee || { 
-        id: appointment.employeeId,
-        name: "Profissional não especificado",
-        role: "",
-        shifts: [],
-        services: [],
-        createdAt: "",
-        updatedAt: ""
-      },
-      service: appointment.service || {
-        id: appointment.serviceId || "",
-        name: "Serviço não especificado",
-        price: 0,
-        duration: 0,
-        multipleAttendees: false,
-        isActive: true,
-        createdAt: "",
-        updatedAt: ""
-      },
-      client: appointment.client || {
-        id: appointment.clientId || "",
-        name: "Cliente não especificado",
-        email: "",
-        phone: "",
-        cep: "",
-        address: "",
-        createdAt: "",
-        updatedAt: ""
-      }
+      employee: employeeObject,
+      service: serviceObject,
+      client: clientObject
     } as AppointmentWithDetails;
   });
 
