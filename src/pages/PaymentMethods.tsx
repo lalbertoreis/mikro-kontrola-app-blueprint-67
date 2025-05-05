@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -149,12 +148,18 @@ const PaymentMethods = () => {
     if (!user) return;
 
     if (currentMethod) {
-      // Editar
-      await updatePaymentMethod(currentMethod.id, data);
+      // Ensure all required fields are explicitly set when editing
+      await updatePaymentMethod(currentMethod.id, {
+        name: data.name,
+        fee: data.fee,
+        is_active: data.is_active
+      });
     } else {
-      // Adicionar
+      // Ensure all required fields are explicitly set when adding
       await createPaymentMethod({
-        ...data,
+        name: data.name,
+        fee: data.fee,
+        is_active: data.is_active,
         user_id: user.id,
       });
     }
