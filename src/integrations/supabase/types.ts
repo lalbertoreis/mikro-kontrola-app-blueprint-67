@@ -184,6 +184,42 @@ export type Database = {
         }
         Relationships: []
       }
+      fixed_costs: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          month: number
+          name: string
+          updated_at: string | null
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          month: number
+          name: string
+          updated_at?: string | null
+          user_id: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          month?: number
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       holidays: {
         Row: {
           auto_generated: boolean
