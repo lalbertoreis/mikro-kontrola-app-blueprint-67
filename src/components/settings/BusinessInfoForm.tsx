@@ -12,8 +12,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Building, Image, Globe } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Building, Globe } from "lucide-react";
+import ImageUpload from "./ImageUpload";
 
 interface BusinessInfoFormProps {
   control: Control<BusinessSettingsFormData>;
@@ -51,22 +51,16 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Logo do Negócio</FormLabel>
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              {watchBusinessLogo && (
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={watchBusinessLogo} alt="Logo do negócio" />
-                  <AvatarFallback className="text-xl">Logo</AvatarFallback>
-                </Avatar>
-              )}
-              <FormControl>
-                <div className="flex items-center flex-1">
-                  <Image className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="URL da logo" {...field} />
-                </div>
-              </FormControl>
-            </div>
-            <FormDescription>
-              URL de uma imagem para sua logo
+            <FormControl>
+              <div className="flex justify-center">
+                <ImageUpload 
+                  value={field.value} 
+                  onChange={field.onChange} 
+                />
+              </div>
+            </FormControl>
+            <FormDescription className="text-center">
+              Faça upload de uma imagem para sua logo
             </FormDescription>
             <FormMessage />
           </FormItem>
