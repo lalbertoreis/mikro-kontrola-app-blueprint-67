@@ -34,7 +34,7 @@ const Employees = () => {
                 Gerencie sua equipe e informações de colaboradores.
               </p>
             </div>
-            <Button onClick={handleAddEmployee} className="bg-primary">
+            <Button onClick={handleAddEmployee} className="bg-primary hover:bg-primary/90">
               <Plus className="mr-2 h-4 w-4" />
               Novo Funcionário
             </Button>

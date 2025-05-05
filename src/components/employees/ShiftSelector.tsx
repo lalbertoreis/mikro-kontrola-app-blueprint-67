@@ -125,7 +125,7 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange, showInl
           type="button"
           onClick={handleAddShift}
           disabled={!newDay || !newStart || !newEnd}
-          className="bg-purple-500 hover:bg-purple-600 text-white w-full"
+          className="bg-primary hover:bg-primary/90 text-white w-full"
         >
           <Plus className="h-4 w-4 mr-2" /> Adicionar Turno
         </Button>
@@ -136,11 +136,11 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange, showInl
         {shifts.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhum turno adicionado</p>
         ) : (
-          <ScrollArea className="max-h-[300px]">
-            <div className="space-y-4">
+          <ScrollArea className="h-[300px] max-h-[300px] overflow-y-auto pr-4">
+            <div className="space-y-4 pr-2">
               {Object.entries(groupedShifts).map(([day, dayShifts]) => (
                 <div key={day} className="space-y-2">
-                  <h4 className="text-sm font-medium text-purple-600">
+                  <h4 className="text-sm font-medium text-primary">
                     {formatDayOfWeek(parseInt(day))}
                   </h4>
                   {dayShifts.map((shift, index) => {

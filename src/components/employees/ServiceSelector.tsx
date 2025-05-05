@@ -45,7 +45,7 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       </div>
 
       <div className="border rounded-lg overflow-hidden">
-        <ScrollArea className="h-[300px]">
+        <ScrollArea className="h-[300px] max-h-[300px] overflow-y-auto pr-4">
           <div className="p-1">
             {isLoading ? (
               <div className="flex justify-center items-center h-20">
@@ -62,7 +62,7 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                   <div
                     key={service.id}
                     className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors ${
-                      isSelected ? "bg-blue-50" : ""
+                      isSelected ? "bg-primary/10" : ""
                     }`}
                     onClick={() => handleServiceToggle(service.id)}
                   >
@@ -74,7 +74,7 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                         </div>
                       </div>
                       {isSelected && (
-                        <Check className="h-5 w-5 text-blue-500" />
+                        <Check className="h-5 w-5 text-primary" />
                       )}
                     </div>
                   </div>

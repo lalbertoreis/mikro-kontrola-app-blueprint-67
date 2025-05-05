@@ -60,24 +60,26 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
     },
   });
 
-  // Atualizar formulário quando os dados do funcionário forem carregados
+  // Reset form and data when dialog opens/closes or employeeId changes
   useEffect(() => {
-    if (employee && isEditing) {
-      form.reset({
-        name: employee.name,
-        role: employee.role,
-      });
-      setShifts(employee.shifts);
-      setSelectedServices(employee.services);
-    } else if (!isEditing) {
-      form.reset({
-        name: "",
-        role: "",
-      });
-      setShifts([]);
-      setSelectedServices([]);
+    if (open) {
+      if (employee && isEditing) {
+        form.reset({
+          name: employee.name,
+          role: employee.role,
+        });
+        setShifts(employee.shifts);
+        setSelectedServices(employee.services);
+      } else if (!isEditing) {
+        form.reset({
+          name: "",
+          role: "",
+        });
+        setShifts([]);
+        setSelectedServices([]);
+      }
     }
-  }, [employee, form, isEditing, open]);
+  }, [employee, form, isEditing, open, employeeId]);
 
   const onSubmit = async (data: z.infer<typeof employeeSchema>) => {
     // Montar dados completos do funcionário
@@ -107,7 +109,7 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden p-0">
         <DialogHeader className="px-6 pt-6 pb-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold">
@@ -173,7 +175,7 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
                         <Button 
                           onClick={form.handleSubmit(onSubmit)} 
                           disabled={isCreating || isUpdating}
-                          className="bg-primary"
+                          className="bg-primary hover:bg-primary/90"
                         >
                           {(isCreating || isUpdating) && (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -197,7 +199,7 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
                       <Button 
                         onClick={form.handleSubmit(onSubmit)} 
                         disabled={isCreating || isUpdating}
-                        className="bg-primary"
+                        className="bg-primary hover:bg-primary/90"
                       >
                         {(isCreating || isUpdating) && (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -230,7 +232,7 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
                       <Button 
                         onClick={form.handleSubmit(onSubmit)} 
                         disabled={isCreating || isUpdating}
-                        className="bg-primary"
+                        className="bg-primary hover:bg-primary/90"
                       >
                         {(isCreating || isUpdating) && (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />

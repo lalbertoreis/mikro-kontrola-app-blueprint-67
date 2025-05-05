@@ -83,7 +83,7 @@ export const HolidayDialog: React.FC<HolidayDialogProps> = ({
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-[600px] md:max-w-[650px] w-[92vw]">
           <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle className="text-lg">
               {isEditing ? "Editar Feriado" : "Adicionar Feriado"}
