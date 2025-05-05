@@ -60,6 +60,10 @@ const NotificationIndicator: React.FC = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
+  const handleClose = () => {
+    setOpen(false);
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -74,9 +78,10 @@ const NotificationIndicator: React.FC = () => {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0">
         <NotificationList 
-          notifications={notifications}
+          notifications={notifications.filter(n => !n.read)}
           onMarkAsRead={handleMarkAsRead}
           onMarkAllAsRead={handleMarkAllAsRead}
+          onClose={handleClose}
         />
       </PopoverContent>
     </Popover>

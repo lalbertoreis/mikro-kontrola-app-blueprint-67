@@ -6,17 +6,20 @@ import { Check, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Notification } from "@/types/notification";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Link } from "react-router-dom";
 
 interface NotificationListProps {
   notifications: Notification[];
   onMarkAsRead: (notificationId: string) => void;
   onMarkAllAsRead: () => void;
+  onClose: () => void;
 }
 
 const NotificationList: React.FC<NotificationListProps> = ({ 
   notifications, 
   onMarkAsRead,
-  onMarkAllAsRead
+  onMarkAllAsRead,
+  onClose
 }) => {
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -35,6 +38,9 @@ const NotificationList: React.FC<NotificationListProps> = ({
     return formatDistanceToNow(date, { addSuffix: true, locale: ptBR });
   };
 
+  // Filter unread notifications to show at the top
+  const unreadNotifications = notifications.filter(n => !n.read);
+
   if (notifications.length === 0) {
     return (
       <div className="p-4 text-center text-muted-foreground">
@@ -47,43 +53,48 @@ const NotificationList: React.FC<NotificationListProps> = ({
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-3 border-b">
         <h3 className="font-medium">Notificações</h3>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={onMarkAllAsRead}
-          disabled={notifications.every(n => n.read)}
-        >
-          <Check className="h-3 w-3 mr-1" />
-          Marcar todas como lidas
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={onMarkAllAsRead}
+            disabled={unreadNotifications.length === 0}
+          >
+            <Check className="h-3 w-3 mr-1" />
+            Marcar todas como lidas
+          </Button>
+          <Link to="/dashboard/notifications" onClick={onClose}>
+            <Button variant="link" size="sm">
+              Ver todas
+            </Button>
+          </Link>
+        </div>
       </div>
       
       <ScrollArea className="h-[300px]">
         <div className="flex flex-col">
-          {notifications.map((notification) => (
-            <div 
-              key={notification.id}
-              className={`p-3 border-b last:border-b-0 ${
-                notification.read ? 'bg-background' : 'bg-accent/20'
-              }`}
-            >
-              <div className="flex items-start">
-                <div className="p-1 rounded-full bg-primary/10 mr-3">
-                  {getNotificationIcon(notification.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-medium text-sm">{notification.title}</h4>
-                    <span className="text-xs text-muted-foreground">
-                      {formatNotificationTime(notification.createdAt)}
-                    </span>
+          {unreadNotifications.length > 0 ? (
+            unreadNotifications.map((notification) => (
+              <div 
+                key={notification.id}
+                className="p-3 border-b last:border-b-0 bg-accent/20"
+              >
+                <div className="flex items-start">
+                  <div className="p-1 rounded-full bg-primary/10 mr-3">
+                    {getNotificationIcon(notification.type)}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {notification.message}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-medium text-sm">{notification.title}</h4>
+                      <span className="text-xs text-muted-foreground">
+                        {formatNotificationTime(notification.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      {notification.message}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              {!notification.read && (
                 <div className="mt-2 flex justify-end">
                   <Button 
                     variant="ghost" 
@@ -93,9 +104,13 @@ const NotificationList: React.FC<NotificationListProps> = ({
                     Marcar como lida
                   </Button>
                 </div>
-              )}
+              </div>
+            ))
+          ) : (
+            <div className="p-4 text-center text-muted-foreground">
+              Nenhuma notificação não lida.
             </div>
-          ))}
+          )}
         </div>
       </ScrollArea>
     </div>
