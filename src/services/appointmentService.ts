@@ -346,11 +346,12 @@ export async function cancelAppointment(appointmentId: string): Promise<boolean>
     
     // Check if there's a time limit for cancellation
     // Safely access the booking_cancel_min_hours property with proper null checks
-    const cancelMinHours = appointment?.profiles && 
-      typeof appointment?.profiles === 'object' && 
-      appointment?.profiles !== null &&
-      'booking_cancel_min_hours' in appointment?.profiles ? 
-      (appointment?.profiles as any).booking_cancel_min_hours : 1;
+    const profileData = appointment?.profiles;
+    const cancelMinHours = profileData && 
+      typeof profileData === 'object' && 
+      profileData !== null &&
+      'booking_cancel_min_hours' in profileData ? 
+      (profileData as any).booking_cancel_min_hours : 1;
     
     const appointmentStartTime = new Date(appointment.start_time);
     const now = new Date();
