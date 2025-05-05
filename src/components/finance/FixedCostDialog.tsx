@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,21 +75,23 @@ export const FixedCostDialog: React.FC<FixedCostDialogProps> = ({
 
   React.useEffect(() => {
     if (open && fixedCost) {
+      // When editing an existing fixed cost
       form.reset({
-        name: fixedCost.name,
-        month: fixedCost.month,
-        year: fixedCost.year,
-        amount: fixedCost.amount,
-        description: fixedCost.description || "",
+        name: fixedCost.name, // Required field, explicitly provided
+        month: fixedCost.month, // Required field, explicitly provided
+        year: fixedCost.year, // Required field, explicitly provided
+        amount: fixedCost.amount, // Required field, explicitly provided
+        description: fixedCost.description || "", // Optional field
       });
     } else if (open) {
+      // When creating a new fixed cost
       const currentDate = new Date();
       form.reset({
-        name: "",  // Non-optional string
-        month: currentDate.getMonth() + 1,
-        year: currentDate.getFullYear(),
-        amount: 0,
-        description: "",
+        name: "", // Required field, explicitly provided as empty string
+        month: currentDate.getMonth() + 1, // Required field
+        year: currentDate.getFullYear(), // Required field
+        amount: 0, // Required field
+        description: "", // Optional field
       });
     }
   }, [open, fixedCost, form]);
