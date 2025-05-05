@@ -12,16 +12,20 @@ import {
 interface AppointmentChipProps {
   appointment: AppointmentWithDetails;
   colorClass: string;
+  onClick: () => void;
 }
 
-const AppointmentChip: React.FC<AppointmentChipProps> = ({ appointment, colorClass }) => {
+const AppointmentChip: React.FC<AppointmentChipProps> = ({ appointment, colorClass, onClick }) => {
   // Format start time
   const startTime = format(new Date(appointment.start), "HH:mm");
   
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className={cn("text-xs px-2 py-1 rounded-sm truncate cursor-pointer", colorClass)}>
+        <div 
+          className={cn("text-xs px-2 py-1 rounded-sm truncate cursor-pointer", colorClass)}
+          onClick={onClick}
+        >
           {startTime} - {appointment.service.name}
         </div>
       </TooltipTrigger>

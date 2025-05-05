@@ -14,9 +14,10 @@ import {
 interface AppointmentCardProps {
   appointment: AppointmentWithDetails;
   colorClass: string;
+  onClick: () => void;
 }
 
-const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorClass }) => {
+const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorClass, onClick }) => {
   // Format start and end time
   const startTime = format(new Date(appointment.start), "HH:mm", { locale: ptBR });
   const endTime = format(new Date(appointment.end), "HH:mm", { locale: ptBR });
@@ -45,6 +46,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
             "p-2 mb-1 rounded text-xs overflow-hidden cursor-pointer",
             colorClass
           )}
+          onClick={onClick}
         >
           <div className="font-medium truncate">{appointment.service.name}</div>
           <div className="flex items-center mt-1 justify-between">

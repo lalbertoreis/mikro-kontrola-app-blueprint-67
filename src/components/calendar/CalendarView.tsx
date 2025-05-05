@@ -42,6 +42,10 @@ const CalendarView: React.FC = () => {
     setAppointmentDialogOpen(true);
   };
 
+  // Type assertion to convert appointments to AppointmentWithDetails[]
+  // This is necessary because the backend ensures these properties exist
+  const appointmentsWithDetails = appointments as unknown as AppointmentWithDetails[];
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -77,14 +81,14 @@ const CalendarView: React.FC = () => {
       {view === "week" ? (
         <WeekCalendar
           date={currentDate}
-          appointments={appointments}
+          appointments={appointmentsWithDetails}
           employees={employees}
           onSelectAppointment={handleSelectAppointment}
         />
       ) : (
         <MonthCalendar
           date={currentDate}
-          appointments={appointments}
+          appointments={appointmentsWithDetails}
           employees={employees}
           onSelectAppointment={handleSelectAppointment}
         />
