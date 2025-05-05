@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -83,10 +82,9 @@ export const FixedCostDialog: React.FC<FixedCostDialogProps> = ({
         description: fixedCost.description || "",
       });
     } else if (open) {
-      // Ensure all required fields have explicit non-optional values
       const currentDate = new Date();
       form.reset({
-        name: "",  // Explicitly set as empty string, not optional
+        name: "",  // Non-optional string
         month: currentDate.getMonth() + 1,
         year: currentDate.getFullYear(),
         amount: 0,
