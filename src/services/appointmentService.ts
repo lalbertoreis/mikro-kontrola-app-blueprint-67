@@ -28,10 +28,36 @@ export async function fetchAppointments(): Promise<Appointment[]> {
       notes: item.notes || undefined,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
-      // Add the joined data
-      employee: item.employee || undefined,
-      service: item.service || undefined,
-      client: item.client || undefined,
+      // Add the joined data with proper structure to match our types
+      employee: item.employee ? {
+        id: item.employee.id,
+        name: item.employee.name,
+        role: "", // Adding missing properties from Employee type
+        shifts: [], 
+        services: [],
+        createdAt: "",
+        updatedAt: ""
+      } : undefined,
+      service: item.service ? {
+        id: item.service.id,
+        name: item.service.name,
+        price: item.service.price || 0,
+        duration: item.service.duration || 0,
+        multipleAttendees: false,
+        isActive: true,
+        createdAt: "",
+        updatedAt: ""
+      } : undefined,
+      client: item.client ? {
+        id: item.client.id,
+        name: item.client.name,
+        email: item.client.email || "",
+        phone: item.client.phone || "",
+        cep: "",
+        address: "",
+        createdAt: "",
+        updatedAt: ""
+      } : undefined,
     }));
   } catch (error) {
     console.error('Error fetching appointments:', error);

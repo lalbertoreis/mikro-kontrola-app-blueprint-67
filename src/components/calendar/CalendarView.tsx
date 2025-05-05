@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
@@ -72,46 +71,39 @@ const CalendarView: React.FC = () => {
     setBlockTimeDialogOpen(true);
   };
 
-  // Map appointments to AppointmentWithDetails
+  // Map appointments to AppointmentWithDetails with complete employee, service, and client objects
   const appointmentsWithDetails = appointments.map(appointment => {
-    // Create objects for employee, service, and client with default values only if needed
-    const employeeObject = appointment.employee || {
-      id: appointment.employeeId,
-      name: "Profissional não especificado",
-      role: "",
-      shifts: [],
-      services: [],
-      createdAt: "",
-      updatedAt: ""
-    };
-    
-    const serviceObject = appointment.service || {
-      id: appointment.serviceId || "",
-      name: "Serviço não especificado",
-      price: 0,
-      duration: 0,
-      multipleAttendees: false,
-      isActive: true,
-      createdAt: "",
-      updatedAt: ""
-    };
-    
-    const clientObject = appointment.client || {
-      id: appointment.clientId || "",
-      name: "Cliente não especificado",
-      email: "",
-      phone: "",
-      cep: "",
-      address: "",
-      createdAt: "",
-      updatedAt: ""
-    };
-
     return {
       ...appointment,
-      employee: employeeObject,
-      service: serviceObject,
-      client: clientObject
+      employee: appointment.employee || {
+        id: appointment.employeeId,
+        name: "Profissional não especificado",
+        role: "",
+        shifts: [],
+        services: [],
+        createdAt: "",
+        updatedAt: ""
+      },
+      service: appointment.service || {
+        id: appointment.serviceId || "",
+        name: "Serviço não especificado",
+        price: 0,
+        duration: 0,
+        multipleAttendees: false,
+        isActive: true,
+        createdAt: "",
+        updatedAt: ""
+      },
+      client: appointment.client || {
+        id: appointment.clientId || "",
+        name: "Cliente não especificado",
+        email: "",
+        phone: "",
+        cep: "",
+        address: "",
+        createdAt: "",
+        updatedAt: ""
+      }
     } as AppointmentWithDetails;
   });
 
