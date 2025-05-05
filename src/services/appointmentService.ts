@@ -142,6 +142,17 @@ export async function blockTimeSlot(blockData: {
     const endDate = new Date(date);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
     endDate.setHours(endHours, endMinutes, 0, 0);
+
+    // First, fetch a default client for blocked appointments
+    // This is a workaround for the not-null constraint
+    const { data: clients, error: clientError } = await supabase
+      .from('clients')
+      .select('id')
+      .limit(1);
+    
+    if (clientError || !clients || clients.length === 0) {
+      throw new Error('Could not find a client for blocking. Please create at least one client first.');
+    }
     
     // Create a "blocked" appointment
     const { data, error } = await supabase
@@ -149,7 +160,7 @@ export async function blockTimeSlot(blockData: {
       .insert({
         employee_id: employeeId,
         service_id: null, // No service associated with a block
-        client_id: null, // No client associated with a block
+        client_id: clients[0].id, // Use the first client as a placeholder
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         status: 'blocked' as AppointmentStatus,
@@ -168,7 +179,7 @@ export async function blockTimeSlot(blockData: {
       end: new Date(data.end_time),
       employeeId: data.employee_id,
       serviceId: null,
-      clientId: null,
+      clientId: data.client_id,
       status: data.status as AppointmentStatus,
       notes: data.notes || undefined,
       createdAt: data.created_at,
@@ -190,22 +201,26 @@ export async function fetchAvailableTimeSlots(
     const selectedDate = new Date(date);
     const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
     
-    const { data: employeeShift, error: shiftError } = await supabase
+    // Get all shifts for the employee on the selected day (using a more flexible query)
+    const { data: employeeShifts, error: shiftError } = await supabase
       .from('shifts')
       .select('*')
       .eq('employee_id', employeeId)
-      .eq('day_of_week', dayOfWeek)
-      .single();
+      .eq('day_of_week', dayOfWeek);
     
     if (shiftError) {
-      console.error('Error fetching employee shift:', shiftError);
+      console.error('Error fetching employee shifts:', shiftError);
       return [];
     }
     
-    if (!employeeShift) {
-      console.log('No shift found for the selected day');
+    // If no shifts found for the selected day, return empty array
+    if (!employeeShifts || employeeShifts.length === 0) {
+      console.log('No shifts found for the selected day');
       return [];
     }
+    
+    // Use the first shift found
+    const employeeShift = employeeShifts[0];
     
     // Get the selected service details (for duration)
     const { data: service, error: serviceError } = await supabase
@@ -250,7 +265,7 @@ export async function fetchAvailableTimeSlots(
     const shiftStartMinutes = startHour * 60 + startMinute;
     const shiftEndMinutes = endHour * 60 + endMinute;
     
-    // Generate 15-minute increments as potential start times
+    // Generate 30-minute increments as potential start times (changed from 15 to 30)
     const availableSlots: string[] = [];
     
     // Block out times that are already booked
@@ -264,8 +279,8 @@ export async function fetchAvailableTimeSlots(
       };
     });
     
-    // Generate slots at 15-minute intervals
-    for (let time = shiftStartMinutes; time <= shiftEndMinutes - serviceDuration; time += 15) {
+    // Generate slots at 30-minute intervals (changed from 15 to 30)
+    for (let time = shiftStartMinutes; time <= shiftEndMinutes - serviceDuration; time += 30) {
       const slotEndTime = time + serviceDuration;
       
       // Check if this time slot overlaps with any existing appointment

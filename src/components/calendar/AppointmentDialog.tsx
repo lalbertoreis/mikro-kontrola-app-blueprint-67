@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useClients } from "@/hooks/useClients";
 import { useServices } from "@/hooks/useServices";
+import { useServicePackages } from "@/hooks/useServicePackages";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useAvailableTimeSlots, useAppointments } from "@/hooks/useAppointments";
 import { Button } from "@/components/ui/button";
@@ -44,11 +45,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const appointmentSchema = z.object({
   client: z.string().min(1, { message: "Cliente é obrigatório" }),
   employee: z.string().min(1, { message: "Funcionário é obrigatório" }),
-  service: z.string().min(1, { message: "Serviço é obrigatório" }),
+  service: z.string().min(1, { message: "Serviço é obrigatório" }).optional(),
+  package: z.string().min(1, { message: "Pacote é obrigatório" }).optional(),
+  serviceType: z.enum(["service", "package"]),
   date: z.date({ required_error: "Data é obrigatória" }),
   startTime: z.string().min(1, { message: "Horário de início é obrigatório" }),
   endTime: z.string({ required_error: "Horário de término é obrigatório" }),
@@ -76,32 +80,38 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
   const { clients } = useClients();
   const { employees } = useEmployees();
   const { services } = useServices();
+  const { packages } = useServicePackages();
   const { createAppointment, isCreating } = useAppointments();
   
   const [isNewClient, setIsNewClient] = useState(false);
   const [servicesList, setServicesList] = useState<any[]>([]);
+  const [packagesList, setPackagesList] = useState<any[]>([]);
+  const [serviceType, setServiceType] = useState<"service" | "package">("service");
   
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
       date: selectedDate || new Date(),
       employee: selectedEmployeeId || "",
+      serviceType: "service",
     },
   });
   
   const selectedEmployee = form.watch("employee");
   const selectedService = form.watch("service");
+  const selectedPackage = form.watch("package");
+  const selectedType = form.watch("serviceType");
   const selectedDate2 = form.watch("date");
 
   // Get available time slots based on selected employee, service and date
   const formattedDate = selectedDate2 ? format(selectedDate2, "yyyy-MM-dd") : "";
   const { data: availableSlots = [] } = useAvailableTimeSlots(
     selectedEmployee,
-    selectedService,
+    selectedType === "service" ? selectedService || "" : selectedPackage || "",
     formattedDate
   );
   
-  // When employee changes, update available services
+  // When employee changes, update available services and packages
   useEffect(() => {
     if (selectedEmployee) {
       const employeeData = employees.find(e => e.id === selectedEmployee);
@@ -110,21 +120,53 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
           employeeData.services.includes(service.id)
         );
         setServicesList(availableServices);
+        
+        // Also update packages (all packages are available to all employees)
+        setPackagesList(packages);
       }
     }
-  }, [selectedEmployee, employees, services]);
+  }, [selectedEmployee, employees, services, packages]);
+
+  // Set service type when changing tabs
+  useEffect(() => {
+    form.setValue("serviceType", serviceType);
+    // Clear the other field when switching
+    if (serviceType === "service") {
+      form.setValue("package", undefined);
+    } else {
+      form.setValue("service", undefined);
+    }
+  }, [serviceType, form]);
 
   // Calculate end time based on selected service duration
   useEffect(() => {
     const startTime = form.watch("startTime");
-    const serviceId = form.watch("service");
+    const currentServiceType = form.watch("serviceType");
+    let serviceDuration = 0;
     
-    if (startTime && serviceId) {
-      const service = services.find(s => s.id === serviceId);
-      if (service) {
+    if (startTime) {
+      if (currentServiceType === "service") {
+        const serviceId = form.watch("service");
+        if (serviceId) {
+          const service = services.find(s => s.id === serviceId);
+          if (service) {
+            serviceDuration = service.duration;
+          }
+        }
+      } else {
+        const packageId = form.watch("package");
+        if (packageId) {
+          const servicePackage = packages.find(p => p.id === packageId);
+          if (servicePackage && servicePackage.totalDuration) {
+            serviceDuration = servicePackage.totalDuration;
+          }
+        }
+      }
+      
+      if (serviceDuration > 0) {
         const [hours, minutes] = startTime.split(':').map(Number);
         const startMinutes = hours * 60 + minutes;
-        const endMinutes = startMinutes + service.duration;
+        const endMinutes = startMinutes + serviceDuration;
         
         const endHours = Math.floor(endMinutes / 60).toString().padStart(2, '0');
         const endMins = (endMinutes % 60).toString().padStart(2, '0');
@@ -132,7 +174,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
         form.setValue("endTime", `${endHours}:${endMins}`);
       }
     }
-  }, [form.watch("startTime"), form.watch("service"), services]);
+  }, [form.watch("startTime"), form.watch("service"), form.watch("package"), form.watch("serviceType"), services, packages]);
   
   // Handle form submission
   const onSubmit = async (values: AppointmentFormValues) => {
@@ -152,7 +194,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
       // Create the appointment
       await createAppointment({
         employee: values.employee,
-        service: values.service,
+        service: values.serviceType === "service" ? values.service! : values.package!,
         client: clientId,
         date: format(values.date, "yyyy-MM-dd"),
         startTime: values.startTime,
@@ -347,46 +389,111 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
               )}
             />
             
-            {/* Service selection - only enabled after employee is selected */}
+            {/* Service/Package selection tabs */}
             <FormField
               control={form.control}
-              name="service"
+              name="serviceType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Serviço</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={!selectedEmployee}
+                  <FormLabel>Tipo</FormLabel>
+                  <Tabs 
+                    value={serviceType} 
+                    onValueChange={(value) => setServiceType(value as "service" | "package")}
+                    className="w-full"
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={
-                          selectedEmployee 
-                            ? "Selecione um serviço" 
-                            : "Selecione um funcionário primeiro"
-                        } />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {servicesList.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name} - {service.duration} min - R$ {service.price}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {selectedEmployee && servicesList.length === 0 && 
-                      "Este funcionário não tem serviços cadastrados"
-                    }
-                  </FormDescription>
+                    <TabsList className="grid grid-cols-2 w-full">
+                      <TabsTrigger value="service">Serviço</TabsTrigger>
+                      <TabsTrigger value="package">Pacote</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            {/* Time selection - only enabled after service is selected */}
+            {/* Service selection - only shown if service tab is active */}
+            {serviceType === "service" && (
+              <FormField
+                control={form.control}
+                name="service"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Serviço</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={!selectedEmployee}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={
+                            selectedEmployee 
+                              ? "Selecione um serviço" 
+                              : "Selecione um funcionário primeiro"
+                          } />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {servicesList.map((service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            {service.name} - {service.duration} min - R$ {service.price}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {selectedEmployee && servicesList.length === 0 && 
+                        "Este funcionário não tem serviços cadastrados"
+                      }
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
+            {/* Package selection - only shown if package tab is active */}
+            {serviceType === "package" && (
+              <FormField
+                control={form.control}
+                name="package"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pacote</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={!selectedEmployee}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={
+                            selectedEmployee 
+                              ? "Selecione um pacote" 
+                              : "Selecione um funcionário primeiro"
+                          } />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {packagesList.map((pkg) => (
+                          <SelectItem key={pkg.id} value={pkg.id}>
+                            {pkg.name} - {pkg.totalDuration || "N/A"} min - R$ {pkg.price}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {selectedEmployee && packagesList.length === 0 && 
+                        "Não há pacotes cadastrados"
+                      }
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
+            {/* Time selection - only enabled after service/package is selected */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -397,12 +504,12 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      disabled={!selectedService || !selectedDate2}
+                      disabled={!((serviceType === "service" ? selectedService : selectedPackage) && selectedDate2)}
                     >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={
-                            selectedService && selectedDate2
+                            (serviceType === "service" ? selectedService : selectedPackage) && selectedDate2
                               ? "Selecione um horário" 
                               : "Selecione serviço e data primeiro"
                           } />
@@ -417,7 +524,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      {selectedService && selectedDate2 && availableSlots.length === 0 && 
+                      {(serviceType === "service" ? selectedService : selectedPackage) && selectedDate2 && availableSlots.length === 0 && 
                         "Não há horários disponíveis para esta data"
                       }
                     </FormDescription>
