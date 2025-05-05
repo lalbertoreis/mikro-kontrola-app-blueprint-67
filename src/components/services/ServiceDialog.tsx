@@ -21,18 +21,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useServiceById } from "@/hooks/useServices";
 
 interface ServiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  serviceId?: string;
   service?: Service | null;
 }
 
 const ServiceDialog: React.FC<ServiceDialogProps> = ({
   open,
   onOpenChange,
-  service,
+  serviceId,
+  service: externalService,
 }) => {
+  const { data: fetchedService, isLoading } = useServiceById(serviceId);
+  const service = externalService || fetchedService;
   const isEditing = Boolean(service?.id);
   const [formDirty, setFormDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -97,7 +102,7 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
             </DialogClose>
           </DialogHeader>
           <ServiceForm 
-            defaultValues={service} 
+            service={service} 
             onFormChange={handleFormChange}
             onClose={handleCloseAttempt}
           />

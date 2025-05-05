@@ -21,18 +21,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useQuery } from "@tanstack/react-query";
+import { fetchServicePackageById } from "@/services/packageService";
 
 interface ServicePackageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  packageId?: string;
   servicePackage?: ServicePackage | null;
 }
 
 const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   open,
   onOpenChange,
-  servicePackage,
+  packageId,
+  servicePackage: externalPackage,
 }) => {
+  const { data: fetchedPackage } = useQuery({
+    queryKey: ["servicePackage", packageId],
+    queryFn: () => packageId ? fetchServicePackageById(packageId) : null,
+    enabled: !!packageId,
+  });
+  
+  const servicePackage = externalPackage || fetchedPackage;
   const isEditing = Boolean(servicePackage?.id);
   const [formDirty, setFormDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -97,7 +108,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
             </DialogClose>
           </DialogHeader>
           <ServicePackageForm 
-            defaultValues={servicePackage} 
+            servicePackage={servicePackage} 
             onFormChange={handleFormChange}
             onClose={handleCloseAttempt}
           />

@@ -21,18 +21,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useClientById } from "@/hooks/useClients";
 
 interface ClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  clientId?: string;
   client?: Client | null;
 }
 
 const ClientDialog: React.FC<ClientDialogProps> = ({
   open,
   onOpenChange,
-  client,
+  clientId,
+  client: externalClient,
 }) => {
+  const { data: fetchedClient, isLoading } = useClientById(clientId);
+  const client = externalClient || fetchedClient;
   const isEditing = Boolean(client?.id);
   const [formDirty, setFormDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -97,7 +102,7 @@ const ClientDialog: React.FC<ClientDialogProps> = ({
             </DialogClose>
           </DialogHeader>
           <ClientForm 
-            defaultValues={client} 
+            client={client} 
             onFormChange={handleFormChange}
             onClose={handleCloseAttempt}
           />
