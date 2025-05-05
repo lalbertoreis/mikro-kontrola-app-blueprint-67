@@ -1,16 +1,25 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import EmployeeList from "@/components/employees/EmployeeList";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import EmployeeDialog from "@/components/employees/EmployeeDialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 const Employees = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined);
+  const navigate = useNavigate();
 
   const handleEditEmployee = (id: string) => {
     setSelectedEmployeeId(id);
+    setDialogOpen(true);
+  };
+
+  const handleAddEmployee = () => {
+    setSelectedEmployeeId(undefined);
     setDialogOpen(true);
   };
 
@@ -18,11 +27,17 @@ const Employees = () => {
     <DashboardLayout>
       <TooltipProvider>
         <div className="space-y-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Funcionários</h1>
-            <p className="text-muted-foreground">
-              Gerencie sua equipe e informações de colaboradores.
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Funcionários</h1>
+              <p className="text-muted-foreground">
+                Gerencie sua equipe e informações de colaboradores.
+              </p>
+            </div>
+            <Button onClick={handleAddEmployee} className="bg-primary">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Funcionário
+            </Button>
           </div>
           
           <EmployeeList onEdit={handleEditEmployee} />
