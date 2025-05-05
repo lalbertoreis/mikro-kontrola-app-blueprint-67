@@ -85,29 +85,6 @@ export const FixedCostList = () => {
     );
   }
 
-  if (fixedCosts.length === 0) {
-    return (
-      <div className="text-center p-8">
-        <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium">Nenhum custo fixo cadastrado</h3>
-        <p className="text-muted-foreground mb-4">
-          Cadastre os custos fixos do seu estabelecimento para melhor controle financeiro.
-        </p>
-        <Button 
-          onClick={handleAddClick}
-          className="bg-kontrola-600 hover:bg-kontrola-700"
-        >
-          <Plus className="h-4 w-4 mr-2" /> Adicionar Custo Fixo
-        </Button>
-        <FixedCostDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          fixedCost={selectedFixedCost}
-        />
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="flex justify-between items-center mb-4">
@@ -132,30 +109,50 @@ export const FixedCostList = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {fixedCosts.map((fixedCost) => (
-              <TableRow key={fixedCost.id}>
-                <TableCell className="font-medium">{fixedCost.name}</TableCell>
-                <TableCell>{getMonthName(fixedCost.month)}/{fixedCost.year}</TableCell>
-                <TableCell>{formatCurrency(fixedCost.amount)}</TableCell>
-                <TableCell>{fixedCost.description || "-"}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEditClick(fixedCost)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteClick(fixedCost)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
+            {fixedCosts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <CreditCard className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">
+                      Nenhum custo fixo cadastrado
+                    </p>
+                    <Button 
+                      onClick={handleAddClick}
+                      className="mt-2 bg-kontrola-600 hover:bg-kontrola-700"
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Adicionar
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              fixedCosts.map((fixedCost) => (
+                <TableRow key={fixedCost.id}>
+                  <TableCell className="font-medium">{fixedCost.name}</TableCell>
+                  <TableCell>{getMonthName(fixedCost.month)}/{fixedCost.year}</TableCell>
+                  <TableCell>{formatCurrency(fixedCost.amount)}</TableCell>
+                  <TableCell>{fixedCost.description || "-"}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditClick(fixedCost)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(fixedCost)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
