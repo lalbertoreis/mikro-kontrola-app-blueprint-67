@@ -199,6 +199,13 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
     }
   };
 
+  // Safely get the price value for display
+  const getFormattedPrice = (): string => {
+    const priceValue = form.watch("price");
+    // Check if priceValue is a number and not undefined/null
+    return typeof priceValue === 'number' ? priceValue.toFixed(2) : '0.00';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] overflow-hidden">
@@ -299,7 +306,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
                         </div>
                         <div className="flex justify-between items-center text-sm font-medium">
                           <span>Valor com desconto:</span>
-                          <span className="text-primary">R$ {form.watch("price").toFixed(2)}</span>
+                          <span className="text-primary">R$ {getFormattedPrice()}</span>
                         </div>
                       </div>
                     </div>
@@ -408,7 +415,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
                                         step="0.01"
                                         disabled
                                         {...field}
-                                        value={field.value.toFixed(2)}
+                                        value={typeof field.value === 'number' ? field.value.toFixed(2) : '0.00'}
                                       />
                                     </FormControl>
                                     <FormMessage />
@@ -459,7 +466,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
                                         type="number"
                                         disabled
                                         {...field}
-                                        value={field.value.toFixed(2)}
+                                        value={typeof field.value === 'number' ? field.value.toFixed(2) : '0.00'}
                                       />
                                     </FormControl>
                                     <FormMessage />
@@ -472,7 +479,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
                         
                         <div className="pt-2">
                           <p className="text-xs text-muted-foreground">
-                            Valor original: R$ {totalPrice.toFixed(2)} • Economia: R$ {(totalPrice - form.watch("price")).toFixed(2)}
+                            Valor original: R$ {totalPrice.toFixed(2)} • Economia: R$ {(totalPrice - price).toFixed(2)}
                           </p>
                         </div>
                       </div>
