@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Appointment, AppointmentFormData } from "@/types/calendar";
+import { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/calendar";
 
 export async function fetchAppointments(): Promise<Appointment[]> {
   try {
@@ -18,13 +18,13 @@ export async function fetchAppointments(): Promise<Appointment[]> {
     
     return data.map(item => ({
       id: item.id,
-      title: item.service.name,
+      title: item.service?.name || 'BLOQUEADO',
       start: new Date(item.start_time),
       end: new Date(item.end_time),
       employeeId: item.employee_id,
       serviceId: item.service_id,
       clientId: item.client_id,
-      status: item.status,
+      status: item.status as AppointmentStatus,
       notes: item.notes || undefined,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
@@ -53,13 +53,13 @@ export async function fetchAppointmentById(id: string): Promise<Appointment | nu
     
     return {
       id: data.id,
-      title: data.service.name,
+      title: data.service?.name || 'BLOQUEADO',
       start: new Date(data.start_time),
       end: new Date(data.end_time),
       employeeId: data.employee_id,
       serviceId: data.service_id,
       clientId: data.client_id,
-      status: data.status,
+      status: data.status as AppointmentStatus,
       notes: data.notes || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
@@ -91,7 +91,7 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
         client_id: client,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
-        status: 'scheduled',
+        status: 'scheduled' as AppointmentStatus,
         notes: notes,
         user_id: (await supabase.auth.getUser()).data.user?.id
       })
@@ -107,13 +107,13 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     
     return {
       id: data.id,
-      title: data.service.name,
+      title: data.service?.name || '',
       start: new Date(data.start_time),
       end: new Date(data.end_time),
       employeeId: data.employee_id,
       serviceId: data.service_id,
       clientId: data.client_id,
-      status: data.status,
+      status: data.status as AppointmentStatus,
       notes: data.notes || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
@@ -152,7 +152,7 @@ export async function blockTimeSlot(blockData: {
         client_id: null, // No client associated with a block
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
-        status: 'blocked',
+        status: 'blocked' as AppointmentStatus,
         notes: reason,
         user_id: (await supabase.auth.getUser()).data.user?.id
       })
@@ -169,7 +169,7 @@ export async function blockTimeSlot(blockData: {
       employeeId: data.employee_id,
       serviceId: null,
       clientId: null,
-      status: 'blocked',
+      status: data.status as AppointmentStatus,
       notes: data.notes || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
