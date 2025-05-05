@@ -2,19 +2,10 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, WalletCards } from "lucide-react";
-
-// Dados de exemplo para resumo financeiro
-const mockSummary = {
-  totalIncome: 15750.50,
-  totalExpenses: 9340.75,
-  balance: 6409.75,
-  periodStart: "2023-05-01",
-  periodEnd: "2023-05-31",
-};
+import { useTransactions } from "@/hooks/useTransactions";
 
 const FinancialSummary = () => {
-  // Na implementação real, aqui buscaríamos os dados do resumo financeiro
-  const summary = mockSummary;
+  const { summary, isLoading } = useTransactions();
   
   // Formatar valores como moeda brasileira
   const formatCurrency = (value: number) => {
@@ -23,6 +14,39 @@ const FinancialSummary = () => {
       currency: 'BRL',
     }).format(value);
   };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="h-4 bg-muted rounded w-20"></CardTitle>
+              <div className="h-4 w-4 bg-muted rounded-full"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 bg-muted rounded w-32 mb-2"></div>
+              <div className="h-3 bg-muted rounded w-40"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-muted-foreground">
+              Nenhum dado financeiro disponível.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

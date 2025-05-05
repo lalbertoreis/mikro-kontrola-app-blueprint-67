@@ -1,6 +1,5 @@
 
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import { 
   Table, 
   TableHeader, 
@@ -11,75 +10,95 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { 
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import {
   BadgePlus, 
   Pencil, 
   Trash2,
   ArrowUpRight, 
-  ArrowDownRight 
+  ArrowDownRight,
+  Calendar,
+  Search
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { TransactionType } from "@/types/finance";
-
-// Dados de exemplo para transações
-const mockTransactions = [
-  {
-    id: "1",
-    description: "Pagamento Cliente XYZ",
-    amount: 2500.00,
-    date: "2023-05-15",
-    type: "income" as TransactionType,
-    category: "Serviços",
-    createdAt: "2023-05-15T10:30:00Z",
-    updatedAt: "2023-05-15T10:30:00Z"
-  },
-  {
-    id: "2",
-    description: "Compra de Material",
-    amount: 850.75,
-    date: "2023-05-10",
-    type: "expense" as TransactionType,
-    category: "Materiais",
-    createdAt: "2023-05-10T14:15:00Z",
-    updatedAt: "2023-05-10T14:15:00Z"
-  },
-  {
-    id: "3",
-    description: "Pagamento Cliente ABC",
-    amount: 1800.00,
-    date: "2023-05-18",
-    type: "income" as TransactionType,
-    category: "Serviços",
-    createdAt: "2023-05-18T09:45:00Z",
-    updatedAt: "2023-05-18T09:45:00Z"
-  },
-  {
-    id: "4",
-    description: "Aluguel",
-    amount: 1500.00,
-    date: "2023-05-05",
-    type: "expense" as TransactionType,
-    category: "Infraestrutura",
-    createdAt: "2023-05-05T08:30:00Z",
-    updatedAt: "2023-05-05T08:30:00Z"
-  }
-];
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Transaction, TransactionType } from "@/types/finance";
+import { useTransactions } from "@/hooks/useTransactions";
+import TransactionDialog from "./TransactionDialog";
 
 const TransactionList = () => {
-  const navigate = useNavigate();
+  const { transactions, isLoading, loadTransactions, removeTransaction } = useTransactions();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  const [activeFilter, setActiveFilter] = useState<"all" | "income" | "expense">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState<string>(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]
+  );
+  const [endDate, setEndDate] = useState<string>(
+    new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split("T")[0]
+  );
+
+  // Filter transactions based on active filter, date range and search term
+  useEffect(() => {
+    let filtered = [...transactions];
+    
+    // Filter by type
+    if (activeFilter !== "all") {
+      filtered = filtered.filter(transaction => transaction.type === activeFilter);
+    }
+    
+    // Filter by date range
+    if (startDate && endDate) {
+      filtered = filtered.filter(
+        transaction => transaction.date >= startDate && transaction.date <= endDate
+      );
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        transaction => 
+          transaction.description.toLowerCase().includes(term) ||
+          transaction.category.toLowerCase().includes(term) ||
+          (transaction.clients?.name?.toLowerCase().includes(term)) ||
+          (transaction.payment_method?.toLowerCase().includes(term))
+      );
+    }
+    
+    setFilteredTransactions(filtered);
+  }, [transactions, activeFilter, searchTerm, startDate, endDate]);
 
   const handleAdd = () => {
-    navigate("/dashboard/finance/new");
+    setSelectedTransaction(null);
+    setDialogOpen(true);
   };
 
-  const handleEdit = (id: string) => {
-    navigate(`/dashboard/finance/${id}`);
+  const handleEdit = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    // Na implementação real, aqui faria uma chamada para API para excluir
-    console.log(`Excluir transação com ID: ${id}`);
-    // E recarregaria os dados ou atualizaria o estado local
+  const handleDelete = async (id: string) => {
+    await removeTransaction(id);
+  };
+
+  // Handle date filter change
+  const handleDateFilterChange = () => {
+    loadTransactions();
   };
 
   // Formatar valores como moeda brasileira
@@ -92,16 +111,69 @@ const TransactionList = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Transações Recentes</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-xl font-semibold">Transações</h2>
         <Button onClick={handleAdd} className="flex items-center gap-2">
           <BadgePlus className="h-4 w-4" />
           Nova Transação
         </Button>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+        <Tabs 
+          defaultValue="all" 
+          value={activeFilter}
+          onValueChange={(value) => setActiveFilter(value as "all" | "income" | "expense")}
+          className="w-full md:w-auto"
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="all">Todas</TabsTrigger>
+            <TabsTrigger value="income">Receitas</TabsTrigger>
+            <TabsTrigger value="expense">Despesas</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        <div className="flex flex-col sm:flex-row gap-2 items-center w-full">
+          <div className="relative flex-1 w-full sm:w-auto">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar transações..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 w-full"
+            />
+          </div>
+          
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-[140px]"
+              />
+              <span>-</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-[140px]"
+              />
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleDateFilterChange}
+            >
+              Filtrar
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <Card>
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -114,10 +186,26 @@ const TransactionList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockTransactions.length > 0 ? (
-                mockTransactions.map((transaction) => (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-10">
+                    <div className="flex justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    </div>
+                    <div className="mt-2 text-muted-foreground">Carregando transações...</div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredTransactions.length > 0 ? (
+                filteredTransactions.map((transaction) => (
                   <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{transaction.description}</TableCell>
+                    <TableCell className="font-medium">
+                      {transaction.description}
+                      {transaction.clients && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Cliente: {transaction.clients.name}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell>{transaction.category}</TableCell>
                     <TableCell>
                       {new Date(transaction.date).toLocaleDateString('pt-BR')}
@@ -143,7 +231,7 @@ const TransactionList = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleEdit(transaction.id)}
+                            onClick={() => handleEdit(transaction)}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -153,13 +241,27 @@ const TransactionList = () => {
                       
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(transaction.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(transaction.id)}>
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </TooltipTrigger>
                         <TooltipContent>Excluir</TooltipContent>
                       </Tooltip>
@@ -169,7 +271,7 @@ const TransactionList = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                    Nenhuma transação registrada.
+                    Nenhuma transação encontrada.
                   </TableCell>
                 </TableRow>
               )}
@@ -177,6 +279,14 @@ const TransactionList = () => {
           </Table>
         </div>
       </Card>
+      
+      <TransactionDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+        transactionId={selectedTransaction?.id}
+        onSuccess={loadTransactions}
+        initialData={selectedTransaction as TransactionFormData}
+      />
     </div>
   );
 };
