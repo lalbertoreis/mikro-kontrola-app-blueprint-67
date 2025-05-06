@@ -41,8 +41,13 @@ const CalendarView: React.FC = () => {
     return <div>Carregando...</div>;
   }
 
+  // Filter out canceled appointments
+  const filteredAppointments = appointments.filter(appointment => 
+    appointment.status !== 'canceled'
+  );
+
   // Map appointments to AppointmentWithDetails with complete employee, service, and client objects
-  const appointmentsWithDetails = appointments.map(appointment => {
+  const appointmentsWithDetails = filteredAppointments.map(appointment => {
     return {
       ...appointment,
       employee: appointment.employee || {

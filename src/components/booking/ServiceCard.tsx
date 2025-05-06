@@ -1,54 +1,38 @@
 
 import React from "react";
-import { Service, ServicePackage } from "@/types/service";
-import { formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useProfileSettings } from "@/hooks/useProfileSettings";
 
 interface ServiceCardProps {
-  item: Service | ServicePackage;
-  isPackage?: boolean;
+  name: string;
+  duration: number;
+  price: number;
   onClick: () => void;
-  disabled?: boolean;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ item, isPackage = false, onClick, disabled = false }) => {
-  const isService = !isPackage && "duration" in item;
-  
-  // Calculate duration based on whether it's a service or package
-  const duration = isService 
-    ? (item as Service).duration 
-    : (item as ServicePackage).totalDuration || 0;
-  
+const ServiceCard: React.FC<ServiceCardProps> = ({
+  name,
+  duration,
+  price,
+  onClick,
+}) => {
+  const { settings } = useProfileSettings();
+  const bookingColor = settings?.bookingColor || '#9b87f5';
+
   return (
-    <div 
-      className={`p-4 rounded-lg border hover:shadow-md transition-all cursor-pointer ${
-        disabled ? 'opacity-70' : ''
-      }`}
-      onClick={disabled ? undefined : onClick}
+    <Button
+      variant="outline"
+      className="flex justify-between items-center w-full p-4 h-auto text-left"
+      onClick={onClick}
     >
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
-          {item.description && (
-            <p className="text-sm text-gray-500 mt-1">{item.description}</p>
-          )}
-          <div className="flex items-center mt-2">
-            <span className="text-sm text-gray-500">
-              {duration} min
-            </span>
-          </div>
-        </div>
-        <div className="text-right">
-          <span className="text-lg font-bold text-purple-600">
-            {formatCurrency(item.price)}
-          </span>
-          {isPackage && "discount" in item && item.discount > 0 && (
-            <div className="text-xs text-green-600 mt-1">
-              {item.discount}% de desconto
-            </div>
-          )}
-        </div>
+      <div className="space-y-1">
+        <div className="font-medium">{name}</div>
+        <div className="text-sm text-muted-foreground">{duration} min</div>
       </div>
-    </div>
+      <div className="font-medium text-lg" style={{ color: bookingColor }}>
+        R$ {price.toFixed(2).replace('.', ',')}
+      </div>
+    </Button>
   );
 };
 
