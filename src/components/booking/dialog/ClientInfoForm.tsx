@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { supabase } from "@/integrations/supabase/client";
+import bcrypt from "bcryptjs-react";
 
 interface ClientInfoFormProps {
   clientInfo: { name: string; phone: string; pin?: string };
   onClientInfoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPreviousStep: () => void;
   onNextStep: () => void;
+  businessSlug?: string;
 }
 
 const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
@@ -17,6 +20,7 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
   onClientInfoChange,
   onPreviousStep,
   onNextStep,
+  businessSlug
 }) => {
   const [pinMode, setPinMode] = useState<'verify' | 'create' | null>(null);
   const [pin, setPin] = useState('');
@@ -58,27 +62,40 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
       if (clientInfo.phone && clientInfo.phone.replace(/\D/g, '').length === 11) {
         try {
           setIsLoading(true);
-          // Fetch from Supabase if user exists by phone
-          const { supabase } = await import("@/integrations/supabase/client");
-          const { data, error } = await supabase
-            .from('clients')
-            .select('name, pin')
-            .eq('phone', clientInfo.phone)
-            .maybeSingle();
           
-          if (error) {
-            console.error('Error checking user:', error);
-            return;
+          // Set slug context if available
+          if (businessSlug) {
+            await supabase.rpc('set_slug_for_session', { slug: businessSlug });
           }
           
-          // If user exists
-          if (data) {
+          // Get the business user ID if slug is provided
+          let businessUserId = null;
+          if (businessSlug) {
+            const { data: business } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('slug', businessSlug)
+              .maybeSingle();
+            
+            businessUserId = business?.id;
+          }
+          
+          // First check if client exists in this business
+          const { data: localClient, error: localClientError } = await supabase
+            .from('clients')
+            .select('id, name, pin')
+            .eq('phone', clientInfo.phone)
+            .eq('user_id', businessUserId || (await supabase.auth.getUser()).data.user?.id)
+            .maybeSingle();
+          
+          if (localClient) {
+            // Client exists in this business
             // Create synthetic event to update name from database
-            if (data.name) {
+            if (localClient.name) {
               const syntheticNameEvent = {
                 target: {
                   name: 'name',
-                  value: data.name
+                  value: localClient.name
                 }
               } as React.ChangeEvent<HTMLInputElement>;
               
@@ -87,21 +104,61 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
             
             // Check if user has a PIN
             setExistingUserData({ 
-              name: data.name,
-              hasPin: !!data.pin 
+              name: localClient.name,
+              hasPin: !!localClient.pin 
             });
             
-            if (data.pin) {
+            if (localClient.pin) {
+              setPinMode('verify');
+            } else {
+              setPinMode('create');
+            }
+            
+            setIsLoading(false);
+            return;
+          }
+          
+          // If client doesn't exist in this business, check other businesses
+          const { data: anyClient } = await supabase
+            .from('clients')
+            .select('name, pin')
+            .eq('phone', clientInfo.phone)
+            .maybeSingle();
+            
+          if (anyClient) {
+            // Client exists in another business
+            // Create synthetic event to update name from database
+            if (anyClient.name) {
+              const syntheticNameEvent = {
+                target: {
+                  name: 'name',
+                  value: anyClient.name
+                }
+              } as React.ChangeEvent<HTMLInputElement>;
+              
+              onClientInfoChange(syntheticNameEvent);
+            }
+            
+            // Set existing user data
+            setExistingUserData({ 
+              name: anyClient.name,
+              hasPin: !!anyClient.pin 
+            });
+            
+            // If client has PIN in another business, use it
+            if (anyClient.pin) {
               setPinMode('verify');
             } else {
               setPinMode('create');
             }
           } else {
+            // Completely new client
             setExistingUserData(null);
             setPinMode('create');
           }
         } catch (err) {
           console.error('Error in checkUserExists:', err);
+          toast.error("Erro ao verificar cadastro");
         } finally {
           setIsLoading(false);
         }
@@ -109,19 +166,13 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
     };
     
     checkUserExists();
-  }, [clientInfo.phone, onClientInfoChange]);
+  }, [clientInfo.phone, onClientInfoChange, businessSlug]);
 
   const handlePinChange = (value: string) => {
     setPin(value);
   };
 
-  const handleConfirmPinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow digits and limit to 4 characters
-    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-    setConfirmPin(value);
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate PIN
     if (pinMode === 'create') {
       if (pin.length !== 4) {
@@ -133,74 +184,72 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
         toast.error("Os PINs não conferem");
         return;
       }
+
+      // Create synthetic event for PIN
+      const syntheticPinEvent = {
+        target: {
+          name: 'pin',
+          value: pin
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      
+      onClientInfoChange(syntheticPinEvent);
+      onNextStep();
+      
     } else if (pinMode === 'verify') {
       if (pin.length !== 4) {
         toast.error("O PIN deve ter 4 dígitos");
         return;
       }
       
-      // Verifica o PIN no banco de dados
-      const verifyPin = async () => {
-        try {
-          setIsLoading(true);
-          const { supabase } = await import("@/integrations/supabase/client");
-          const { data, error } = await supabase
-            .from('clients')
-            .select('pin')
-            .eq('phone', clientInfo.phone)
-            .maybeSingle();
-            
-          if (error || !data || !data.pin) {
-            toast.error("Erro ao verificar PIN");
-            return false;
-          }
+      // Verificar PIN
+      try {
+        setIsLoading(true);
+        
+        // Set slug context if available
+        if (businessSlug) {
+          await supabase.rpc('set_slug_for_session', { slug: businessSlug });
+        }
+        
+        // Buscar usuário em qualquer estabelecimento
+        const { data, error } = await supabase
+          .from('clients')
+          .select('pin')
+          .eq('phone', clientInfo.phone)
+          .maybeSingle();
           
-          const { default: bcrypt } = await import('bcryptjs-react');
-          const match = await bcrypt.compare(pin, data.pin);
-          
-          if (!match) {
-            toast.error("PIN incorreto");
-            return false;
-          }
-          
-          return true;
-        } catch (err) {
-          console.error('Error verifying PIN:', err);
+        if (error || !data || !data.pin) {
+          console.error("Error verifying PIN:", error);
           toast.error("Erro ao verificar PIN");
-          return false;
-        } finally {
           setIsLoading(false);
+          return;
         }
-      };
-      
-      verifyPin().then(isValid => {
-        if (isValid) {
-          // Prosseguir com o agendamento
-          const syntheticPinEvent = {
-            target: {
-              name: 'pin',
-              value: pin
-            }
-          } as React.ChangeEvent<HTMLInputElement>;
-          
-          onClientInfoChange(syntheticPinEvent);
-          onNextStep();
+        
+        const match = await bcrypt.compare(pin, data.pin);
+        
+        if (!match) {
+          toast.error("PIN incorreto");
+          setIsLoading(false);
+          return;
         }
-      });
-      
-      return;
-    }
-    
-    // Create synthetic event for PIN
-    const syntheticPinEvent = {
-      target: {
-        name: 'pin',
-        value: pin
+        
+        // PIN correto, prosseguir
+        const syntheticPinEvent = {
+          target: {
+            name: 'pin',
+            value: pin
+          }
+        } as React.ChangeEvent<HTMLInputElement>;
+        
+        onClientInfoChange(syntheticPinEvent);
+        onNextStep();
+      } catch (err) {
+        console.error('Error verifying PIN:', err);
+        toast.error("Erro ao verificar PIN");
+      } finally {
+        setIsLoading(false);
       }
-    } as React.ChangeEvent<HTMLInputElement>;
-    
-    onClientInfoChange(syntheticPinEvent);
-    onNextStep();
+    }
   };
 
   return (

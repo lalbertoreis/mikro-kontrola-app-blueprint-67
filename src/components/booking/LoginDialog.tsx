@@ -11,9 +11,10 @@ interface LoginDialogProps {
   open: boolean;
   onClose: () => void;
   onLogin: (userData: { name: string; phone: string }) => void;
+  businessSlug?: string;
 }
 
-const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => {
+const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin, businessSlug }) => {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
@@ -46,6 +47,13 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
       if (phone && phone.replace(/\D/g, '').length === 11) {
         try {
           setIsLoading(true);
+          
+          // Set slug context if available
+          if (businessSlug) {
+            await supabase.rpc('set_slug_for_session', { slug: businessSlug });
+          }
+          
+          // Verificar cliente em qualquer estabelecimento
           const { data, error } = await supabase
             .from('clients')
             .select('name, pin')
@@ -54,6 +62,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
           
           if (error) {
             console.error('Error checking user:', error);
+            setIsLoading(false);
             return;
           }
           
@@ -80,14 +89,19 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
           }
         } catch (err) {
           console.error('Error in checkUserExists:', err);
+          toast.error("Erro ao verificar cadastro");
         } finally {
           setIsLoading(false);
         }
+      } else {
+        // Reset data if phone is cleared or incomplete
+        setPinMode(null);
+        setExistingUserData(null);
       }
     };
     
     checkUserExists();
-  }, [phone]);
+  }, [phone, businessSlug]);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,12 +122,29 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
         return;
       }
       
+      // Set slug context if available
+      if (businessSlug) {
+        await supabase.rpc('set_slug_for_session', { slug: businessSlug });
+      }
+      
+      // Get business user ID if slug is provided
+      let businessUserId = null;
+      if (businessSlug) {
+        const { data: business } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('slug', businessSlug)
+          .maybeSingle();
+        
+        businessUserId = business?.id;
+      }
+
       // PIN validation
       if (pinMode === 'verify') {
         // Check PIN
         const { data, error } = await supabase
           .from('clients')
-          .select('pin, name')
+          .select('pin, name, id, user_id')
           .eq('phone', phone)
           .maybeSingle();
           
@@ -135,6 +166,28 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
           toast.error("PIN incorreto");
           setIsLoading(false);
           return;
+        }
+        
+        // Se o cliente existe em outro estabelecimento, mas não neste, copiar para este estabelecimento
+        if (businessUserId && data.user_id !== businessUserId) {
+          const { data: existingLocalClient } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('phone', phone)
+            .eq('user_id', businessUserId)
+            .maybeSingle();
+            
+          if (!existingLocalClient) {
+            // Clona o cliente para este estabelecimento
+            await supabase
+              .from('clients')
+              .insert({
+                name: data.name,
+                phone: phone,
+                pin: data.pin,  // Mantém o mesmo PIN
+                user_id: businessUserId
+              });
+          }
         }
         
         // Se chegou aqui, o PIN está correto
@@ -161,10 +214,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
         const saltRounds = 10;
         const hashedPin = await bcrypt.hash(pin, saltRounds);
         
-        // Check if user exists
+        // Check if user exists in any business
         const { data: existingClient } = await supabase
           .from('clients')
-          .select('id, name')
+          .select('id, name, user_id')
           .eq('phone', phone)
           .maybeSingle();
           
@@ -178,6 +231,28 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
             })
             .eq('id', existingClient.id);
             
+          // Se o cliente existe em outro estabelecimento, mas não neste, copiar para este estabelecimento
+          if (businessUserId && existingClient.user_id !== businessUserId) {
+            const { data: existingLocalClient } = await supabase
+              .from('clients')
+              .select('id')
+              .eq('phone', phone)
+              .eq('user_id', businessUserId)
+              .maybeSingle();
+              
+            if (!existingLocalClient) {
+              // Clona o cliente para este estabelecimento
+              await supabase
+                .from('clients')
+                .insert({
+                  name: name || existingClient.name || '',
+                  phone: phone,
+                  pin: hashedPin,
+                  user_id: businessUserId
+                });
+            }
+          }
+          
           // Call login function with user data
           onLogin({ 
             name: name || existingClient.name || "Usuário", 
@@ -192,13 +267,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
                 name, 
                 phone,
                 pin: hashedPin,
-                user_id: (await supabase.auth.getUser()).data.user?.id || undefined
+                user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
               }
             ])
             .select()
             .single();
             
           if (error) {
+            console.error('Insert error:', error);
             toast.error("Erro ao criar usuário");
             setIsLoading(false);
             return;

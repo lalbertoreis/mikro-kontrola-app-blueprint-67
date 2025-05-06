@@ -38,6 +38,7 @@ const PublicBooking: React.FC = () => {
     isLoggedIn,
     userProfile,
     appointments,
+    isLoadingAppointments,
     handleServiceClick,
     handlePackageClick,
     handleBookingConfirm,
@@ -76,6 +77,7 @@ const PublicBooking: React.FC = () => {
     <BookingLayout
       businessProfile={businessProfile}
       isLoggedIn={isLoggedIn}
+      userProfile={userProfile}
       onMyAppointmentsClick={() => setIsMyAppointmentsDialogOpen(true)}
       onLogoutClick={handleLogout}
     >
@@ -86,6 +88,7 @@ const PublicBooking: React.FC = () => {
             onClick={() => setIsLoginDialogOpen(true)}
             className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
             size="lg"
+            aria-label="Acessar meus agendamentos"
           >
             <CalendarCheck className="w-6 h-6" />
           </Button>
@@ -130,6 +133,7 @@ const PublicBooking: React.FC = () => {
         onCancelAppointment={handleCancelAppointment}
         bookingSettings={bookingSettings}
         businessSlug={slug}
+        isLoadingAppointments={isLoadingAppointments}
       />
       
       {/* Separate confirmation dialog */}

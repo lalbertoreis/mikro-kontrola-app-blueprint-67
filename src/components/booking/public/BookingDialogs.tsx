@@ -21,13 +21,14 @@ interface BookingDialogsProps {
   onCloseAppointmentsDialog: () => void;
   onBookingConfirm: (data: any) => void;
   onLogin: (userData: { name: string; phone: string }) => void;
-  onCancelAppointment: (id: string) => void;
+  onCancelAppointment: (id: string, businessSlug?: string) => void;
   bookingSettings?: {
     simultaneousLimit: number;
     futureLimit: number;
     cancelMinHours: number;
   };
   businessSlug?: string;
+  isLoadingAppointments?: boolean;
 }
 
 const BookingDialogs: React.FC<BookingDialogsProps> = ({
@@ -45,7 +46,8 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
   onLogin,
   onCancelAppointment,
   bookingSettings,
-  businessSlug
+  businessSlug,
+  isLoadingAppointments
 }) => {
   return (
     <>
@@ -66,6 +68,7 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
         open={isLoginDialogOpen}
         onClose={onCloseLoginDialog}
         onLogin={onLogin}
+        businessSlug={businessSlug}
       />
 
       <MyAppointmentsDialog
@@ -73,6 +76,7 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
         onClose={onCloseAppointmentsDialog}
         appointments={appointments}
         onCancelAppointment={onCancelAppointment}
+        isLoading={isLoadingAppointments}
       />
     </>
   );

@@ -1,110 +1,110 @@
-import { Service, ServicePackage } from "@/types/service";
+
+import { useState } from "react";
+import { format } from 'date-fns';
 import { toast } from "sonner";
-import { useBookingAuth } from "./useBookingAuth";
-import { processBooking, cancelAppointment } from "./utils";
+import { Service } from "@/types/service";
 import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
+import { processBooking } from "./utils/appointmentBooking";
+import { cancelAppointment } from "./utils/appointmentManagement";
+import { setSlugForSession } from "./utils/businessUtils";
+import { SetStateAction } from "react";
 
 /**
- * Hook for booking-related handlers
+ * Hook to handle booking flow actions
  */
 export function useBookingHandlers(
-  slug: string | undefined,
+  businessSlug: string | undefined,
   businessUserId: string | null,
-  setBookingDialogOpen: (isOpen: boolean) => void,
-  setBookingConfirmed: (isConfirmed: boolean) => void,
-  setConfirmationDate: (date: Date | null) => void,
-  setConfirmationTime: (time: string | null) => void
+  setIsBookingDialogOpen: (open: boolean) => void,
+  setBookingConfirmed: (confirmed: boolean) => void,
+  setConfirmationDate: (date: Date) => void,
+  setConfirmationTime: (time: string) => void,
+  setAppointments: (appointments: SetStateAction<BookingAppointment[]>) => void
 ) {
-  const { isLoggedIn, userProfile, appointments, setAppointments, handleLogin } = useBookingAuth();
-  
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Handle click on a service
   const handleServiceClick = (service: Service) => {
-    // Verificar explicitamente se hasEmployees é true
-    if (service.hasEmployees !== true) {
-      toast.info("Este serviço não tem profissionais disponíveis no momento.");
+    if (!service.hasEmployees) {
+      toast.error("Este serviço não tem profissionais disponíveis");
       return;
     }
-    
-    setBookingDialogOpen(true);
+    setIsBookingDialogOpen(true);
   };
 
-  const handlePackageClick = (pkg: ServicePackage) => {
-    // For demo purposes, just show a toast
-    toast.info("Funcionalidade de agendamento de pacotes em breve!");
+  // Handle click on a package
+  const handlePackageClick = (pkg: any) => {
+    toast.info("Agendamento de pacotes em breve!");
   };
 
-  const handleBookingConfirm = async (bookingData: any) => {
-    console.log("Booking data:", bookingData);
-    
-    // Store date and time for confirmation screen
-    setConfirmationDate(bookingData.date);
-    setConfirmationTime(bookingData.time);
-    
-    // The flow has changed - now we always receive client info directly in bookingData
-    if (bookingData.clientInfo) {
-      // Use the client info provided in the booking form
-      const userData = {
-        name: bookingData.clientInfo.name,
-        phone: bookingData.clientInfo.phone
-      };
-      
-      // Store user info and set logged in
-      handleLogin(userData);
-      
-      try {
-        // Process the booking in the database
-        const result = await processBooking({
-          ...bookingData,
-          businessSlug: slug,
-          businessUserId: businessUserId,
-          bookingSettings: bookingData.bookingSettings
-        });
-        
-        if (result) {
-          // Add to local appointments list
-          // Convert the formatted appointment to match BookingAppointment type
-          const newAppointment: BookingAppointment = {
-            id: result.newAppointment.id,
-            serviceName: result.newAppointment.service.name,
-            employeeName: result.newAppointment.employee.name,
-            date: result.newAppointment.date,
-            time: result.newAppointment.time,
-            status: result.newAppointment.status as any
-          };
-          
-          setAppointments((prev) => [...prev, newAppointment]);
-          
-          // Close booking dialog and show confirmation
-          setBookingDialogOpen(false);
-          setBookingConfirmed(true);
-        }
-      } catch (error) {
-        console.error("Error processing booking:", error);
-        toast.error("Erro ao realizar agendamento. Tente novamente.");
-      }
-    } else {
-      // This case shouldn't happen anymore with the new flow but keeping as fallback
-      toast.error("Informações de cliente não fornecidas");
-    }
-  };
-
-  const handleCancelAppointment = async (id: string) => {
+  // Handle booking confirmation
+  const handleBookingConfirm = async ({ service, employee, date, time, clientInfo }: {
+    service: any;
+    employee: any;
+    date: Date;
+    time: string;
+    clientInfo: { name: string; phone: string; pin?: string };
+  }) => {
+    setIsProcessing(true);
     try {
-      await cancelAppointment(id, slug);
-      setAppointments((prev) => prev.filter((app) => app.id !== id));
-      toast.success("Agendamento cancelado com sucesso!");
-    } catch (error) {
-      console.error('Error canceling appointment:', error);
-      toast.error("Erro ao cancelar agendamento");
+      // Set the slug for the current session - important for RLS policies
+      if (businessSlug) {
+        await setSlugForSession(businessSlug);
+      }
+      
+      const result = await processBooking({ 
+        service, 
+        employee, 
+        date, 
+        time, 
+        clientInfo,
+        businessSlug,
+        businessUserId
+      });
+
+      // Update the appointments list with the new appointment
+      if (result.success) {
+        setAppointments(prev => [...prev, result.newAppointment]);
+      }
+
+      // Close dialog and show confirmation
+      setIsBookingDialogOpen(false);
+      setConfirmationDate(date);
+      setConfirmationTime(time);
+      setBookingConfirmed(true);
+
+    } catch (error: any) {
+      console.error("Error in booking confirmation:", error);
+      toast.error(error.message || "Erro ao confirmar agendamento");
+    } finally {
+      setIsProcessing(false);
     }
   };
-  
+
+  // Handle appointment cancellation
+  const handleCancelAppointment = async (appointmentId: string, appointmentBusinessSlug?: string) => {
+    try {
+      // Use the appointment's business slug if provided, otherwise use the current business slug
+      const slugToUse = appointmentBusinessSlug || businessSlug;
+      
+      await cancelAppointment(appointmentId, slugToUse);
+      
+      toast.success("Agendamento cancelado com sucesso");
+      
+      // Update appointments list
+      setAppointments(prev => prev.filter(app => app.id !== appointmentId));
+      
+    } catch (error: any) {
+      console.error("Error cancelling appointment:", error);
+      toast.error(error.message || "Erro ao cancelar agendamento");
+    }
+  };
+
   return {
-    isLoggedIn,
-    userProfile,
-    appointments,
     handleServiceClick,
     handlePackageClick,
     handleBookingConfirm,
-    handleCancelAppointment
+    handleCancelAppointment,
+    isProcessing
   };
 }

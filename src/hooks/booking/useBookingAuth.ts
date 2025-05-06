@@ -1,11 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
-import { fetchUserAppointmentsByPhone } from "./utils";
+import { fetchUserAppointmentsByPhone } from "./utils/appointmentManagement";
+import { toast } from "sonner";
 
 export function useBookingAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState<{ name: string; phone: string } | null>(null);
   const [appointments, setAppointments] = useState<BookingAppointment[]>([]);
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   
   // Check if user is already logged in from localStorage on component mount
   useEffect(() => {
@@ -27,10 +30,14 @@ export function useBookingAuth() {
       if (!isLoggedIn || !userProfile?.phone) return;
       
       try {
+        setIsLoadingAppointments(true);
         const bookingAppointments = await fetchUserAppointmentsByPhone(userProfile.phone);
         setAppointments(bookingAppointments);
       } catch (error) {
         console.error('Error fetching appointments:', error);
+        toast.error('Erro ao carregar seus agendamentos');
+      } finally {
+        setIsLoadingAppointments(false);
       }
     };
     
@@ -56,6 +63,7 @@ export function useBookingAuth() {
     userProfile,
     appointments,
     setAppointments,
+    isLoadingAppointments,
     handleLogin,
     handleLogout
   };

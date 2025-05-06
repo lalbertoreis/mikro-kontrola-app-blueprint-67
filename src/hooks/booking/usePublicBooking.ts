@@ -60,6 +60,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     userProfile, 
     appointments, 
     setAppointments, 
+    isLoadingAppointments,
     handleLogin, 
     handleLogout 
   } = useBookingAuth();
@@ -76,7 +77,8 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     setIsBookingDialogOpen, 
     setBookingConfirmed,
     setConfirmationDate,
-    setConfirmationTime
+    setConfirmationTime,
+    setAppointments
   );
 
   // Customize service click handler to also set the selected service
@@ -113,6 +115,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     isLoggedIn,
     userProfile,
     appointments,
+    isLoadingAppointments,
     handleServiceClick,
     handlePackageClick,
     handleBookingConfirm,
