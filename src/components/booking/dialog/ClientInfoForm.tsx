@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 interface ClientInfoFormProps {
   clientInfo: { name: string; phone: string; pin?: string };
@@ -21,6 +22,7 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [existingUserData, setExistingUserData] = useState<{ name?: string, hasPin: boolean } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Add phone input formatting
   const formatPhoneNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +57,7 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
     const checkUserExists = async () => {
       if (clientInfo.phone && clientInfo.phone.replace(/\D/g, '').length === 11) {
         try {
+          setIsLoading(true);
           // Fetch from Supabase if user exists by phone
           const { supabase } = await import("@/integrations/supabase/client");
           const { data, error } = await supabase
@@ -99,6 +102,8 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
           }
         } catch (err) {
           console.error('Error in checkUserExists:', err);
+        } finally {
+          setIsLoading(false);
         }
       }
     };
@@ -106,9 +111,7 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
     checkUserExists();
   }, [clientInfo.phone, onClientInfoChange]);
 
-  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow digits and limit to 4 characters
-    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+  const handlePinChange = (value: string) => {
     setPin(value);
   };
 
@@ -130,6 +133,62 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
         toast.error("Os PINs não conferem");
         return;
       }
+    } else if (pinMode === 'verify') {
+      if (pin.length !== 4) {
+        toast.error("O PIN deve ter 4 dígitos");
+        return;
+      }
+      
+      // Verifica o PIN no banco de dados
+      const verifyPin = async () => {
+        try {
+          setIsLoading(true);
+          const { supabase } = await import("@/integrations/supabase/client");
+          const { data, error } = await supabase
+            .from('clients')
+            .select('pin')
+            .eq('phone', clientInfo.phone)
+            .maybeSingle();
+            
+          if (error || !data || !data.pin) {
+            toast.error("Erro ao verificar PIN");
+            return false;
+          }
+          
+          const { default: bcrypt } = await import('bcryptjs-react');
+          const match = await bcrypt.compare(pin, data.pin);
+          
+          if (!match) {
+            toast.error("PIN incorreto");
+            return false;
+          }
+          
+          return true;
+        } catch (err) {
+          console.error('Error verifying PIN:', err);
+          toast.error("Erro ao verificar PIN");
+          return false;
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      verifyPin().then(isValid => {
+        if (isValid) {
+          // Prosseguir com o agendamento
+          const syntheticPinEvent = {
+            target: {
+              name: 'pin',
+              value: pin
+            }
+          } as React.ChangeEvent<HTMLInputElement>;
+          
+          onClientInfoChange(syntheticPinEvent);
+          onNextStep();
+        }
+      });
+      
+      return;
     }
     
     // Create synthetic event for PIN
@@ -171,6 +230,7 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
             className="w-full p-2 border rounded-md"
             placeholder="(00) 00000-0000"
             required
+            disabled={isLoading}
           />
           <p className="text-xs text-muted-foreground">
             Este número será usado para enviar confirmações e lembretes do agendamento.
@@ -190,6 +250,7 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
               className="w-full p-2 border rounded-md"
               placeholder="Seu nome completo"
               required
+              disabled={isLoading || (existingUserData?.name ? true : false)}
             />
           </div>
         )}
@@ -199,19 +260,22 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
             <label htmlFor="pin" className="text-sm font-medium">
               Digite seu PIN de acesso (4 dígitos)
             </label>
-            <input
-              id="pin"
-              type="password"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              value={pin}
-              onChange={handlePinChange}
-              className="w-full p-2 border rounded-md text-center text-lg tracking-widest"
-              placeholder="••••"
-              required
-            />
-            <p className="text-xs text-muted-foreground">
+            <div className="flex justify-center my-2">
+              <InputOTP 
+                maxLength={4} 
+                value={pin} 
+                onChange={handlePinChange}
+                disabled={isLoading}
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
               Digite o PIN de 4 dígitos que você criou anteriormente.
             </p>
           </div>
@@ -223,37 +287,43 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
               <label htmlFor="pin" className="text-sm font-medium">
                 Crie um PIN de acesso (4 dígitos)
               </label>
-              <input
-                id="pin"
-                type="password"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                value={pin}
-                onChange={handlePinChange}
-                className="w-full p-2 border rounded-md text-center text-lg tracking-widest"
-                placeholder="••••"
-                required
-              />
+              <div className="flex justify-center my-2">
+                <InputOTP 
+                  maxLength={4} 
+                  value={pin} 
+                  onChange={handlePinChange}
+                  disabled={isLoading}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
             </div>
             
             <div className="space-y-2">
               <label htmlFor="confirmPin" className="text-sm font-medium">
                 Confirme o PIN
               </label>
-              <input
-                id="confirmPin"
-                type="password"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                value={confirmPin}
-                onChange={handleConfirmPinChange}
-                className="w-full p-2 border rounded-md text-center text-lg tracking-widest"
-                placeholder="••••"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
+              <div className="flex justify-center my-2">
+                <InputOTP 
+                  maxLength={4} 
+                  value={confirmPin} 
+                  onChange={setConfirmPin}
+                  disabled={isLoading}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
                 Esse PIN será usado para acessar e gerenciar seus agendamentos futuramente.
               </p>
             </div>
@@ -264,13 +334,14 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
           className="w-full mt-4 bg-purple-500 hover:bg-purple-600"
           onClick={handleSubmit}
           disabled={
+            isLoading ||
             !clientInfo.phone || 
             !clientInfo.name ||
             (pinMode === 'verify' && pin.length !== 4) ||
             (pinMode === 'create' && (pin.length !== 4 || pin !== confirmPin))
           }
         >
-          Confirmar Agendamento
+          {isLoading ? "Processando..." : "Confirmar Agendamento"}
         </Button>
       </div>
     </div>

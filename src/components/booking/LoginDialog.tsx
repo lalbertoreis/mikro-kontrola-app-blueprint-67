@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import bcrypt from "bcryptjs-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 interface LoginDialogProps {
   open: boolean;
@@ -97,11 +98,13 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
       // Validate inputs
       if (!phone || phone.replace(/\D/g, '').length !== 11) {
         toast.error("Por favor, insira um número de telefone válido");
+        setIsLoading(false);
         return;
       }
       
       if (!existingUserData && !name) {
         toast.error("Por favor, insira seu nome");
+        setIsLoading(false);
         return;
       }
       
@@ -110,12 +113,19 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
         // Check PIN
         const { data, error } = await supabase
           .from('clients')
-          .select('pin')
+          .select('pin, name')
           .eq('phone', phone)
-          .single();
+          .maybeSingle();
           
         if (error) {
           toast.error("Erro ao verificar PIN");
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!data || !data.pin) {
+          toast.error("Conta não encontrada");
+          setIsLoading(false);
           return;
         }
         
@@ -123,17 +133,27 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
         const pinMatch = await bcrypt.compare(pin, data.pin);
         if (!pinMatch) {
           toast.error("PIN incorreto");
+          setIsLoading(false);
           return;
         }
+        
+        // Se chegou aqui, o PIN está correto
+        // Call login function with user data
+        onLogin({ 
+          name: data.name || "Usuário", 
+          phone 
+        });
       } else if (pinMode === 'create') {
         // Creating new PIN
         if (pin.length !== 4) {
           toast.error("O PIN deve ter 4 dígitos");
+          setIsLoading(false);
           return;
         }
         
         if (pin !== confirmPin) {
           toast.error("Os PINs não conferem");
+          setIsLoading(false);
           return;
         }
         
@@ -157,9 +177,15 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
               name: name || existingClient.name || ''
             })
             .eq('id', existingClient.id);
+            
+          // Call login function with user data
+          onLogin({ 
+            name: name || existingClient.name || "Usuário", 
+            phone 
+          });
         } else {
           // Create new client with PIN
-          await supabase
+          const { data: newClient, error } = await supabase
             .from('clients')
             .insert([
               { 
@@ -168,15 +194,23 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
                 pin: hashedPin,
                 user_id: (await supabase.auth.getUser()).data.user?.id || undefined
               }
-            ]);
+            ])
+            .select()
+            .single();
+            
+          if (error) {
+            toast.error("Erro ao criar usuário");
+            setIsLoading(false);
+            return;
+          }
+          
+          // Call login function with user data
+          onLogin({ 
+            name: newClient.name, 
+            phone 
+          });
         }
       }
-      
-      // Call login function with user data
-      onLogin({ 
-        name: name || (existingUserData?.name || "Usuário"), 
-        phone 
-      });
       
       // Close the dialog
       onClose();
@@ -220,6 +254,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
               onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
               className="w-full p-2 border rounded-md"
               placeholder="(00) 00000-0000"
+              disabled={isLoading}
               required
             />
           </div>
@@ -236,6 +271,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
                 onChange={(e) => setName(e.target.value)}
                 className="w-full p-2 border rounded-md"
                 placeholder="Seu nome completo"
+                disabled={isLoading || (existingUserData?.name ? true : false)}
                 required
               />
             </div>
@@ -246,18 +282,24 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
               <label htmlFor="verify-pin" className="block text-sm font-medium text-gray-700 mb-1">
                 Digite seu PIN de acesso
               </label>
-              <input
-                id="verify-pin"
-                type="password"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                className="w-full p-2 border rounded-md text-center text-lg tracking-widest"
-                placeholder="••••"
-                required
-              />
+              <div className="flex justify-center my-2">
+                <InputOTP 
+                  maxLength={4} 
+                  value={pin} 
+                  onChange={setPin}
+                  disabled={isLoading}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <p className="text-xs text-gray-500 mt-1 text-center">
+                Digite o PIN de 4 dígitos que você criou anteriormente.
+              </p>
             </div>
           )}
           
@@ -267,37 +309,43 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
                 <label htmlFor="create-pin" className="block text-sm font-medium text-gray-700 mb-1">
                   Crie um PIN de acesso (4 dígitos)
                 </label>
-                <input
-                  id="create-pin"
-                  type="password"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={4}
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  className="w-full p-2 border rounded-md text-center text-lg tracking-widest"
-                  placeholder="••••"
-                  required
-                />
+                <div className="flex justify-center my-2">
+                  <InputOTP 
+                    maxLength={4} 
+                    value={pin} 
+                    onChange={setPin}
+                    disabled={isLoading}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
               </div>
               
               <div>
                 <label htmlFor="confirm-pin" className="block text-sm font-medium text-gray-700 mb-1">
                   Confirme o PIN
                 </label>
-                <input
-                  id="confirm-pin"
-                  type="password"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={4}
-                  value={confirmPin}
-                  onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  className="w-full p-2 border rounded-md text-center text-lg tracking-widest"
-                  placeholder="••••"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
+                <div className="flex justify-center my-2">
+                  <InputOTP 
+                    maxLength={4} 
+                    value={confirmPin} 
+                    onChange={setConfirmPin}
+                    disabled={isLoading}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                <p className="text-xs text-gray-500 mt-1 text-center">
                   Esse PIN será usado para acessar e gerenciar seus agendamentos futuramente.
                 </p>
               </div>

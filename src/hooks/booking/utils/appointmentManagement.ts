@@ -32,17 +32,38 @@ export const fetchUserAppointmentsByPhone = async (phone: string, businessSlug?:
     // First get the client id by phone
     let query = supabase
       .from('clients')
-      .select('id')
-      .eq('phone', phone);
-      
-    // Adicionar filtro por negócio se tivermos o ID
+      .select('id');
+    
+    // Se temos o ID do negócio, vamos filtrar por ele
     if (businessId) {
       query = query.eq('user_id', businessId);
     }
+      
+    // Adicionar filtro por telefone
+    query = query.eq('phone', phone);
     
     const { data: client, error: clientError } = await query.maybeSingle();
     
-    if (clientError || !client) return [];
+    if (clientError || !client) {
+      console.log("Nenhum cliente encontrado com este telefone neste estabelecimento");
+      
+      // Se não encontramos o cliente neste estabelecimento, verificamos em outros
+      if (businessId) {
+        const { data: anyClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('phone', phone)
+          .maybeSingle();
+          
+        if (anyClient) {
+          console.log("Cliente encontrado em outro estabelecimento, buscando agendamentos...");
+          // Cliente existe em outro estabelecimento, mas não tem agendamentos aqui
+          return [];
+        }
+      }
+      
+      return [];
+    }
     
     // Then fetch appointments from the view
     let appointmentsQuery = supabase

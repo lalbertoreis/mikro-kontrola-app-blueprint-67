@@ -9,6 +9,8 @@ import PackagesList from "@/components/booking/public/PackagesList";
 import BookingDialogs from "@/components/booking/public/BookingDialogs";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ConfirmationScreen from "@/components/booking/dialog/ConfirmationScreen";
+import { Button } from "@/components/ui/button";
+import { CalendarCheck } from "lucide-react";
 
 const PublicBooking: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -77,6 +79,19 @@ const PublicBooking: React.FC = () => {
       onMyAppointmentsClick={() => setIsMyAppointmentsDialogOpen(true)}
       onLogoutClick={handleLogout}
     >
+      {/* Botão flutuante para acessar os agendamentos */}
+      {!isLoggedIn && (
+        <div className="fixed bottom-6 right-6 z-10">
+          <Button
+            onClick={() => setIsLoginDialogOpen(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+            size="lg"
+          >
+            <CalendarCheck className="w-6 h-6" />
+          </Button>
+        </div>
+      )}
+      
       <ServicesList 
         services={activeServices} 
         onServiceClick={handleServiceClick}

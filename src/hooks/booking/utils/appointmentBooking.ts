@@ -155,51 +155,98 @@ export async function processBooking({
       const { setSlugContext } = await import("@/services/appointment/availableTimeSlots");
       await setSlugContext(businessSlug);
     }
-    
-    // Look for existing client with this phone number
-    const { data: client, error: clientError } = await supabase
+
+    // Look for existing client with this phone number, scoped to this business
+    const { data: localClient, error: localClientError } = await supabase
       .from('clients')
       .select('*')
       .eq('phone', clientInfo.phone)
+      .eq('user_id', businessUserId || (await supabase.auth.getUser()).data.user?.id)
       .maybeSingle();
     
-    // If client not found, create new client
-    if (clientError || !client) {
-      // Create new client
-      let insertPayload: any = {
-        name: clientInfo.name,
-        phone: clientInfo.phone,
-        user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
-      };
-      
-      // Add hashed pin if provided
-      if (clientInfo.pin) {
-        const { default: bcrypt } = await import('bcryptjs-react');
-        const saltRounds = 10;
-        insertPayload.pin = await bcrypt.hash(clientInfo.pin, saltRounds);
-      }
-      
-      const { data: newClientData, error: insertError } = await supabase
+    // If no local client found, look for this client in ANY business
+    if (!localClient) {
+      const { data: anyClient, error: anyClientError } = await supabase
         .from('clients')
-        .insert(insertPayload)
-        .select()
-        .single();
+        .select('*')
+        .eq('phone', clientInfo.phone)
+        .maybeSingle();
       
-      if (insertError) {
-        console.error('Error creating new client:', insertError);
-        throw new Error('Erro ao criar novo cliente');
+      // If client exists in another business, clone it for this business
+      if (anyClient) {
+        console.log('Client found in another business, cloning for this business');
+        
+        let insertPayload: any = {
+          name: anyClient.name,
+          phone: anyClient.phone,
+          email: anyClient.email,
+          cep: anyClient.cep,
+          address: anyClient.address,
+          notes: anyClient.notes,
+          user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
+        };
+        
+        // Add hashed pin if provided in client info or from original client
+        if (clientInfo.pin) {
+          const { default: bcrypt } = await import('bcryptjs-react');
+          const saltRounds = 10;
+          insertPayload.pin = await bcrypt.hash(clientInfo.pin, saltRounds);
+        } else if (anyClient.pin) {
+          // Transfer the existing pin to the new client record
+          insertPayload.pin = anyClient.pin;
+        }
+        
+        const { data: newClientData, error: insertError } = await supabase
+          .from('clients')
+          .insert(insertPayload)
+          .select()
+          .single();
+        
+        if (insertError) {
+          console.error('Error cloning client:', insertError);
+          throw new Error('Erro ao criar novo cliente');
+        }
+        
+        clientId = newClientData.id;
+        existingClient = newClientData;
+        newClient = true;
+      } else {
+        // Create completely new client
+        let insertPayload: any = {
+          name: clientInfo.name,
+          phone: clientInfo.phone,
+          user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
+        };
+        
+        // Add hashed pin if provided
+        if (clientInfo.pin) {
+          const { default: bcrypt } = await import('bcryptjs-react');
+          const saltRounds = 10;
+          insertPayload.pin = await bcrypt.hash(clientInfo.pin, saltRounds);
+        }
+        
+        const { data: newClientData, error: insertError } = await supabase
+          .from('clients')
+          .insert(insertPayload)
+          .select()
+          .single();
+        
+        if (insertError) {
+          console.error('Error creating new client:', insertError);
+          throw new Error('Erro ao criar novo cliente');
+        }
+        
+        clientId = newClientData.id;
+        existingClient = newClientData;
+        newClient = true;
       }
-      
-      clientId = newClientData.id;
-      existingClient = newClientData;
-      newClient = true;
     } else {
-      // Use existing client
-      clientId = client.id;
-      existingClient = client;
+      // Use existing client (local to this business)
+      clientId = localClient.id;
+      existingClient = localClient;
       
       // Update client's pin if provided and doesn't exist already
-      if (clientInfo.pin && !client.pin) {
+      if (clientInfo.pin && !localClient.pin) {
         const { default: bcrypt } = await import('bcryptjs-react');
         const saltRounds = 10;
         const hashedPin = await bcrypt.hash(clientInfo.pin, saltRounds);
