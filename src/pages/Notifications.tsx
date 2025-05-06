@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNotifications } from "@/hooks/useNotifications";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Notifications = () => {
   const { notifications, markAsRead, markAllAsRead, loading } = useNotifications();
@@ -29,7 +30,7 @@ const Notifications = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 w-full">
+      <div className="space-y-5 w-full">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">Notificações</h1>
@@ -71,9 +72,19 @@ const Notifications = () => {
         
         <div className="space-y-4">
           {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-kontrola-600 border-t-transparent rounded-full mx-auto"></div>
-              <p className="mt-4 text-muted-foreground">Carregando notificações...</p>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-4 border rounded-lg">
+                  <div className="flex items-start gap-4">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-5 w-[200px]" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
@@ -82,7 +93,7 @@ const Notifications = () => {
                 : "Não há notificações para exibir."}
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {filteredNotifications.map((notification) => (
                 <div 
                   key={notification.id} 

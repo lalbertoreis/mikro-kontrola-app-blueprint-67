@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   Home, 
@@ -15,12 +15,15 @@ import {
   LogOut,
   LayoutDashboard,
   Calendar,
-  CreditCard
+  CreditCard,
+  Menu,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import NotificationIndicator from "@/components/notifications/NotificationIndicator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -40,6 +43,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { theme, setTheme } = useTheme();
+  const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const menuCategories: MenuCategory[] = [
     {
@@ -86,17 +91,48 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
+  
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Close mobile menu on window resize if exceeding mobile breakpoint
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mobileMenuOpen]);
 
   return (
     <div className="flex h-full min-h-screen max-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Menu lateral fixo */}
-      <aside className="w-64 min-w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+      {/* Menu lateral fixo no desktop, oculto no mobile */}
+      <aside 
+        className={`fixed md:relative z-30 w-64 min-w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col max-h-screen h-full transition-transform duration-300 ${
+          isMobile && !mobileMenuOpen ? '-translate-x-full' : 'translate-x-0'
+        }`}
+      >
         {/* Logo e título */}
         <div className="h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700">
           <Link to="/" className="flex items-center space-x-2">
             <div className="bg-kontrola-600 text-white font-bold text-xl p-2 rounded">K</div>
             <span className="text-lg font-semibold text-kontrola-800 dark:text-white">KontrolaApp</span>
           </Link>
+          {isMobile && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="ml-auto" 
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
         </div>
 
         {/* Menu de navegação */}
@@ -155,21 +191,46 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       </aside>
 
       {/* Área principal de conteúdo */}
-      <div className="flex flex-col flex-1 max-h-screen overflow-hidden">
+      <div className="flex flex-col flex-1 max-h-screen overflow-hidden w-full">
         {/* Header */}
-        <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-end px-6 sticky top-0 z-10">
-          <div className="flex items-center">
+        <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 sticky top-0 z-20">
+          {isMobile && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="mr-2"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          
+          <div className="md:hidden ml-2">
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="bg-kontrola-600 text-white font-bold text-xl p-1.5 rounded">K</div>
+            </Link>
+          </div>
+          
+          <div className="flex items-center ml-auto">
             <NotificationIndicator />
           </div>
         </header>
 
         {/* Conteúdo principal */}
-        <main className="flex-1 overflow-auto p-6 bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-auto p-4 md:p-6 bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-7xl mx-auto w-full">
             {children}
           </div>
         </main>
       </div>
+      
+      {/* Overlay para fechar menu no mobile */}
+      {isMobile && mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-20"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
     </div>
   );
 };

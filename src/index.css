@@ -91,6 +91,11 @@
   h3 {
     @apply text-base md:text-lg font-medium;
   }
+  
+  /* Consertar padding em dispositivos móveis */
+  .container {
+    @apply px-4 md:px-6;
+  }
 }
 
 @layer components {
@@ -110,9 +115,30 @@
   .responsive-flex {
     @apply flex flex-col sm:flex-row gap-4;
   }
+  
+  .responsive-gap {
+    @apply gap-2 sm:gap-3 md:gap-4;
+  }
+  
+  .responsive-padding {
+    @apply p-3 sm:p-4 md:p-6;
+  }
+  
+  .responsive-margin {
+    @apply m-2 sm:m-3 md:m-4;
+  }
 
   .page-container {
     @apply w-full max-w-full mx-auto;
+  }
+  
+  /* Ajustes para tabelas responsivas */
+  .table-responsive {
+    @apply overflow-x-auto -mx-4 sm:-mx-0;
+  }
+  
+  .table-responsive table {
+    @apply min-w-full;
   }
 }
 
@@ -138,6 +164,21 @@ table {
 
 /* Formatação de espaços */
 .main-content {
-  @apply px-4 py-6 sm:px-6 lg:px-8;
+  @apply px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8;
 }
 
+/* Ajuste para telas pequenas */
+@media (max-width: 640px) {
+  .sm-hidden {
+    display: none;
+  }
+  
+  .sm-full {
+    width: 100%;
+  }
+  
+  .sm-stack {
+    display: flex;
+    flex-direction: column;
+  }
+}

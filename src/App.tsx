@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
@@ -5,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import Navbar from "@/components/layout/Navbar";
+import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 
 // Páginas
 import Index from "@/pages/Index";
@@ -31,6 +33,7 @@ import PaymentMethods from "@/pages/PaymentMethods";
 import FixedCosts from "@/pages/FixedCosts";
 import PublicBooking from "@/pages/PublicBooking";
 import { Business404 } from "@/pages/Business404";
+import Notifications from "@/pages/Notifications";
 
 // Criando o cliente para o React Query
 const queryClient = new QueryClient({
@@ -65,7 +68,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <OnboardingModal />
+    </>
+  );
 };
 
 const App = () => {
@@ -110,6 +118,7 @@ const App = () => {
               <Route path="/dashboard/holidays" element={<ProtectedRoute><Holidays /></ProtectedRoute>} />
               <Route path="/dashboard/holidays/new" element={<ProtectedRoute><HolidayForm /></ProtectedRoute>} />
               <Route path="/dashboard/holidays/:id" element={<ProtectedRoute><HolidayForm /></ProtectedRoute>} />
+              <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               
               {/* Rota 404 */}
               <Route path="*" element={<NotFound />} />
