@@ -13,6 +13,7 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
     const fetchBusinessBySlug = async () => {
       try {
         setIsLoadingBusiness(true);
+        // Agora essa consulta deve funcionar para usuários não autenticados graças às políticas RLS
         const { data, error } = await supabase
           .from('profiles')
           .select('*')

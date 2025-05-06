@@ -35,13 +35,14 @@ export const processBooking = async (bookingData: {
     if (existingClient) {
       clientId = existingClient.id;
     } else {
-      // Create new client
+      // Create new client - agora funciona para usuários anônimos
       const { data: newClient, error: createClientError } = await supabase
         .from('clients')
         .insert({
           name: clientInfo.name,
           phone: clientInfo.phone,
-          user_id: (await supabase.auth.getUser()).data.user?.id || null
+          // Os usuários anônimos não têm user_id, então definimos como nulo
+          user_id: null
         })
         .select('id')
         .single();
@@ -63,7 +64,7 @@ export const processBooking = async (bookingData: {
     const endDate = new Date(startDate);
     endDate.setMinutes(endDate.getMinutes() + service.duration);
     
-    // Create appointment
+    // Create appointment - agora funciona para usuários anônimos
     const { data: appointment, error: appointmentError } = await supabase
       .from('appointments')
       .insert({
@@ -73,7 +74,8 @@ export const processBooking = async (bookingData: {
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         status: 'scheduled',
-        user_id: (await supabase.auth.getUser()).data.user?.id || null
+        // Os usuários anônimos não têm user_id, então definimos como nulo
+        user_id: null
       })
       .select()
       .single();
