@@ -24,6 +24,7 @@ const PublicBooking: React.FC = () => {
     isPackagesLoading,
     employees,
     isEmployeesLoading,
+    isViewLoading,
     selectedService,
     setSelectedService,
     isBookingDialogOpen,
@@ -65,7 +66,8 @@ const PublicBooking: React.FC = () => {
     return <Business404 />;
   }
 
-  const isLoading = isServicesLoading || isPackagesLoading || isEmployeesLoading;
+  // Considerar todas as fontes de loading para um estado mais preciso
+  const isLoading = isServicesLoading || isPackagesLoading || isEmployeesLoading || isViewLoading;
 
   return (
     <BookingLayout

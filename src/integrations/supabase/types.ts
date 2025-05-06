@@ -65,6 +65,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_shifts_view"
+            referencedColumns: ["employee_id"]
+          },
+          {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -148,6 +155,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_services_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_shifts_view"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "employee_services_service_id_fkey"
@@ -495,6 +509,13 @@ export type Database = {
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "shifts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_shifts_view"
+            referencedColumns: ["employee_id"]
+          },
         ]
       }
       transactions: {
@@ -585,6 +606,55 @@ export type Database = {
       }
     }
     Views: {
+      appointments_view: {
+        Row: {
+          appointment_id: string | null
+          business_slug: string | null
+          client_id: string | null
+          employee_id: string | null
+          end_time: string | null
+          service_id: string | null
+          start_time: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_shifts_view"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "business_services_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_services_view: {
         Row: {
           business_slug: string | null
@@ -607,7 +677,28 @@ export type Database = {
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "employee_services_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_shifts_view"
+            referencedColumns: ["employee_id"]
+          },
         ]
+      }
+      employees_shifts_view: {
+        Row: {
+          business_slug: string | null
+          business_user_id: string | null
+          day_of_week: number | null
+          employee_id: string | null
+          employee_name: string | null
+          employee_role: string | null
+          end_time: string | null
+          shift_id: string | null
+          start_time: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {

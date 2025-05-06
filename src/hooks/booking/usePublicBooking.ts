@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { Service } from "@/types/service"; // Added the missing Service import
@@ -27,6 +28,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     services: activeServices,
     isServicesLoading,
     isEmployeesLoading,
+    isViewLoading,
     employees
   } = useServicesWithEmployees(slug);
   
@@ -85,7 +87,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
   // Log active services for debugging
   useEffect(() => {
     console.log(`usePublicBooking hook: ${activeServices.length} active services available`);
-    activeServices.forEach(service => console.log(`- ${service.name}`));
+    activeServices.forEach(service => console.log(`- ${service.name} (hasEmployees: ${service.hasEmployees})`));
   }, [activeServices]);
 
   return {
@@ -98,6 +100,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     isPackagesLoading,
     employees,
     isEmployeesLoading,
+    isViewLoading,
     selectedService,
     setSelectedService,
     isBookingDialogOpen,
