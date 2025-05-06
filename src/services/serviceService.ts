@@ -17,7 +17,14 @@ export async function fetchServices(businessUserId?: string | null): Promise<Ser
     
     const { data, error } = await query;
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching services:", error);
+      throw error;
+    }
+    
+    // Log the data to see what we're getting back
+    console.log("Services data returned:", data);
+    console.log("Number of services found:", data?.length || 0);
     
     return data.map(item => ({
       id: item.id,

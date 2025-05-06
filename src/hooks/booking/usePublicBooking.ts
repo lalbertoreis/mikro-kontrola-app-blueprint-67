@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "sonner";
@@ -19,10 +18,16 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     businessUserId 
   } = useBusinessProfile(slug, navigate);
   
+  console.log("usePublicBooking - businessUserId:", businessUserId);
+  
   // Fetch data using custom hooks, passing businessUserId to filter data
   const { services, isLoading: isServicesLoading } = useServices(businessUserId);
   const { packages, isLoading: isPackagesLoading } = useServicePackages();
   const { employees, isLoading: isEmployeesLoading } = useEmployees();
+  
+  console.log("usePublicBooking - services count:", services.length);
+  console.log("usePublicBooking - services:", services);
+  console.log("usePublicBooking - employees count:", employees.length);
   
   const { 
     isLoggedIn, 
@@ -46,7 +51,10 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
   const serviceWithEmployeesMap = useMemo(() => {
     const map = new Map<string, string[]>();
     
+    console.log("Building serviceWithEmployeesMap with", employees.length, "employees");
+    
     employees.forEach(employee => {
+      console.log("Employee:", employee.name, "services:", employee.services);
       (employee.services || []).forEach(serviceId => {
         if (!map.has(serviceId)) {
           map.set(serviceId, []);
@@ -55,17 +63,27 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
       });
     });
     
+    console.log("serviceWithEmployeesMap size:", map.size);
     return map;
   }, [employees]);
 
   // Filter active services that have associated employees
   const activeServices = useMemo(() => {
     console.log("Filtering active services from", services.length, "services");
-    return services.filter((service) => 
-      service.isActive && 
-      serviceWithEmployeesMap.has(service.id) && 
-      serviceWithEmployeesMap.get(service.id)?.length > 0
-    );
+    console.log("Raw services:", services);
+    
+    const filtered = services.filter((service) => {
+      const isActive = service.isActive;
+      const hasEmployeeMap = serviceWithEmployeesMap.has(service.id);
+      const hasEmployees = hasEmployeeMap && (serviceWithEmployeesMap.get(service.id)?.length || 0) > 0;
+      
+      console.log(`Service ${service.name} (${service.id}): isActive=${isActive}, hasEmployeeMap=${hasEmployeeMap}, hasEmployees=${hasEmployees}`);
+      
+      return isActive && hasEmployeeMap && hasEmployees;
+    });
+    
+    console.log("Filtered active services:", filtered.length);
+    return filtered;
   }, [services, serviceWithEmployeesMap]);
 
   // Filter active packages
