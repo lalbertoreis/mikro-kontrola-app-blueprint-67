@@ -95,5 +95,34 @@ export async function getEmployeeAvailableDays(employeeId: string, slug?: string
   }
 }
 
+// Função para verificar se existe algum agendamento ou bloqueio sobrepostos
+export async function checkOverlappingAppointments(
+  employeeId: string,
+  startTime: string,
+  endTime: string
+): Promise<boolean> {
+  try {
+    // Verificar agendamentos existentes que se sobrepõem ao período solicitado
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('id')
+      .eq('employee_id', employeeId)
+      .neq('status', 'canceled')
+      .or(`end_time.gt.${startTime},start_time.lt.${endTime}`)
+      .limit(1);
+    
+    if (error) {
+      console.error('Erro ao verificar agendamentos sobrepostos:', error);
+      throw error;
+    }
+    
+    // Se encontrou algum agendamento, significa que há sobreposição
+    return data && data.length > 0;
+  } catch (error) {
+    console.error('Erro ao verificar sobreposição de horários:', error);
+    throw error;
+  }
+}
+
 // Exportar outras funções relacionadas
 export * from "./index";
