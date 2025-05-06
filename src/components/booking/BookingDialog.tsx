@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format, addDays, addMonths } from "date-fns";
@@ -9,15 +10,11 @@ import { Service } from "@/types/service";
 import { Employee } from "@/types/employee";
 import { BusinessSettings } from "@/types/settings";
 
-// Import all the components we extracted
-import ServiceInfo from "./dialog/ServiceInfo";
-import EmployeeSelector from "./dialog/EmployeeSelector";
-import BookingCalendar from "./dialog/BookingCalendar";
-import PeriodSelector from "./dialog/PeriodSelector";
-import TimeSlotSelector from "./dialog/TimeSlotSelector";
-import BookingSummary from "./dialog/BookingSummary";
-import ClientInfoForm from "./dialog/ClientInfoForm";
+// Import components
 import ConfirmationScreen from "./dialog/ConfirmationScreen";
+import ClientInfoForm from "./dialog/ClientInfoForm";
+import BookingDateTimeStep from "./dialog/BookingDateTimeStep";
+import DialogStepNavigator from "./dialog/DialogStepNavigator";
 
 interface BookingDialogProps {
   open: boolean;
@@ -44,6 +41,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   bookingSettings,
   businessSlug
 }) => {
+  // State management stays in the parent component
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
@@ -58,20 +56,19 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   const [isLoadingDays, setIsLoadingDays] = useState(false);
   const [availablePeriods, setAvailablePeriods] = useState<Period[]>(["Manhã", "Tarde", "Noite"]);
   
-  // Utilizar os limites do bookingSettings, ou valores padrão
+  // Settings
   const timeInterval = businessSettings?.bookingTimeInterval || 30;
   const futureLimit = bookingSettings?.futureLimit || businessSettings?.bookingFutureLimit || 3;
   
   // Generate week days (7 days from current week start)
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
 
-  // Navigate to next week
-  const goToNextWeek = () => {
+  // Navigation functions
+  const goToNextWeek = useCallback(() => {
     setCurrentWeekStart(addDays(currentWeekStart, 7));
-  };
+  }, [currentWeekStart]);
 
-  // Navigate to previous week
-  const goToPreviousWeek = () => {
+  const goToPreviousWeek = useCallback(() => {
     // Prevent going to past weeks
     const today = new Date();
     const newDate = addDays(currentWeekStart, -7);
@@ -80,15 +77,13 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     } else {
       setCurrentWeekStart(newDate);
     }
-  };
+  }, [currentWeekStart]);
   
   // Calculate max future date based on settings
   const maxFutureDate = addMonths(new Date(), futureLimit);
 
-  // Check if can go to next week
+  // Check if can go to next/previous week
   const canGoNext = addDays(currentWeekStart, 7) <= maxFutureDate;
-
-  // Check if can go to previous week
   const canGoPrevious = currentWeekStart > new Date();
 
   // Fetch employee's available days when employee is selected
@@ -122,7 +117,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   }, [selectedEmployee, businessSlug]);
 
   // Check available periods for a date
-  const checkAvailablePeriods = async (employee: any, date: Date) => {
+  const checkAvailablePeriods = useCallback(async (employee: any, date: Date) => {
     if (!employee || !date) return [];
     
     const dayOfWeek = date.getDay();
@@ -165,10 +160,10 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     });
     
     return available;
-  };
+  }, [businessSlug]);
 
   // Create time slot intervals based on settings and employee shift
-  const generateTimeIntervals = async (employee: any, date: Date, period: Period): Promise<TimeSlot[]> => {
+  const generateTimeIntervals = useCallback(async (employee: any, date: Date, period: Period): Promise<TimeSlot[]> => {
     if (!employee || !date) return [];
     
     const dayOfWeek = date.getDay();
@@ -218,10 +213,10 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     }
     
     return slots;
-  };
+  }, [businessSlug, timeInterval]);
 
   // Fetch available time slots based on employee, service duration, and date
-  const fetchAvailableTimeSlots = async (employee: any, date: Date, period: Period) => {
+  const fetchAvailableTimeSlots = useCallback(async (employee: any, date: Date, period: Period) => {
     if (!employee || !date || !period) return [];
     
     setIsLoadingSlots(true);
@@ -258,18 +253,19 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     } finally {
       setIsLoadingSlots(false);
     }
-  };
+  }, [generateTimeIntervals, service.id, businessSlug]);
 
-  const handleEmployeeSelect = (employee: any) => {
+  // Handler functions
+  const handleEmployeeSelect = useCallback((employee: any) => {
     setSelectedEmployee(employee);
     setSelectedDate(null);
     setSelectedPeriod(null);
     setSelectedTime(null);
     setAvailableTimeSlots([]);
     setAvailablePeriods(["Manhã", "Tarde", "Noite"]);
-  };
+  }, []);
 
-  const handleDateSelect = async (date: Date) => {
+  const handleDateSelect = useCallback(async (date: Date) => {
     setSelectedDate(date);
     setSelectedPeriod(null);
     setSelectedTime(null);
@@ -280,9 +276,9 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
       const periods = await checkAvailablePeriods(selectedEmployee, date);
       setAvailablePeriods(periods);
     }
-  };
+  }, [selectedEmployee, checkAvailablePeriods]);
 
-  const handlePeriodSelect = async (period: Period) => {
+  const handlePeriodSelect = useCallback(async (period: Period) => {
     setSelectedPeriod(period);
     setSelectedTime(null);
     
@@ -290,18 +286,18 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
       const slots = await fetchAvailableTimeSlots(selectedEmployee, selectedDate, period);
       setAvailableTimeSlots(slots);
     }
-  };
+  }, [selectedEmployee, selectedDate, fetchAvailableTimeSlots]);
 
-  const handleTimeSelect = (time: TimeSlot) => {
+  const handleTimeSelect = useCallback((time: TimeSlot) => {
     setSelectedTime(time);
-  };
+  }, []);
 
-  const handleClientInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleClientInfoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setClientInfo(prev => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
-  const handleNextStep = () => {
+  const handleNextStep = useCallback(() => {
     if (currentStep === "datetime") {
       setCurrentStep("clientinfo");
     } else if (currentStep === "clientinfo") {
@@ -313,21 +309,21 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
           date: selectedDate,
           time: selectedTime,
           clientInfo,
-          bookingSettings // Passar as configurações de agendamento
+          bookingSettings
         });
         setCurrentStep("confirmation");
         setBookingConfirmed(true);
       }
     }
-  };
+  }, [currentStep, selectedEmployee, selectedDate, selectedTime, clientInfo, onBookingConfirm, service, bookingSettings]);
 
-  const handlePreviousStep = () => {
+  const handlePreviousStep = useCallback(() => {
     if (currentStep === "clientinfo") {
       setCurrentStep("datetime");
     }
-  };
+  }, [currentStep]);
 
-  const resetDialog = () => {
+  const resetDialog = useCallback(() => {
     setSelectedEmployee(null);
     setSelectedDate(null);
     setSelectedPeriod(null);
@@ -339,14 +335,14 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setClientInfo({ name: "", phone: "" });
     setAvailablePeriods(["Manhã", "Tarde", "Noite"]);
     onClose();
-  };
+  }, [onClose]);
   
-  // If dialog is closed, reset state
+  // Reset state when dialog is closed
   useEffect(() => {
     if (!open) {
       resetDialog();
     }
-  }, [open]);
+  }, [open, resetDialog]);
 
   return (
     <Dialog open={open} onOpenChange={resetDialog}>
@@ -362,6 +358,12 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
           </div>
         </DialogHeader>
 
+        <div className="p-4">
+          {currentStep !== "confirmation" && (
+            <DialogStepNavigator currentStep={currentStep} setCurrentStep={setCurrentStep} />
+          )}
+        </div>
+
         {currentStep === "confirmation" && bookingConfirmed ? (
           <ConfirmationScreen
             selectedDate={selectedDate}
@@ -376,62 +378,30 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
             onNextStep={handleNextStep}
           />
         ) : (
-          <div className="p-4">
-            {/* Service Info */}
-            <ServiceInfo service={service} />
-
-            {/* Employee Selection */}
-            <EmployeeSelector
-              employees={employees}
-              selectedEmployee={selectedEmployee}
-              onEmployeeSelect={handleEmployeeSelect}
-            />
-
-            {/* Calendar */}
-            {selectedEmployee && (
-              <BookingCalendar
-                weekDays={weekDays}
-                availableDays={availableDays}
-                selectedDate={selectedDate}
-                isLoadingDays={isLoadingDays}
-                selectedEmployee={selectedEmployee}
-                canGoNext={canGoNext}
-                canGoPrevious={canGoPrevious}
-                currentWeekStart={currentWeekStart}
-                onDateSelect={handleDateSelect}
-                goToNextWeek={goToNextWeek}
-                goToPreviousWeek={goToPreviousWeek}
-              />
-            )}
-
-            {/* Period Selection */}
-            {selectedDate && (
-              <PeriodSelector
-                selectedPeriod={selectedPeriod}
-                onPeriodSelect={handlePeriodSelect}
-                availablePeriods={availablePeriods}
-              />
-            )}
-
-            {/* Time Slots */}
-            {selectedDate && selectedPeriod && (
-              <TimeSlotSelector
-                availableTimeSlots={availableTimeSlots}
-                selectedTime={selectedTime}
-                isLoadingSlots={isLoadingSlots}
-                onTimeSelect={handleTimeSelect}
-              />
-            )}
-
-            {/* Booking Summary */}
-            <BookingSummary
-              service={service}
-              selectedEmployee={selectedEmployee}
-              selectedDate={selectedDate}
-              selectedTime={selectedTime}
-              onNextStep={handleNextStep}
-            />
-          </div>
+          <BookingDateTimeStep
+            service={service}
+            employees={employees}
+            selectedEmployee={selectedEmployee}
+            selectedDate={selectedDate}
+            selectedPeriod={selectedPeriod}
+            selectedTime={selectedTime}
+            availableDays={availableDays}
+            availablePeriods={availablePeriods}
+            isLoadingDays={isLoadingDays}
+            isLoadingSlots={isLoadingSlots}
+            availableTimeSlots={availableTimeSlots}
+            weekDays={weekDays}
+            canGoNext={canGoNext}
+            canGoPrevious={canGoPrevious}
+            currentWeekStart={currentWeekStart}
+            onEmployeeSelect={handleEmployeeSelect}
+            onDateSelect={handleDateSelect}
+            onPeriodSelect={handlePeriodSelect}
+            onTimeSelect={handleTimeSelect}
+            onNextStep={handleNextStep}
+            goToNextWeek={goToNextWeek}
+            goToPreviousWeek={goToPreviousWeek}
+          />
         )}
       </DialogContent>
     </Dialog>
