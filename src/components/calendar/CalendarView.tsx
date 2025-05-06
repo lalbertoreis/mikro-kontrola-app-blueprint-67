@@ -29,6 +29,8 @@ const CalendarView: React.FC = () => {
     selectedAppointment,
     editMode,
     dialogKey,
+    hideCanceled,
+    toggleHideCanceled,
     handleSelectAppointment,
     handleEditAppointment,
     navigatePrevious,
@@ -77,6 +79,11 @@ const CalendarView: React.FC = () => {
     } as AppointmentWithDetails;
   });
 
+  // Filter out canceled appointments if hideCanceled is true
+  const filteredAppointments = hideCanceled 
+    ? appointmentsWithDetails.filter(app => app.status !== 'canceled')
+    : appointmentsWithDetails;
+
   return (
     <div className="space-y-4">
       {/* Calendar Header with View Tabs and Action Buttons */}
@@ -85,6 +92,8 @@ const CalendarView: React.FC = () => {
         onViewChange={setView}
         onNewAppointment={handleOpenNewAppointment}
         onBlockTime={handleOpenBlockTime}
+        hideCanceled={hideCanceled}
+        onToggleHideCanceled={toggleHideCanceled}
       />
 
       {/* Employee Filter */}
@@ -106,7 +115,7 @@ const CalendarView: React.FC = () => {
       <CalendarContent
         view={view}
         currentDate={currentDate}
-        appointments={appointmentsWithDetails}
+        appointments={filteredAppointments}
         employees={employees}
         onSelectAppointment={handleSelectAppointment}
       />

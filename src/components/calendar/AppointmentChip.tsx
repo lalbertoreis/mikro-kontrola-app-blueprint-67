@@ -21,7 +21,12 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({ appointment, colorCla
   
   // Verificar se é um bloqueio e ajustar classe CSS
   const isBlocked = appointment.status === 'blocked';
-  const chipColorClass = isBlocked ? "bg-red-200 text-red-800" : colorClass;
+  const isCanceled = appointment.status === 'canceled';
+  const chipColorClass = isBlocked 
+    ? "bg-red-200 text-red-800 border-red-400" 
+    : isCanceled
+      ? `${colorClass.replace("bg-", "bg-opacity-50 bg-")} border-gray-300`
+      : `${colorClass} border-transparent`;
   
   // Access service, client and employee data safely
   const serviceName = appointment.service?.name ?? "Serviço não especificado";
@@ -32,15 +37,22 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({ appointment, colorCla
     <Tooltip>
       <TooltipTrigger asChild>
         <div 
-          className={cn("text-xs px-2 py-1 rounded-sm truncate cursor-pointer", chipColorClass)}
+          className={cn("text-xs px-2 py-1 rounded-sm w-full border cursor-pointer", chipColorClass)}
           onClick={onClick}
         >
-          {startTime} - {isBlocked ? "BLOQUEADO" : serviceName}
+          <div className="flex items-center justify-between w-full">
+            <span className="truncate max-w-[calc(100%-40px)]">
+              {isBlocked ? "BLOQUEADO" : serviceName}
+              {isCanceled && " (C)"}
+            </span>
+            <span className="flex-shrink-0">{startTime}</span>
+          </div>
         </div>
       </TooltipTrigger>
       <TooltipContent side="right">
         <div className="space-y-1">
           <div className="font-bold">{isBlocked ? "HORÁRIO BLOQUEADO" : serviceName}</div>
+          {isCanceled && <div className="text-sm font-semibold text-red-500">CANCELADO</div>}
           {!isBlocked && <div className="text-sm">Cliente: {clientName}</div>}
           <div className="text-sm">Horário: {startTime}</div>
           <div className="text-sm">Profissional: {employeeName}</div>

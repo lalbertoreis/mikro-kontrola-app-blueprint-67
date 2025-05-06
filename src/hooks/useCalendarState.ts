@@ -7,6 +7,7 @@ export function useCalendarState() {
   const [view, setView] = useState<CalendarViewOptions["view"]>("week");
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedEmployee, setSelectedEmployee] = useState<string | undefined>();
+  const [hideCanceled, setHideCanceled] = useState<boolean>(false);
   
   // Dialog states
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
@@ -54,6 +55,10 @@ export function useCalendarState() {
     setBlockTimeDialogOpen(true);
   };
 
+  const toggleHideCanceled = () => {
+    setHideCanceled(prev => !prev);
+  };
+
   return {
     view,
     setView,
@@ -71,6 +76,9 @@ export function useCalendarState() {
     editMode,
     setEditMode,
     dialogKey,
+    hideCanceled,
+    setHideCanceled,
+    toggleHideCanceled,
     handleSelectAppointment,
     handleEditAppointment,
     navigatePrevious,

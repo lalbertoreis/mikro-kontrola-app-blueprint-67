@@ -49,31 +49,37 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
   const clientName = appointment.client?.name ?? "Cliente não especificado";
   const employeeName = appointment.employee?.name ?? "Profissional não especificado";
 
+  const isCanceled = appointment.status === 'canceled';
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <div
           className={cn(
-            "p-2 mb-1 rounded text-xs overflow-hidden cursor-pointer",
-            cardColorClass
+            "p-2 mb-1 rounded text-xs overflow-visible min-h-[60px] cursor-pointer border",
+            cardColorClass,
+            isCanceled && "opacity-60"
           )}
           onClick={onClick}
         >
-          <div className="font-medium truncate">{isBlocked ? "BLOQUEADO" : serviceName}</div>
+          <div className="font-medium line-clamp-2">
+            {isBlocked ? "BLOQUEADO" : serviceName}
+            {isCanceled && " (CANCELADO)"}
+          </div>
           <div className="flex items-center mt-1 justify-between">
-            <div className="flex items-center">
-              <User className="h-3 w-3 mr-1" />
+            <div className="flex items-center max-w-[60%]">
+              <User className="h-3 w-3 mr-1 flex-shrink-0" />
               <span className="truncate">{isBlocked ? "Indisponível" : clientName}</span>
             </div>
             <div className="flex items-center">
-              <Clock className="h-3 w-3 mr-1" />
+              <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
               <span>{startTime}</span>
             </div>
           </div>
           <div className={`h-1 w-full mt-1 rounded ${getStatusColor()}`}></div>
         </div>
       </TooltipTrigger>
-      <TooltipContent side="right">
+      <TooltipContent side="right" className="max-w-[300px]">
         <div className="space-y-1">
           <div className="font-bold">{isBlocked ? "HORÁRIO BLOQUEADO" : serviceName}</div>
           {!isBlocked && <div className="text-sm">Cliente: {clientName}</div>}

@@ -182,3 +182,24 @@ table {
     flex-direction: column;
   }
 }
+
+/* Ajustes para calendário e agendamento */
+.appointment-card {
+  @apply border rounded overflow-visible min-h-[60px];
+}
+
+.appointment-text {
+  @apply break-words whitespace-normal;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Estilo para agendamentos cancelados */
+.appointment-canceled {
+  @apply opacity-60 border-dashed;
+}
