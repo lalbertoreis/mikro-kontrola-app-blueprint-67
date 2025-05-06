@@ -19,7 +19,6 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
         if (slug) {
           // Definir o slug para a sessão usando a função que criamos no banco de dados
           await supabase.rpc('set_slug_for_session', { slug });
-          console.log("Set session slug:", slug);
         }
         
         // Agora podemos buscar o perfil do negócio com o slug definido
@@ -37,7 +36,6 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
         }
         
         if (data) {
-          console.log("Business profile found:", data);
           setBusinessUserId(data.id); // Armazenar o ID do usuário do negócio
           
           setBusinessProfile({
@@ -57,7 +55,6 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
           });
         } else {
           // No business found with this slug
-          console.error("No business found with slug:", slug);
           navigate('/booking/404');
         }
       } catch (error) {

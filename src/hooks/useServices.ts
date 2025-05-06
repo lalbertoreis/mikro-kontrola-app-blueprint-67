@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
@@ -9,24 +10,13 @@ import {
 } from "@/services/serviceService";
 import type { Service, ServiceFormData } from "@/types/service";
 
-export function useServices(businessUserId?: string | null) {
+export function useServices() {
   const queryClient = useQueryClient();
 
-  console.log("useServices hook called with businessUserId:", businessUserId);
-
   const { data: services = [], isLoading, error } = useQuery({
-    queryKey: ["services", businessUserId],
-    queryFn: () => {
-      console.log("Executing queryFn with businessUserId:", businessUserId);
-      return fetchServices(businessUserId);
-    },
+    queryKey: ["services"],
+    queryFn: fetchServices,
   });
-
-  if (error) {
-    console.error("Error in useServices hook:", error);
-  }
-
-  console.log("useServices hook returning", services.length, "services");
 
   const createMutation = useMutation({
     mutationFn: (newService: ServiceFormData) => createService(newService),

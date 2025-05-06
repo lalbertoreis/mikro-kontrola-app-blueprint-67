@@ -72,25 +72,22 @@ async function fetchTimeInterval(slug?: string): Promise<number> {
   if (slug) {
     try {
       await supabase.rpc('set_slug_for_session', { slug });
-      console.log("Set slug for session in fetchTimeInterval:", slug);
+      console.log("Set slug for session in availableTimeSlots:", slug);
     } catch (error) {
       console.error('Error setting slug for session:', error);
     }
   }
   
-  // Agora buscar as configurações do perfil associado ao slug atual
+  // Agora buscar as configurações do negócio
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('booking_time_interval')
-    .eq('slug', slug)
+    .eq('id', (await supabase.auth.getUser()).data.user?.id)
     .maybeSingle();
   
   if (profileError) {
     console.error('Error fetching business settings:', profileError);
-    return 30; // Default to 30 minutes if not found
   }
-  
-  console.log("Booking time interval:", profile?.booking_time_interval);
   
   // Default to 30 minutes if not set
   return profile?.booking_time_interval || 30;
