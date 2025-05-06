@@ -6,10 +6,10 @@ import { formatCurrency } from "@/lib/utils";
 
 interface StatsSummaryProps {
   stats: {
-    todayAppointments: number;
-    clients: number;
-    monthlyRevenue: number;
-    notificationsSent: number;
+    todayAppointments: string;
+    clients: string;
+    monthlyRevenue: string;
+    notificationsSent: string;
   };
 }
 
@@ -18,28 +18,28 @@ const StatsSummary = ({ stats }: StatsSummaryProps) => {
   const statCards = [
     {
       title: "Agendamentos Hoje",
-      value: stats.todayAppointments.toString(),
+      value: stats.todayAppointments,
       change: "+1 desde ontem",
       icon: Calendar,
       link: "/dashboard/calendar"
     },
     {
       title: "Clientes Ativos",
-      value: stats.clients.toString(),
+      value: stats.clients,
       change: "+5 este mês",
       icon: Users,
       link: "/dashboard/clients"
     },
     {
       title: "Receita do Mês",
-      value: formatCurrency(stats.monthlyRevenue),
+      value: formatCurrency(parseFloat(stats.monthlyRevenue)),
       change: "+15% comparado ao mês anterior",
       icon: CreditCard,
       link: "/dashboard/finance"
     },
     {
       title: "Notificações Enviadas",
-      value: stats.notificationsSent.toString(),
+      value: stats.notificationsSent,
       change: "12 agendamentos confirmados",
       icon: Bell,
       link: "/dashboard/notifications"

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,10 +132,18 @@ const DashboardOverview = () => {
     );
   }
 
+  // Convert numeric stats to string format for the StatsSummary component
+  const formattedStats = {
+    todayAppointments: stats.todayAppointments.toString(),
+    clients: stats.clients.toString(),
+    monthlyRevenue: stats.monthlyRevenue.toString(),
+    notificationsSent: stats.notificationsSent.toString(),
+  };
+
   return (
     <div className="space-y-8">
       <DashboardHeader />
-      <StatsSummary stats={stats} />
+      <StatsSummary stats={formattedStats} />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <UpcomingAppointments appointments={upcomingAppointments} />
         <TasksList tasks={tasks} />
