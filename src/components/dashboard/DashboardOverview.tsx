@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +63,14 @@ const DashboardOverview = () => {
           ? monthlyTransactions.reduce((sum, transaction) => sum + parseFloat(transaction.amount || "0"), 0)
           : 0;
 
+        // Make sure ALL values are stored as strings to match the StatsSummary component interface
+        setStats({
+          todayAppointments: String(todayAppts?.length || 0),
+          clients: String(clientsCount || 0),
+          monthlyRevenue: String(monthlyRevenue), // Fixed: Ensure it's a string without the conditional
+          notificationsSent: "42", // Mock data for now
+        });
+
         // Fetch upcoming appointments
         const { data: upcomingAppts, error: upcomingError } = await supabase
           .from('appointments')
@@ -84,14 +91,6 @@ const DashboardOverview = () => {
           .limit(3);
         
         if (upcomingError) throw upcomingError;
-
-        // Make sure ALL values are stored as strings to match the StatsSummary component interface
-        setStats({
-          todayAppointments: String(todayAppts?.length || 0),
-          clients: String(clientsCount || 0),
-          monthlyRevenue: String(monthlyRevenue || 0),  // Convert to string here
-          notificationsSent: "42", // Mock data for now
-        });
 
         // Format upcoming appointments
         const formattedAppointments = upcomingAppts.map(appointment => {
