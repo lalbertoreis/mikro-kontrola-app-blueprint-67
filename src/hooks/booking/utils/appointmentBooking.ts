@@ -1,175 +1,284 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Service } from "@/types/service";
-import { Employee } from "@/types/employee";
-import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
-import { format } from "date-fns";
-import { getBusinessUserId, setSlugForSession } from "./businessUtils";
-import { formatAppointmentDate } from "./dateFormatters";
+import { format, addMinutes } from 'date-fns';
 
-// Process booking data and create appointment in the database
-export const processBooking = async (bookingData: {
-  service: Service;
-  employee: Employee;
+/**
+ * Fetches user appointments by phone number
+ */
+export async function fetchUserAppointmentsByPhone(phone: string): Promise<any[]> {
+  try {
+    const { data: appointments, error } = await supabase
+      .from('appointments')
+      .select(`
+        id,
+        start_time,
+        status,
+        services (name, price),
+        clients (name, phone),
+        employees (name)
+      `)
+      .like('clients.phone', phone);
+
+    if (error) {
+      console.error('Error fetching appointments:', error);
+      return [];
+    }
+
+    // Format the appointments to match the structure expected by the component
+    const formattedAppointments = appointments?.map(appointment => ({
+      id: appointment.id,
+      service: {
+        name: appointment.services?.name || 'Serviço não encontrado',
+        price: appointment.services?.price || 0
+      },
+      client: {
+        name: appointment.clients?.name || 'Cliente não encontrado',
+        phone: appointment.clients?.phone || ''
+      },
+      employee: {
+        name: appointment.employees?.name || 'Profissional não encontrado'
+      },
+      date: format(new Date(appointment.start_time), 'yyyy-MM-dd'),
+      time: format(new Date(appointment.start_time), 'HH:mm'),
+      status: appointment.status,
+      createdAt: new Date().toISOString()
+    })) || [];
+
+    return formattedAppointments;
+  } catch (error) {
+    console.error('Error fetching user appointments:', error);
+    return [];
+  }
+}
+
+/**
+ * Cancel an appointment by ID
+ */
+export async function cancelAppointment(appointmentId: string, slug?: string): Promise<boolean> {
+  try {
+    // Set slug context for Supabase session if provided
+    if (slug) {
+      const { setSlugContext } = await import("@/services/appointment/availableTimeSlots");
+      await setSlugContext(slug);
+    }
+
+    // First get the appointment details
+    const { data: appointment, error: fetchError } = await supabase
+      .from('appointments')
+      .select('*, profiles:user_id(booking_cancel_min_hours)')
+      .eq('id', appointmentId)
+      .single();
+    
+    if (fetchError) {
+      throw new Error('Erro ao buscar detalhes do agendamento');
+    }
+    
+    // Check if there's a time limit for cancellation
+    // Safely access the booking_cancel_min_hours property with proper null checks
+    const profileData = appointment?.profiles;
+    
+    // Default to 1 hour if profileData is null or doesn't have booking_cancel_min_hours
+    let cancelMinHours = 1; // default value
+    
+    // Using optional chaining and nullish coalescing for safer access
+    if (profileData && typeof profileData === 'object') {
+      // Type assertion to avoid TypeScript error
+      const profile = profileData as { booking_cancel_min_hours?: number | null };
+      cancelMinHours = profile.booking_cancel_min_hours ?? 1;
+    }
+    
+    const appointmentStartTime = new Date(appointment.start_time);
+    const now = new Date();
+    
+    // Calculate time difference in hours
+    const timeDiffMs = appointmentStartTime.getTime() - now.getTime();
+    const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
+    
+    if (timeDiffHours < cancelMinHours) {
+      // Format the message based on the cancelMinHours value
+      let timeMessage = `${cancelMinHours} hora(s)`;
+      if (cancelMinHours >= 24) {
+        const days = Math.floor(cancelMinHours / 24);
+        timeMessage = days === 1 ? '1 dia' : `${days} dias`;
+      }
+      
+      throw new Error(`O cancelamento só é permitido até ${timeMessage} antes do horário marcado.`);
+    }
+    
+    // Update appointment status to canceled
+    const { error: updateError } = await supabase
+      .from('appointments')
+      .update({ status: 'canceled' })
+      .eq('id', appointmentId);
+      
+    if (updateError) {
+      throw new Error('Erro ao cancelar o agendamento');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error canceling appointment:', error);
+    throw error;
+  }
+}
+
+/**
+ * Process a booking with client information
+ */
+export async function processBooking({
+  service,
+  employee,
+  date,
+  time,
+  clientInfo,
+  businessSlug,
+  businessUserId,
+  bookingSettings
+}: {
+  service: any;
+  employee: any;
   date: Date;
   time: string;
-  clientInfo: { name: string; phone: string };
+  clientInfo: { name: string; phone: string; pin?: string };
   businessSlug?: string;
-  businessUserId?: string;
-  bookingSettings?: {
-    simultaneousLimit: number;
-    futureLimit: number;
-    cancelMinHours: number;
-  };
-}) => {
-  const { service, employee, date, time, clientInfo, businessSlug, businessUserId, bookingSettings } = bookingData;
-  
+  businessUserId: string | null;
+  bookingSettings?: any;
+}) {
   try {
-    // Obter o user_id do negócio pelo slug ou usar o que foi passado
-    let businessId = businessUserId;
-    if (!businessId && businessSlug) {
-      // Definir o slug para a sessão
-      console.log("Setting session slug before booking:", businessSlug);
-      await setSlugForSession(businessSlug);
-      businessId = await getBusinessUserId(businessSlug);
-    }
+    // Check if client exists
+    let clientId: string;
+    let existingClient: any;
+    let newClient = false;
     
-    if (!businessId) {
-      console.error("No business ID found for booking!");
-      throw new Error("Não foi possível identificar o negócio para este agendamento");
-    }
-    
-    console.log("Using business ID for booking:", businessId);
-    
-    // Ensure session slug is set again right before database operations
+    // Set slug context for Supabase session if provided
     if (businessSlug) {
-      await setSlugForSession(businessSlug);
+      const { setSlugContext } = await import("@/services/appointment/availableTimeSlots");
+      await setSlugContext(businessSlug);
     }
     
-    // Verificar a quantidade de agendamentos simultâneos
-    const simultaneousLimit = bookingSettings?.simultaneousLimit || 3;
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const [hours, minutes] = time.split(':').map(Number);
-    
-    // Criar start e end time
-    const startDate = new Date(`${dateStr}T${time}:00`);
-    startDate.setHours(hours, minutes, 0, 0);
-    const endDate = new Date(startDate);
-    endDate.setMinutes(endDate.getMinutes() + service.duration);
-    
-    // Verificar quantos agendamentos já existem nesse horário
-    const { data: existingAppointments, error: appointmentCountError } = await supabase
-      .from('appointments_view')
-      .select('appointment_id')
-      .eq('business_slug', businessSlug)
-      .eq('employee_id', employee.id)
-      .gte('start_time', startDate.toISOString())
-      .lt('start_time', endDate.toISOString())
-      .neq('status', 'canceled');
-      
-    if (appointmentCountError) {
-      console.error("Error checking existing appointments:", appointmentCountError);
-      throw appointmentCountError;
-    }
-    
-    if (existingAppointments && existingAppointments.length >= simultaneousLimit) {
-      throw new Error(`Limite de agendamentos atingido para este horário (máximo: ${simultaneousLimit})`);
-    }
-    
-    // Check if client exists or create new client
-    let clientId;
-    
-    console.log("Checking for existing client with phone:", clientInfo.phone);
-    const { data: existingClient, error: clientFetchError } = await supabase
+    // Look for existing client with this phone number
+    const { data: client, error: clientError } = await supabase
       .from('clients')
-      .select('id')
+      .select('*')
       .eq('phone', clientInfo.phone)
-      .eq('user_id', businessId) // Filtrar por user_id do negócio
       .maybeSingle();
     
-    if (clientFetchError) {
-      console.error("Error checking for existing client:", clientFetchError);
-      throw clientFetchError;
-    }
-    
-    if (existingClient) {
-      console.log("Found existing client:", existingClient.id);
-      clientId = existingClient.id;
-    } else {
-      // Create new client com o user_id do negócio
-      console.log("Creating new client for business:", businessId);
-      const { data: newClient, error: createClientError } = await supabase
+    // If client not found, create new client
+    if (clientError || !client) {
+      // Create new client
+      let insertPayload: any = {
+        name: clientInfo.name,
+        phone: clientInfo.phone,
+        user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
+      };
+      
+      // Add hashed pin if provided
+      if (clientInfo.pin) {
+        const { default: bcrypt } = await import('bcryptjs-react');
+        const saltRounds = 10;
+        insertPayload.pin = await bcrypt.hash(clientInfo.pin, saltRounds);
+      }
+      
+      const { data: newClientData, error: insertError } = await supabase
         .from('clients')
-        .insert({
-          name: clientInfo.name,
-          phone: clientInfo.phone,
-          user_id: businessId // Usar o ID do negócio
-        })
-        .select('id')
+        .insert(insertPayload)
+        .select()
         .single();
       
-      if (createClientError) {
-        console.error("Error creating new client:", createClientError);
-        throw createClientError;
+      if (insertError) {
+        console.error('Error creating new client:', insertError);
+        throw new Error('Erro ao criar novo cliente');
       }
-      console.log("Created new client:", newClient.id);
-      clientId = newClient.id;
+      
+      clientId = newClientData.id;
+      existingClient = newClientData;
+      newClient = true;
+    } else {
+      // Use existing client
+      clientId = client.id;
+      existingClient = client;
+      
+      // Update client's pin if provided and doesn't exist already
+      if (clientInfo.pin && !client.pin) {
+        const { default: bcrypt } = await import('bcryptjs-react');
+        const saltRounds = 10;
+        const hashedPin = await bcrypt.hash(clientInfo.pin, saltRounds);
+        
+        const { error: updateError } = await supabase
+          .from('clients')
+          .update({ pin: hashedPin })
+          .eq('id', clientId);
+          
+        if (updateError) {
+          console.error('Error updating client PIN:', updateError);
+        }
+      }
     }
     
-    console.log("Creating appointment with data:", {
-      employee_id: employee.id,
-      service_id: service.id,
-      client_id: clientId,
-      start_time: startDate.toISOString(),
-      end_time: endDate.toISOString(),
-      user_id: businessId
-    });
+    // Create appointment time as ISO string
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    const startTime = `${formattedDate}T${time}:00`;
+    const startDateTime = new Date(startTime);
     
-    // Create appointment com o user_id do negócio
-    const { data: appointment, error: appointmentError } = await supabase
+    // Calculate end time based on service duration
+    const duration = service.duration || 60; // Default to 60 minutes if duration not provided
+    const endDateTime = addMinutes(startDateTime, duration);
+    
+    // Create appointment
+    const appointmentData = {
+      service_id: service.id,
+      employee_id: employee.id,
+      client_id: clientId,
+      status: 'scheduled',
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
+      user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
+    };
+    
+    const { data: newAppointment, error: appointmentError } = await supabase
       .from('appointments')
-      .insert({
-        employee_id: employee.id,
-        service_id: service.id,
-        client_id: clientId,
-        start_time: startDate.toISOString(),
-        end_time: endDate.toISOString(),
-        status: 'scheduled',
-        user_id: businessId // Usar o ID do negócio
-      })
+      .insert(appointmentData)
       .select()
       .single();
     
     if (appointmentError) {
-      console.error("Error creating appointment:", appointmentError);
-      throw appointmentError;
+      console.error('Error creating appointment:', appointmentError);
+      throw new Error('Erro ao criar agendamento');
     }
     
-    console.log("Appointment created successfully:", appointment.id);
+    console.log('Appointment created:', newAppointment);
     
-    // Create a BookingAppointment object from the appointment
-    const newAppointment: BookingAppointment = {
-      id: appointment.id,
-      serviceName: service.name,
-      employeeName: employee.name,
-      date: formatAppointmentDate(date),
-      time,
-      status: 'scheduled'
+    // Format appointment for the client-side display
+    // This matches the structure expected by the MyAppointments component
+    const formattedAppointment = {
+      id: newAppointment.id,
+      service: {
+        name: service.name,
+        price: service.price
+      },
+      client: {
+        name: existingClient.name,
+        phone: existingClient.phone
+      },
+      employee: {
+        name: employee.name
+      },
+      date: formattedDate,
+      time: time,
+      status: 'scheduled',
+      createdAt: new Date().toISOString()
     };
     
-    // Play sound notification (if exists)
-    try {
-      const audio = new Audio('/notification.mp3');
-      audio.play().catch(() => {
-        console.log('Sound notification not available');
-      });
-    } catch (e) {
-      console.log('Sound notification error:', e);
-    }
+    // Return information about the booking
+    return {
+      success: true,
+      newClient,
+      clientId,
+      appointmentId: newAppointment.id,
+      newAppointment: formattedAppointment
+    };
     
-    return { appointment, newAppointment };
   } catch (error) {
-    console.error('Error processing booking:', error);
+    console.error('Error in processBooking:', error);
     throw error;
   }
-};
+}

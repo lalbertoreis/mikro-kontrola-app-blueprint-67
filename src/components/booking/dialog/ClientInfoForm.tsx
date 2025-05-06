@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 interface ClientInfoFormProps {
-  clientInfo: { name: string; phone: string };
+  clientInfo: { name: string; phone: string; pin?: string };
   onClientInfoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPreviousStep: () => void;
   onNextStep: () => void;
@@ -16,6 +17,11 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
   onPreviousStep,
   onNextStep,
 }) => {
+  const [pinMode, setPinMode] = useState<'verify' | 'create' | null>(null);
+  const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [existingUserData, setExistingUserData] = useState<{ name?: string, hasPin: boolean } | null>(null);
+
   // Add phone input formatting
   const formatPhoneNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
@@ -44,6 +50,100 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
     onClientInfoChange(syntheticEvent);
   };
 
+  // Check if user exists when phone number is complete
+  useEffect(() => {
+    const checkUserExists = async () => {
+      if (clientInfo.phone && clientInfo.phone.replace(/\D/g, '').length === 11) {
+        try {
+          // Fetch from Supabase if user exists by phone
+          const { supabase } = await import("@/integrations/supabase/client");
+          const { data, error } = await supabase
+            .from('clients')
+            .select('name, pin')
+            .eq('phone', clientInfo.phone)
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Error checking user:', error);
+            return;
+          }
+          
+          // If user exists
+          if (data) {
+            // Create synthetic event to update name from database
+            if (data.name) {
+              const syntheticNameEvent = {
+                target: {
+                  name: 'name',
+                  value: data.name
+                }
+              } as React.ChangeEvent<HTMLInputElement>;
+              
+              onClientInfoChange(syntheticNameEvent);
+            }
+            
+            // Check if user has a PIN
+            setExistingUserData({ 
+              name: data.name,
+              hasPin: !!data.pin 
+            });
+            
+            if (data.pin) {
+              setPinMode('verify');
+            } else {
+              setPinMode('create');
+            }
+          } else {
+            setExistingUserData(null);
+            setPinMode('create');
+          }
+        } catch (err) {
+          console.error('Error in checkUserExists:', err);
+        }
+      }
+    };
+    
+    checkUserExists();
+  }, [clientInfo.phone, onClientInfoChange]);
+
+  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow digits and limit to 4 characters
+    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setPin(value);
+  };
+
+  const handleConfirmPinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow digits and limit to 4 characters
+    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setConfirmPin(value);
+  };
+
+  const handleSubmit = () => {
+    // Validate PIN
+    if (pinMode === 'create') {
+      if (pin.length !== 4) {
+        toast.error("O PIN deve ter 4 dígitos");
+        return;
+      }
+      
+      if (pin !== confirmPin) {
+        toast.error("Os PINs não conferem");
+        return;
+      }
+    }
+    
+    // Create synthetic event for PIN
+    const syntheticPinEvent = {
+      target: {
+        name: 'pin',
+        value: pin
+      }
+    } as React.ChangeEvent<HTMLInputElement>;
+    
+    onClientInfoChange(syntheticPinEvent);
+    onNextStep();
+  };
+
   return (
     <div className="p-6">
       <div className="flex items-center mb-4">
@@ -59,21 +159,6 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
       </div>
 
       <div className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="name" className="text-sm font-medium">
-            Nome completo
-          </label>
-          <input
-            id="name"
-            name="name"
-            value={clientInfo.name}
-            onChange={onClientInfoChange}
-            className="w-full p-2 border rounded-md"
-            placeholder="Seu nome completo"
-            required
-          />
-        </div>
-
         <div className="space-y-2">
           <label htmlFor="phone" className="text-sm font-medium">
             Telefone (WhatsApp)
@@ -92,10 +177,98 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
           </p>
         </div>
 
+        {(existingUserData === null || !existingUserData.name) && (
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium">
+              Nome completo
+            </label>
+            <input
+              id="name"
+              name="name"
+              value={clientInfo.name}
+              onChange={onClientInfoChange}
+              className="w-full p-2 border rounded-md"
+              placeholder="Seu nome completo"
+              required
+            />
+          </div>
+        )}
+
+        {pinMode === 'verify' && (
+          <div className="space-y-2">
+            <label htmlFor="pin" className="text-sm font-medium">
+              Digite seu PIN de acesso (4 dígitos)
+            </label>
+            <input
+              id="pin"
+              type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              value={pin}
+              onChange={handlePinChange}
+              className="w-full p-2 border rounded-md text-center text-lg tracking-widest"
+              placeholder="••••"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Digite o PIN de 4 dígitos que você criou anteriormente.
+            </p>
+          </div>
+        )}
+
+        {pinMode === 'create' && (
+          <>
+            <div className="space-y-2">
+              <label htmlFor="pin" className="text-sm font-medium">
+                Crie um PIN de acesso (4 dígitos)
+              </label>
+              <input
+                id="pin"
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={pin}
+                onChange={handlePinChange}
+                className="w-full p-2 border rounded-md text-center text-lg tracking-widest"
+                placeholder="••••"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="confirmPin" className="text-sm font-medium">
+                Confirme o PIN
+              </label>
+              <input
+                id="confirmPin"
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={confirmPin}
+                onChange={handleConfirmPinChange}
+                className="w-full p-2 border rounded-md text-center text-lg tracking-widest"
+                placeholder="••••"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Esse PIN será usado para acessar e gerenciar seus agendamentos futuramente.
+              </p>
+            </div>
+          </>
+        )}
+
         <Button
           className="w-full mt-4 bg-purple-500 hover:bg-purple-600"
-          onClick={onNextStep}
-          disabled={!clientInfo.name || !clientInfo.phone}
+          onClick={handleSubmit}
+          disabled={
+            !clientInfo.phone || 
+            !clientInfo.name ||
+            (pinMode === 'verify' && pin.length !== 4) ||
+            (pinMode === 'create' && (pin.length !== 4 || pin !== confirmPin))
+          }
         >
           Confirmar Agendamento
         </Button>

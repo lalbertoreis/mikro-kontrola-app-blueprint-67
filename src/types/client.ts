@@ -8,6 +8,7 @@ export interface Client {
   address: string;
   lastAppointment?: string;
   notes?: string;
+  pin?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,5 +19,6 @@ export interface ClientFormData {
   phone: string;
   cep: string;
   address: string;
+  pin?: string;
   notes?: string;
 }

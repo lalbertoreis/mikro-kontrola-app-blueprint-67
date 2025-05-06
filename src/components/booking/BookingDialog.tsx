@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format, addDays, addMonths } from "date-fns";
 import { X } from "lucide-react";
@@ -11,10 +11,8 @@ import { Employee } from "@/types/employee";
 import { BusinessSettings } from "@/types/settings";
 
 // Import components
-import ConfirmationScreen from "./dialog/ConfirmationScreen";
 import ClientInfoForm from "./dialog/ClientInfoForm";
 import BookingDateTimeStep from "./dialog/BookingDateTimeStep";
-import DialogStepNavigator from "./dialog/DialogStepNavigator";
 
 interface BookingDialogProps {
   open: boolean;
@@ -46,12 +44,11 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
   const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null);
-  const [bookingConfirmed, setBookingConfirmed] = useState<boolean>(false);
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
   const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [currentStep, setCurrentStep] = useState<BookingStep>("datetime");
-  const [clientInfo, setClientInfo] = useState({ name: "", phone: "" });
+  const [clientInfo, setClientInfo] = useState({ name: "", phone: "", pin: "" });
   const [availableDays, setAvailableDays] = useState<{ [key: number]: boolean }>({});
   const [isLoadingDays, setIsLoadingDays] = useState(false);
   const [availablePeriods, setAvailablePeriods] = useState<Period[]>(["Manhã", "Tarde", "Noite"]);
@@ -301,7 +298,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     if (currentStep === "datetime") {
       setCurrentStep("clientinfo");
     } else if (currentStep === "clientinfo") {
-      // Move to confirmation and trigger the callback with client info and booking settings
+      // Skip confirmation step and trigger the callback with client info and booking settings
       if (selectedEmployee && selectedDate && selectedTime) {
         onBookingConfirm({
           service,
@@ -311,11 +308,10 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
           clientInfo,
           bookingSettings
         });
-        setCurrentStep("confirmation");
-        setBookingConfirmed(true);
+        onClose();
       }
     }
-  }, [currentStep, selectedEmployee, selectedDate, selectedTime, clientInfo, onBookingConfirm, service, bookingSettings]);
+  }, [currentStep, selectedEmployee, selectedDate, selectedTime, clientInfo, onBookingConfirm, service, bookingSettings, onClose]);
 
   const handlePreviousStep = useCallback(() => {
     if (currentStep === "clientinfo") {
@@ -328,11 +324,10 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setSelectedDate(null);
     setSelectedPeriod(null);
     setSelectedTime(null);
-    setBookingConfirmed(false);
     setCurrentWeekStart(new Date());
     setAvailableTimeSlots([]);
     setCurrentStep("datetime");
-    setClientInfo({ name: "", phone: "" });
+    setClientInfo({ name: "", phone: "", pin: "" });
     setAvailablePeriods(["Manhã", "Tarde", "Noite"]);
     onClose();
   }, [onClose]);
@@ -350,27 +345,10 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
         <DialogHeader className="p-4 border-b">
           <div className="flex justify-between items-center">
             <DialogTitle>{service.name}</DialogTitle>
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon">
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
           </div>
         </DialogHeader>
 
-        <div className="p-4">
-          {currentStep !== "confirmation" && (
-            <DialogStepNavigator currentStep={currentStep} setCurrentStep={setCurrentStep} />
-          )}
-        </div>
-
-        {currentStep === "confirmation" && bookingConfirmed ? (
-          <ConfirmationScreen
-            selectedDate={selectedDate}
-            selectedTime={selectedTime}
-            onClose={resetDialog}
-          />
-        ) : currentStep === "clientinfo" ? (
+        {currentStep === "clientinfo" ? (
           <ClientInfoForm
             clientInfo={clientInfo}
             onClientInfoChange={handleClientInfoChange}
