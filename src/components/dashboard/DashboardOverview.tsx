@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "@/components/ui/use-toast";
 import DashboardHeader from "./overview/DashboardHeader";
 import StatsSummary from "./overview/StatsSummary";
 import UpcomingAppointments from "./overview/UpcomingAppointments";
@@ -12,10 +13,10 @@ import TasksList from "./overview/TasksList";
 const DashboardOverview = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    todayAppointments: 0,
-    clients: 0,
-    monthlyRevenue: 0,
-    notificationsSent: 0,
+    todayAppointments: "0",
+    clients: "0",
+    monthlyRevenue: "0",
+    notificationsSent: "0",
   });
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [tasks, setTasks] = useState([
@@ -84,12 +85,12 @@ const DashboardOverview = () => {
         
         if (upcomingError) throw upcomingError;
 
-        // Update stats
+        // Update stats with string values
         setStats({
-          todayAppointments: todayAppts?.length || 0,
-          clients: clientsCount || 0,
-          monthlyRevenue: monthlyRevenue,
-          notificationsSent: 42, // Mock data for now
+          todayAppointments: String(todayAppts?.length || 0),
+          clients: String(clientsCount || 0),
+          monthlyRevenue: String(monthlyRevenue),
+          notificationsSent: "42", // Mock data for now
         });
 
         // Format upcoming appointments
@@ -116,6 +117,11 @@ const DashboardOverview = () => {
         setUpcomingAppointments(formattedAppointments);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar os dados do dashboard.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -132,18 +138,10 @@ const DashboardOverview = () => {
     );
   }
 
-  // Convert numeric stats to string format for the StatsSummary component
-  const formattedStats = {
-    todayAppointments: String(stats.todayAppointments),
-    clients: String(stats.clients),
-    monthlyRevenue: String(stats.monthlyRevenue),
-    notificationsSent: String(stats.notificationsSent),
-  };
-
   return (
     <div className="space-y-8">
       <DashboardHeader />
-      <StatsSummary stats={formattedStats} />
+      <StatsSummary stats={stats} />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <UpcomingAppointments appointments={upcomingAppointments} />
         <TasksList tasks={tasks} />

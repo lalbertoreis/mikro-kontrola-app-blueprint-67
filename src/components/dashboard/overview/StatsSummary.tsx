@@ -14,6 +14,9 @@ interface StatsSummaryProps {
 }
 
 const StatsSummary = ({ stats }: StatsSummaryProps) => {
+  // Format the revenue correctly by parsing the string to a number first
+  const formattedRevenue = formatCurrency(parseFloat(stats.monthlyRevenue || "0"));
+
   // Stats info with real data
   const statCards = [
     {
@@ -32,7 +35,7 @@ const StatsSummary = ({ stats }: StatsSummaryProps) => {
     },
     {
       title: "Receita do Mês",
-      value: formatCurrency(parseFloat(stats.monthlyRevenue)),
+      value: formattedRevenue,
       change: "+15% comparado ao mês anterior",
       icon: CreditCard,
       link: "/dashboard/finance"
