@@ -134,10 +134,10 @@ const DashboardOverview = () => {
 
   // Convert numeric stats to string format for the StatsSummary component
   const formattedStats = {
-    todayAppointments: stats.todayAppointments.toString(),
-    clients: stats.clients.toString(),
-    monthlyRevenue: stats.monthlyRevenue.toString(),
-    notificationsSent: stats.notificationsSent.toString(),
+    todayAppointments: String(stats.todayAppointments),
+    clients: String(stats.clients),
+    monthlyRevenue: String(stats.monthlyRevenue),
+    notificationsSent: String(stats.notificationsSent),
   };
 
   return (
