@@ -2,6 +2,7 @@
 import React from "react";
 import { Calendar, Users, CreditCard, Bell } from "lucide-react";
 import StatsCard from "./StatsCard";
+import { formatCurrency } from "@/lib/utils";
 
 interface StatsSummaryProps {
   stats: {
@@ -31,7 +32,7 @@ const StatsSummary = ({ stats }: StatsSummaryProps) => {
     },
     {
       title: "Receita do Mês",
-      value: `R$ ${stats.monthlyRevenue.toFixed(2)}`,
+      value: formatCurrency(stats.monthlyRevenue),
       change: "+15% comparado ao mês anterior",
       icon: CreditCard,
       link: "/dashboard/finance"
