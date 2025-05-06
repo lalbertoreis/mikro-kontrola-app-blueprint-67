@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -34,14 +34,33 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
   goToNextWeek,
   goToPreviousWeek
 }) => {
-  // Para fins de depuração
-  console.log("BookingCalendar props:", { 
-    availableDays, 
-    isLoadingDays,
-    selectedDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null,
-    weekDays: weekDays.map(d => format(d, 'yyyy-MM-dd')),
-    selectedEmployee: selectedEmployee?.name
-  });
+  // Para fins de depuração - executar apenas quando props relevantes mudam
+  useEffect(() => {
+    console.log("BookingCalendar props:", { 
+      availableDays, 
+      isLoadingDays,
+      selectedDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null,
+      selectedEmployee: selectedEmployee?.name
+    });
+  }, [availableDays, isLoadingDays, selectedDate, selectedEmployee?.id]);
+
+  // Memorizar os dias e suas disponibilidades para evitar recálculos em renderizações
+  const calendarDays = useMemo(() => {
+    return weekDays.map((day) => {
+      const dayOfWeek = day.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+      const isAvailable = availableDays[dayOfWeek] || false;
+      const isSelected = selectedDate && 
+                        selectedDate.getDate() === day.getDate() &&
+                        selectedDate.getMonth() === day.getMonth();
+      
+      // Para debugging
+      if (selectedEmployee) {
+        console.log(`Dia ${format(day, 'dd/MM')} (${dayOfWeek}): disponível = ${isAvailable}`);
+      }
+      
+      return { day, dayOfWeek, isAvailable, isSelected };
+    });
+  }, [weekDays, availableDays, selectedDate, selectedEmployee]);
 
   return (
     <div className="mb-6">
@@ -87,34 +106,23 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
             <Skeleton key={`skeleton-${i}`} className="h-10 rounded-md" />
           ))
         ) : (
-          weekDays.map((day) => {
-            const dayOfWeek = day.getDay(); // 0 = Domingo, 1 = Segunda, etc.
-            const isAvailable = availableDays[dayOfWeek] || false;
-            const isSelected = selectedDate && 
-                              selectedDate.getDate() === day.getDate() &&
-                              selectedDate.getMonth() === day.getMonth();
-            
-            // Para debugging
-            console.log(`Dia ${format(day, 'dd/MM')} (${dayOfWeek}): disponível = ${isAvailable}`);
-            
-            return (
-              <Button
-                key={day.toISOString()}
-                variant={isSelected ? "default" : "outline"}
-                className={`h-10 ${isSelected ? "bg-purple-500 hover:bg-purple-600" : ""} ${
-                  !isAvailable ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-                disabled={!isAvailable}
-                onClick={() => isAvailable && onDateSelect(day)}
-              >
-                {format(day, 'd')}
-              </Button>
-            );
-          })
+          calendarDays.map(({ day, dayOfWeek, isAvailable, isSelected }) => (
+            <Button
+              key={day.toISOString()}
+              variant={isSelected ? "default" : "outline"}
+              className={`h-10 ${isSelected ? "bg-purple-500 hover:bg-purple-600" : ""} ${
+                !isAvailable ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={!isAvailable}
+              onClick={() => isAvailable && onDateSelect(day)}
+            >
+              {format(day, 'd')}
+            </Button>
+          ))
         )}
       </div>
     </div>
   );
 };
 
-export default BookingCalendar;
+export default React.memo(BookingCalendar);

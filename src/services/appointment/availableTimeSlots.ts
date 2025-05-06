@@ -1,10 +1,28 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Cache para dados de turno
+const shiftCache: Record<string, {data: any, timestamp: number}> = {};
+const serviceCache: Record<string, {duration: number, timestamp: number}> = {};
+const appointmentsCache: Record<string, {data: any[], timestamp: number}> = {};
+const timeIntervalCache: Record<string, {interval: number, timestamp: number}> = {};
+
+// Tempo de validade do cache em milissegundos (5 minutos)
+const CACHE_EXPIRY = 5 * 60 * 1000;
+
 /**
  * Fetches shift information for an employee on a specific day of the week
  */
 async function fetchEmployeeShift(employeeId: string, dayOfWeek: number, slug?: string) {
+  // Chave de cache
+  const cacheKey = `${employeeId}_${dayOfWeek}_${slug || ''}`;
+  
+  // Verificar cache
+  if (shiftCache[cacheKey] && (Date.now() - shiftCache[cacheKey].timestamp < CACHE_EXPIRY)) {
+    console.log(`Usando cache de turno para ${cacheKey}`);
+    return shiftCache[cacheKey].data;
+  }
+  
   // Define slug para a sessão se fornecido
   if (slug) {
     try {
@@ -35,6 +53,12 @@ async function fetchEmployeeShift(employeeId: string, dayOfWeek: number, slug?: 
   
   console.log(`Shift found for employee ${employeeId} on day ${dayOfWeek}:`, shifts[0]);
   
+  // Armazenar no cache
+  shiftCache[cacheKey] = {
+    data: shifts[0],
+    timestamp: Date.now()
+  };
+  
   // Get the employee's working hours for this day
   return shifts[0]; // Assuming one shift per day
 }
@@ -43,6 +67,15 @@ async function fetchEmployeeShift(employeeId: string, dayOfWeek: number, slug?: 
  * Fetches service duration in minutes
  */
 async function fetchServiceDuration(serviceId: string, slug?: string): Promise<number> {
+  // Chave de cache
+  const cacheKey = `${serviceId}_${slug || ''}`;
+  
+  // Verificar cache
+  if (serviceCache[cacheKey] && (Date.now() - serviceCache[cacheKey].timestamp < CACHE_EXPIRY)) {
+    console.log(`Usando cache de duração do serviço para ${serviceId}`);
+    return serviceCache[cacheKey].duration;
+  }
+  
   // Define slug para a sessão se fornecido
   if (slug) {
     try {
@@ -63,13 +96,30 @@ async function fetchServiceDuration(serviceId: string, slug?: string): Promise<n
     return 30; // Default duration in minutes
   }
   
-  return service?.duration || 30;
+  const duration = service?.duration || 30;
+  
+  // Armazenar no cache
+  serviceCache[cacheKey] = {
+    duration,
+    timestamp: Date.now()
+  };
+  
+  return duration;
 }
 
 /**
  * Fetches existing appointments for an employee on a specific date
  */
 async function fetchExistingAppointments(employeeId: string, formattedDate: string, slug?: string) {
+  // Chave de cache
+  const cacheKey = `${employeeId}_${formattedDate}_${slug || ''}`;
+  
+  // Verificar cache - curto prazo para agendamentos (1 minuto)
+  if (appointmentsCache[cacheKey] && (Date.now() - appointmentsCache[cacheKey].timestamp < 60 * 1000)) {
+    console.log(`Usando cache de agendamentos para ${cacheKey}`);
+    return appointmentsCache[cacheKey].data;
+  }
+  
   // Define slug para a sessão se fornecido
   if (slug) {
     try {
@@ -93,6 +143,13 @@ async function fetchExistingAppointments(employeeId: string, formattedDate: stri
   }
   
   console.log('Existing appointments:', appointments);
+  
+  // Armazenar no cache
+  appointmentsCache[cacheKey] = {
+    data: appointments || [],
+    timestamp: Date.now()
+  };
+  
   return appointments || [];
 }
 
@@ -100,6 +157,15 @@ async function fetchExistingAppointments(employeeId: string, formattedDate: stri
  * Fetches business time interval setting
  */
 async function fetchTimeInterval(slug?: string): Promise<number> {
+  // Chave de cache
+  const cacheKey = slug || 'default';
+  
+  // Verificar cache
+  if (timeIntervalCache[cacheKey] && (Date.now() - timeIntervalCache[cacheKey].timestamp < CACHE_EXPIRY)) {
+    console.log(`Usando cache de intervalo de tempo para ${cacheKey}`);
+    return timeIntervalCache[cacheKey].interval;
+  }
+  
   // Se um slug foi fornecido, vamos definir o contexto da sessão
   if (slug) {
     try {
@@ -123,6 +189,13 @@ async function fetchTimeInterval(slug?: string): Promise<number> {
       console.error('Error fetching business profile by slug:', error);
     } else if (profile) {
       console.log("Found business profile by slug:", profile);
+      
+      // Armazenar no cache
+      timeIntervalCache[cacheKey] = {
+        interval: profile.booking_time_interval || 30,
+        timestamp: Date.now()
+      };
+      
       return profile.booking_time_interval || 30;
     }
   }
@@ -138,8 +211,16 @@ async function fetchTimeInterval(slug?: string): Promise<number> {
     console.error('Error fetching business settings:', profileError);
   }
   
+  const interval = profile?.booking_time_interval || 30;
+  
+  // Armazenar no cache
+  timeIntervalCache[cacheKey] = {
+    interval,
+    timestamp: Date.now()
+  };
+  
   // Default to 30 minutes if not set
-  return profile?.booking_time_interval || 30;
+  return interval;
 }
 
 /**
@@ -206,6 +287,9 @@ function filterAvailableSlots(
   return availableSlots;
 }
 
+// Cache para time slots
+const timeSlotCache: Record<string, {slots: string[], timestamp: number}> = {};
+
 /**
  * Main function to fetch available time slots for an employee, service, and date
  */
@@ -216,6 +300,15 @@ export async function fetchAvailableTimeSlots(
   slug?: string // Adicionamos o parâmetro slug para definir o contexto da sessão
 ): Promise<string[]> {
   try {
+    // Chave de cache unindo todos os parâmetros
+    const cacheKey = `${employeeId}_${serviceId}_${date}_${slug || ''}`;
+    
+    // Verificar cache - curto prazo para time slots (1 minuto)
+    if (timeSlotCache[cacheKey] && (Date.now() - timeSlotCache[cacheKey].timestamp < 60 * 1000)) {
+      console.log(`Usando cache de time slots para ${cacheKey}`);
+      return timeSlotCache[cacheKey].slots;
+    }
+    
     // Set the session context with the slug if provided
     if (slug) {
       try {
@@ -254,6 +347,12 @@ export async function fetchAvailableTimeSlots(
     const availableSlots = filterAvailableSlots(allTimeSlots, appointments, formattedDate, serviceDuration);
     
     console.log('Available slots:', availableSlots);
+    
+    // Armazenar no cache
+    timeSlotCache[cacheKey] = {
+      slots: availableSlots,
+      timestamp: Date.now()
+    };
     
     return availableSlots;
   } catch (error) {

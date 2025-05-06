@@ -24,9 +24,25 @@ export async function checkEmployeeAvailability(
   }
 }
 
+// Função para obter os horários de turno do funcionário - com cache
+let shiftCache: Record<string, { startTime: string, endTime: string, timestamp: number }> = {};
+
 // Função para obter os horários de turno do funcionário
 export async function getEmployeeShiftHours(employeeId: string, dayOfWeek: number, slug?: string): Promise<{ startTime: string, endTime: string } | null> {
   try {
+    // Chave de cache
+    const cacheKey = `${employeeId}_${dayOfWeek}_${slug || ''}`;
+    
+    // Verificar cache (válido por 5 minutos)
+    const cachedData = shiftCache[cacheKey];
+    if (cachedData && (Date.now() - cachedData.timestamp < 5 * 60 * 1000)) {
+      console.log(`Usando cache para turno do funcionário ${employeeId} no dia ${dayOfWeek}`);
+      return {
+        startTime: cachedData.startTime,
+        endTime: cachedData.endTime
+      };
+    }
+    
     // Definir slug para a sessão se fornecido
     if (slug) {
       try {
@@ -49,6 +65,13 @@ export async function getEmployeeShiftHours(employeeId: string, dayOfWeek: numbe
     
     console.log(`Turno encontrado para funcionário ${employeeId} no dia ${dayOfWeek}:`, data);
     
+    // Atualizar cache
+    shiftCache[cacheKey] = {
+      startTime: data.start_time,
+      endTime: data.end_time,
+      timestamp: Date.now()
+    };
+    
     return {
       startTime: data.start_time,
       endTime: data.end_time
@@ -59,9 +82,22 @@ export async function getEmployeeShiftHours(employeeId: string, dayOfWeek: numbe
   }
 }
 
+// Cache para dias disponíveis
+let availableDaysCache: Record<string, { days: number[], timestamp: number }> = {};
+
 // Função para obter os dias da semana disponíveis para um funcionário
 export async function getEmployeeAvailableDays(employeeId: string, slug?: string): Promise<number[]> {
   try {
+    // Chave de cache
+    const cacheKey = `${employeeId}_${slug || ''}`;
+    
+    // Verificar cache (válido por 5 minutos)
+    const cachedData = availableDaysCache[cacheKey];
+    if (cachedData && (Date.now() - cachedData.timestamp < 5 * 60 * 1000)) {
+      console.log(`Usando cache para dias disponíveis do funcionário ${employeeId}`);
+      return cachedData.days;
+    }
+    
     // Definir slug para a sessão se fornecido
     if (slug) {
       try {
@@ -87,6 +123,12 @@ export async function getEmployeeAvailableDays(employeeId: string, slug?: string
     // Extrair os dias da semana distintos
     const availableDays = [...new Set(data.map(item => item.day_of_week))];
     console.log(`Dias disponíveis para funcionário ${employeeId}:`, availableDays);
+    
+    // Atualizar cache
+    availableDaysCache[cacheKey] = {
+      days: availableDays,
+      timestamp: Date.now()
+    };
     
     return availableDays;
   } catch (error) {
