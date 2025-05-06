@@ -5,6 +5,29 @@ import { Notification } from "@/types/notification";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+// Local storage key for read notifications
+const READ_NOTIFICATIONS_KEY = 'kontrola-read-notifications';
+
+// Function to get read notification IDs from localStorage
+const getReadNotificationsFromStorage = (): string[] => {
+  try {
+    const stored = localStorage.getItem(READ_NOTIFICATIONS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error("Error reading from localStorage:", error);
+    return [];
+  }
+};
+
+// Function to save read notification IDs to localStorage
+const saveReadNotificationsToStorage = (ids: string[]) => {
+  try {
+    localStorage.setItem(READ_NOTIFICATIONS_KEY, JSON.stringify(ids));
+  } catch (error) {
+    console.error("Error saving to localStorage:", error);
+  }
+};
+
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -36,15 +59,8 @@ export function useNotifications() {
           
         if (error) throw error;
 
-        // Fetch read notifications for the current user
-        const { data: readNotifications, error: readError } = await supabase
-          .from('notification_reads')
-          .select('notification_id')
-          .eq('user_id', supabase.auth.getUser().then(res => res.data.user?.id));
-
-        if (readError) throw readError;
-        
-        const readNotificationIds = readNotifications?.map(n => n.notification_id) || [];
+        // Get read notifications from localStorage
+        const readNotificationIds = getReadNotificationsFromStorage();
         
         const notificationsData: Notification[] = [];
         
@@ -120,21 +136,14 @@ export function useNotifications() {
   
   const markAsRead = async (notificationId: string) => {
     try {
-      const user = await supabase.auth.getUser();
-      const userId = user.data.user?.id;
+      // Get current read notifications
+      const readNotificationIds = getReadNotificationsFromStorage();
       
-      if (!userId) throw new Error("User not authenticated");
-      
-      // Add to notification_reads table
-      const { error } = await supabase
-        .from('notification_reads')
-        .insert({
-          user_id: userId,
-          notification_id: notificationId,
-          read_at: new Date().toISOString()
-        });
-        
-      if (error) throw error;
+      // Add new notification ID if not already included
+      if (!readNotificationIds.includes(notificationId)) {
+        readNotificationIds.push(notificationId);
+        saveReadNotificationsToStorage(readNotificationIds);
+      }
       
       // Update local state
       setNotifications(prev =>
@@ -149,27 +158,23 @@ export function useNotifications() {
   
   const markAllAsRead = async () => {
     try {
-      const user = await supabase.auth.getUser();
-      const userId = user.data.user?.id;
-      
-      if (!userId) throw new Error("User not authenticated");
-      
-      // Add all unread notification IDs to notification_reads table
+      // Get all unread notification IDs
       const unreadNotifications = notifications.filter(n => !n.read);
       
       if (unreadNotifications.length === 0) return;
       
-      const reads = unreadNotifications.map(n => ({
-        user_id: userId,
-        notification_id: n.id,
-        read_at: new Date().toISOString()
-      }));
+      // Get current read notifications
+      const readNotificationIds = getReadNotificationsFromStorage();
       
-      const { error } = await supabase
-        .from('notification_reads')
-        .insert(reads);
-        
-      if (error) throw error;
+      // Add all unread notification IDs
+      unreadNotifications.forEach(notification => {
+        if (!readNotificationIds.includes(notification.id)) {
+          readNotificationIds.push(notification.id);
+        }
+      });
+      
+      // Save to localStorage
+      saveReadNotificationsToStorage(readNotificationIds);
       
       // Update local state
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
