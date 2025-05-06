@@ -304,8 +304,9 @@ export async function fetchAvailableTimeSlots(
     
     console.log('Available slots:', availableSlots);
     
+    // Fix: Use the correct property name 'data' instead of 'slots' to match CachedItem<string[]>
     CACHE.timeSlots.set(cacheKey, {
-      slots: availableSlots,
+      data: availableSlots,
       timestamp: Date.now()
     });
     
