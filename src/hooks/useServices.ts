@@ -21,6 +21,7 @@ export function useServices(businessUserId?: string) {
       console.info("Executing queryFn with businessUserId:", businessUserId);
       return fetchServices(businessUserId);
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
   console.info("useServices hook returning", services.length, "services");

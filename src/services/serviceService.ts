@@ -1,5 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Service, ServiceFormData } from "@/types/service";
+import { setSlugForSession } from "@/hooks/booking/utils/businessUtils";
 
 export async function fetchServices(businessUserId?: string): Promise<Service[]> {
   try {
@@ -27,6 +29,13 @@ export async function fetchServices(businessUserId?: string): Promise<Service[]>
     
     console.info("Services data returned:", data);
     console.info("Number of services found:", data?.length || 0);
+    
+    if (data && data.length > 0) {
+      // Debug each service returned
+      data.forEach((service, index) => {
+        console.log(`Service ${index}: id=${service.id}, name=${service.name}, isActive=${service.is_active}`);
+      });
+    }
     
     return data.map(item => ({
       id: item.id,

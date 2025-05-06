@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+
+import { useState, useMemo, useEffect } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "sonner";
 import { useServices } from "@/hooks/useServices";
@@ -64,11 +65,29 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
 
   // Filter active services that have associated employees
   const activeServices = useMemo(() => {
-    const filtered = services.filter((service) => 
-      service.isActive && 
-      serviceWithEmployeesMap.has(service.id) && 
-      serviceWithEmployeesMap.get(service.id)?.length > 0
-    );
+    console.log("Filtering services...");
+    
+    // Debug all service IDs
+    services.forEach(service => {
+      console.log(`Service: ${service.id} (${service.name}), isActive: ${service.isActive}`);
+    });
+    
+    // Debug all service IDs in the employee map
+    Array.from(serviceWithEmployeesMap.keys()).forEach(id => {
+      console.log(`ServiceMap has service ID: ${id} with ${serviceWithEmployeesMap.get(id)?.length} employees`);
+    });
+    
+    // Filter services that are active and have employees
+    const filtered = services.filter(service => {
+      const isActive = service.isActive === true;
+      const hasEmployees = serviceWithEmployeesMap.has(service.id) && 
+                          (serviceWithEmployeesMap.get(service.id)?.length || 0) > 0;
+      
+      console.log(`Evaluating service ${service.name}: isActive=${isActive}, hasEmployees=${hasEmployees}`);
+      
+      return isActive && hasEmployees;
+    });
+    
     console.log("Filtered active services:", filtered.length);
     return filtered;
   }, [services, serviceWithEmployeesMap]);
