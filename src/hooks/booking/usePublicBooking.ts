@@ -46,15 +46,28 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
 
   // Map services to employees
   const serviceWithEmployeesMap = useMemo(() => {
+    console.log("Building serviceWithEmployeesMap with employees:", employees.length);
     const map = new Map<string, string[]>();
     
     employees.forEach(employee => {
-      (employee.services || []).forEach(serviceId => {
+      if (!employee.services) {
+        console.log(`Employee ${employee.name} has no services defined`);
+        return;
+      }
+      
+      employee.services.forEach(serviceId => {
+        console.log(`Employee ${employee.name} has service ${serviceId}`);
         if (!map.has(serviceId)) {
           map.set(serviceId, []);
         }
         map.get(serviceId)?.push(employee.id);
       });
+    });
+    
+    // Debug what's in the map
+    console.log("ServiceWithEmployeesMap final size:", map.size);
+    map.forEach((employeeIds, serviceId) => {
+      console.log(`Service ${serviceId} has ${employeeIds.length} employees`);
     });
     
     return map;
@@ -63,39 +76,33 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
   console.log("Services available:", services.length);
   console.log("ServiceWithEmployeesMap size:", Array.from(serviceWithEmployeesMap.keys()).length);
 
-  // Filter active services that have associated employees
-  const activeServices = useMemo(() => {
-    console.log("Filtering services...");
-    
-    // Debug all service IDs
-    services.forEach(service => {
-      console.log(`Service: ${service.id} (${service.name}), isActive: ${service.isActive}`);
-    });
-    
-    // Debug all service IDs in the employee map
-    Array.from(serviceWithEmployeesMap.keys()).forEach(id => {
-      console.log(`ServiceMap has service ID: ${id} with ${serviceWithEmployeesMap.get(id)?.length} employees`);
-    });
-    
-    // Filter services that have employees
-    // Agora não precisamos filtrar por services.isActive porque a view já faz isso
-    const filtered = services.filter(service => {
+  // Add hasEmployees property to services
+  const servicesWithEmployeeFlag = useMemo(() => {
+    return services.map(service => {
       const hasEmployees = serviceWithEmployeesMap.has(service.id) && 
-                          (serviceWithEmployeesMap.get(service.id)?.length || 0) > 0;
+                         (serviceWithEmployeesMap.get(service.id)?.length || 0) > 0;
       
-      console.log(`Evaluating service ${service.name}: hasEmployees=${hasEmployees}`);
+      console.log(`Service ${service.name} (${service.id}): hasEmployees=${hasEmployees}`);
       
-      return hasEmployees;
+      return {
+        ...service,
+        hasEmployees
+      };
     });
-    
-    console.log("Filtered active services:", filtered.length);
-    return filtered;
   }, [services, serviceWithEmployeesMap]);
+
+  // Filter active services (já são filtrados pela view, não precisamos filtrar novamente)
+  const activeServices = servicesWithEmployeeFlag;
 
   // Filter active packages
   const activePackages = packages.filter((pkg) => pkg.showInOnlineBooking && pkg.isActive);
 
   const handleServiceClick = (service: Service) => {
+    if (service.hasEmployees === false) {
+      toast.info("Este serviço não tem profissionais disponíveis no momento.");
+      return;
+    }
+    
     setSelectedService(service);
     setIsBookingDialogOpen(true);
   };
