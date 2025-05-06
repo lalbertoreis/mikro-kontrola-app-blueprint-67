@@ -334,6 +334,7 @@ export type Database = {
           address: string | null
           avatar_url: string | null
           booking_cancel_min_hours: number | null
+          booking_color: string | null
           booking_future_limit: number | null
           booking_simultaneous_limit: number | null
           booking_time_interval: number | null
@@ -354,6 +355,7 @@ export type Database = {
           address?: string | null
           avatar_url?: string | null
           booking_cancel_min_hours?: number | null
+          booking_color?: string | null
           booking_future_limit?: number | null
           booking_simultaneous_limit?: number | null
           booking_time_interval?: number | null
@@ -374,6 +376,7 @@ export type Database = {
           address?: string | null
           avatar_url?: string | null
           booking_cancel_min_hours?: number | null
+          booking_color?: string | null
           booking_future_limit?: number | null
           booking_simultaneous_limit?: number | null
           booking_time_interval?: number | null

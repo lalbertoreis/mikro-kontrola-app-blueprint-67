@@ -13,6 +13,7 @@ export interface BusinessSettings {
   bookingFutureLimit: number;
   bookingTimeInterval: number;
   bookingCancelMinHours: number;
+  bookingColor?: string;
 }
 
 export interface BusinessSettingsFormData {
@@ -27,4 +28,5 @@ export interface BusinessSettingsFormData {
   bookingFutureLimit: number;
   bookingTimeInterval: number;
   bookingCancelMinHours: number;
+  bookingColor?: string;
 }

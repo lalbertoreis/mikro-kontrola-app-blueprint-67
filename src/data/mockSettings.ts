@@ -15,5 +15,5 @@ export const mockSettings: BusinessSettings = {
   bookingFutureLimit: 3,
   bookingTimeInterval: 30,
   bookingCancelMinHours: 1,
+  bookingColor: "#9b87f5",
 };
-

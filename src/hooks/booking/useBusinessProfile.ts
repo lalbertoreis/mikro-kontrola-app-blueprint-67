@@ -58,6 +58,7 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
             bookingFutureLimit: data.booking_future_limit || 3,
             bookingTimeInterval: data.booking_time_interval || 30,
             bookingCancelMinHours: data.booking_cancel_min_hours || 1,
+            bookingColor: data.booking_color || '#9b87f5',
             createdAt: data.created_at || '',
             updatedAt: data.updated_at || ''
           });
@@ -86,6 +87,6 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
     businessProfile,
     isLoadingBusiness,
     businessExists,
-    businessUserId  // Adicionar businessUserId ao retorno
+    businessUserId
   };
 }

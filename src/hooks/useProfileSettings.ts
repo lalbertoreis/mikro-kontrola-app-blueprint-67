@@ -47,6 +47,7 @@ export function useProfileSettings() {
           bookingFutureLimit: data.booking_future_limit || 3,
           bookingTimeInterval: data.booking_time_interval || 30,
           bookingCancelMinHours: data.booking_cancel_min_hours || 1,
+          bookingColor: data.booking_color || '#9b87f5',
         });
       } else {
         // If no profile exists yet, create one
@@ -65,7 +66,8 @@ export function useProfileSettings() {
               booking_simultaneous_limit: 3,
               booking_future_limit: 3, 
               booking_time_interval: 30,
-              booking_cancel_min_hours: 1
+              booking_cancel_min_hours: 1,
+              booking_color: '#9b87f5'
             });
           
           if (createError) {
@@ -126,6 +128,7 @@ export function useProfileSettings() {
         booking_future_limit: updatedData.bookingFutureLimit,
         booking_time_interval: updatedData.bookingTimeInterval,
         booking_cancel_min_hours: updatedData.bookingCancelMinHours,
+        booking_color: updatedData.bookingColor || '#9b87f5',
         updated_at: new Date().toISOString()
       };
       

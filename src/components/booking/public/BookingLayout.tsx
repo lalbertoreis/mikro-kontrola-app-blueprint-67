@@ -1,3 +1,4 @@
+
 import React, { ReactNode } from "react";
 import { BusinessSettings } from "@/types/settings";
 import { UserCircle2, Calendar, Phone, Instagram, MapPin, LogOut } from "lucide-react";
@@ -9,7 +10,7 @@ interface BookingLayoutProps {
   isLoggedIn: boolean;
   userProfile?: { name: string; phone: string } | null;
   onMyAppointmentsClick: () => void;
-  onLoginClick: () => void;  // Added this prop for login functionality
+  onLoginClick: () => void;
   onLogoutClick: () => void;
 }
 
@@ -19,15 +20,21 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
   isLoggedIn,
   userProfile,
   onMyAppointmentsClick,
-  onLoginClick,        // Added this parameter
+  onLoginClick,
   onLogoutClick
 }) => {
+  // Use the business profile color or default to purple
+  const bookingColor = businessProfile?.bookingColor || "#9b87f5";
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header - Simplified to match the image */}
       <div className="flex flex-col items-center justify-center pt-8 pb-4 px-4 space-y-3 bg-white">
         {/* Logo */}
-        <div className="rounded-full bg-blue-500 p-2 w-20 h-20 flex items-center justify-center mb-2">
+        <div 
+          className="rounded-full p-2 w-20 h-20 flex items-center justify-center mb-2" 
+          style={{ backgroundColor: bookingColor }}
+        >
           {businessProfile?.businessLogo ? (
             <img 
               src={businessProfile.businessLogo} 
@@ -35,7 +42,10 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
               className="w-16 h-16 rounded-full object-cover"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-blue-400 flex items-center justify-center">
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: bookingColor }}
+            >
               <span className="text-white text-xl font-bold">
                 {businessProfile?.businessName?.substring(0, 1) || "A"}
               </span>
@@ -97,7 +107,8 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
             {/* My Appointments button when logged in */}
             <Button
               onClick={onMyAppointmentsClick}
-              className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+              className="text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+              style={{ backgroundColor: bookingColor }}
               size="lg"
               aria-label="Acessar meus agendamentos"
             >
@@ -118,7 +129,8 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
           /* Login button when not logged in - Now calls onLoginClick */
           <Button
             onClick={onLoginClick}
-            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+            className="text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+            style={{ backgroundColor: bookingColor }}
             size="lg"
             aria-label="Fazer login"
           >

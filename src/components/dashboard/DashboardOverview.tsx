@@ -1,53 +1,166 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, CreditCard, Bell } from "lucide-react";
+import { Calendar, Users, CreditCard, Bell, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { format, isToday, isTomorrow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const DashboardOverview = () => {
-  // Mock data - in a real app this would come from an API
-  const stats = [
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    todayAppointments: 0,
+    clients: 0,
+    monthlyRevenue: 0,
+    notificationsSent: 0,
+  });
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [tasks, setTasks] = useState([
+    { title: "Confirmar agendamento com Maria", completed: false },
+    { title: "Preparar material para João", completed: true },
+    { title: "Enviar orçamento para novo cliente", completed: false }
+  ]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        // Fetch today's appointments
+        const today = new Date().toISOString().split('T')[0];
+        const { data: todayAppts, error: todayApptError } = await supabase
+          .from('appointments')
+          .select('*')
+          .gte('start_time', `${today}T00:00:00`)
+          .lte('start_time', `${today}T23:59:59`);
+        
+        if (todayApptError) throw todayApptError;
+
+        // Fetch clients count
+        const { count: clientsCount, error: clientsError } = await supabase
+          .from('clients')
+          .select('*', { count: 'exact', head: true });
+        
+        if (clientsError) throw clientsError;
+
+        // Fetch monthly revenue
+        const currentDate = new Date();
+        const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
+        const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
+        
+        const { data: monthlyTransactions, error: transactionError } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('type', 'income')
+          .gte('date', firstDayOfMonth)
+          .lte('date', lastDayOfMonth);
+        
+        if (transactionError) throw transactionError;
+        
+        const monthlyRevenue = monthlyTransactions 
+          ? monthlyTransactions.reduce((sum, transaction) => sum + parseFloat(transaction.amount || 0), 0)
+          : 0;
+
+        // Fetch upcoming appointments
+        const { data: upcomingAppts, error: upcomingError } = await supabase
+          .from('appointments')
+          .select(`
+            id,
+            start_time,
+            clients (
+              id,
+              name
+            ),
+            services (
+              id,
+              name
+            )
+          `)
+          .gt('start_time', new Date().toISOString())
+          .order('start_time', { ascending: true })
+          .limit(3);
+        
+        if (upcomingError) throw upcomingError;
+
+        // Update stats
+        setStats({
+          todayAppointments: todayAppts?.length || 0,
+          clients: clientsCount || 0,
+          monthlyRevenue: monthlyRevenue,
+          notificationsSent: 42, // Mock data for now
+        });
+
+        // Format upcoming appointments
+        const formattedAppointments = upcomingAppts.map(appointment => {
+          const date = new Date(appointment.start_time);
+          let displayDate;
+          
+          if (isToday(date)) {
+            displayDate = "Hoje";
+          } else if (isTomorrow(date)) {
+            displayDate = "Amanhã";
+          } else {
+            displayDate = format(date, "dd/MM", { locale: ptBR });
+          }
+          
+          return {
+            client: appointment.clients?.name || "Cliente não especificado",
+            service: appointment.services?.name || "Serviço não especificado",
+            time: format(date, "HH:mm"),
+            date: displayDate
+          };
+        });
+
+        setUpcomingAppointments(formattedAppointments);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Stats info with real data
+  const statCards = [
     {
       title: "Agendamentos Hoje",
-      value: "3",
+      value: stats.todayAppointments.toString(),
       change: "+1 desde ontem",
       icon: Calendar,
       link: "/dashboard/calendar"
     },
     {
       title: "Clientes Ativos",
-      value: "28",
+      value: stats.clients.toString(),
       change: "+5 este mês",
       icon: Users,
       link: "/dashboard/clients"
     },
     {
       title: "Receita do Mês",
-      value: "R$ 2.450",
+      value: `R$ ${stats.monthlyRevenue.toFixed(2)}`,
       change: "+15% comparado ao mês anterior",
       icon: CreditCard,
       link: "/dashboard/finance"
     },
     {
       title: "Notificações Enviadas",
-      value: "42",
+      value: stats.notificationsSent.toString(),
       change: "12 agendamentos confirmados",
       icon: Bell,
       link: "/dashboard/notifications"
     }
-  ];
-
-  const upcomingAppointments = [
-    { client: "Maria Silva", service: "Consulta Inicial", time: "14:00", date: "Hoje" },
-    { client: "João Costa", service: "Avaliação", time: "10:30", date: "Amanhã" },
-    { client: "Pedro Santos", service: "Sessão de Acompanhamento", time: "16:00", date: "25/05" }
-  ];
-
-  const tasks = [
-    { title: "Confirmar agendamento com Maria", completed: false },
-    { title: "Preparar material para João", completed: true },
-    { title: "Enviar orçamento para novo cliente", completed: false }
   ];
 
   return (
@@ -59,7 +172,7 @@ const DashboardOverview = () => {
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
+        {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <Link to={stat.link} key={index}>
