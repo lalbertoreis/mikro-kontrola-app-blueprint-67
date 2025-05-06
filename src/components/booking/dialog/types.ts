@@ -24,3 +24,8 @@ export interface BookingDialogProps {
     }
   }) => void;
 }
+
+export interface BookingStepProps {
+  onNext?: () => void;
+  onPrevious?: () => void;
+}

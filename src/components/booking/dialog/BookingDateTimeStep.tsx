@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { BookingStep } from "./types";
+import { BookingStepProps } from "./types";
 import BookingCalendar from "./BookingCalendar";
 import TimeSlotSelector from "./TimeSlotSelector";
 import PeriodSelector from "./PeriodSelector";
@@ -10,7 +10,7 @@ import DialogStepNavigator from "./DialogStepNavigator";
 import { getDateWithPeriod } from "@/hooks/booking/utils/dateFormatters";
 import { useProfileSettings } from "@/hooks/useProfileSettings";
 
-interface BookingDateTimeStepProps extends BookingStep {
+interface BookingDateTimeStepProps extends BookingStepProps {
   date: Date | undefined;
   setDate: (date: Date) => void;
   time: string | undefined;
@@ -75,32 +75,26 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
     <div className="space-y-4" style={{ '--booking-color': bookingColor } as React.CSSProperties}>
       <h2 className="text-xl font-semibold">Escolha a data e horário</h2>
       
-      <BookingCalendar
-        selectedDate={date}
-        onDateSelect={setDate}
-        maxDate={maxDate}
-        businessSlug={businessSlug}
-        employeeId={employeeId}
-        serviceId={serviceId}
-      />
-
-      {date && (
-        <div className="space-y-4">
+      <div>
+        {date && (
           <div className="text-sm text-gray-500">
             {format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </div>
-
-          <PeriodSelector selectedPeriod={period} onChange={handlePeriodChange} />
-          
-          <TimeSlotSelector
-            availableTimeSlots={filteredTimeSlots}
-            selectedTime={time}
-            onTimeSelect={handleTimeSelect}
-            period={period}
-            isLoading={isLoading}
-          />
-        </div>
-      )}
+        )}
+        
+        <PeriodSelector 
+          selectedPeriod={period} 
+          onPeriodSelect={handlePeriodChange} 
+        />
+        
+        <TimeSlotSelector
+          availableTimeSlots={filteredTimeSlots}
+          selectedTime={time}
+          onTimeSelect={handleTimeSelect}
+          period={period}
+          isLoading={isLoading}
+        />
+      </div>
 
       <DialogStepNavigator
         onNext={onNext}

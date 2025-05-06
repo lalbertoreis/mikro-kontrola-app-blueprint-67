@@ -2,21 +2,28 @@
 import React from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-type Period = "Manhã" | "Tarde" | "Noite";
+type PeriodType = "morning" | "afternoon" | "evening";
 
 interface PeriodSelectorProps {
-  selectedPeriod: Period | null;
-  onPeriodSelect: (period: Period) => void;
-  availablePeriods?: Period[]; // Add this prop to filter available periods
+  selectedPeriod: PeriodType | null | undefined;
+  onPeriodSelect: (period: PeriodType) => void;
+  availablePeriods?: PeriodType[]; // Add this prop to filter available periods
 }
 
 const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   selectedPeriod,
   onPeriodSelect,
-  availablePeriods = ["Manhã", "Tarde", "Noite"], // Default to all periods if not provided
+  availablePeriods = ["morning", "afternoon", "evening"], // Default to all periods if not provided
 }) => {
+  // Map internal period types to display labels
+  const periodLabels = {
+    "morning": "Manhã",
+    "afternoon": "Tarde",
+    "evening": "Noite"
+  };
+
   // Filter periods based on availability
-  const periodsToShow = (["Manhã", "Tarde", "Noite"] as Period[]).filter(
+  const periodsToShow = (["morning", "afternoon", "evening"] as PeriodType[]).filter(
     (period) => availablePeriods.includes(period)
   );
 
@@ -35,11 +42,11 @@ const PeriodSelector: React.FC<PeriodSelectorProps> = ({
         type="single" 
         className="justify-start" 
         value={selectedPeriod || ''} 
-        onValueChange={value => value && onPeriodSelect(value as Period)}
+        onValueChange={value => value && onPeriodSelect(value as PeriodType)}
       >
         {periodsToShow.map((period) => (
           <ToggleGroupItem key={period} value={period} className="px-4">
-            {period}
+            {periodLabels[period]}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
