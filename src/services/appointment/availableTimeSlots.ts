@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -73,6 +72,7 @@ async function fetchTimeInterval(slug?: string): Promise<number> {
   if (slug) {
     try {
       await supabase.rpc('set_slug_for_session', { slug });
+      console.log("Set slug for session in availableTimeSlots:", slug);
     } catch (error) {
       console.error('Error setting slug for session:', error);
     }
@@ -170,6 +170,7 @@ export async function fetchAvailableTimeSlots(
     // Se um slug foi fornecido, vamos definir o contexto da sessão
     if (slug) {
       await supabase.rpc('set_slug_for_session', { slug });
+      console.log("Set slug for session in availableTimeSlots:", slug);
     }
     
     // Format date and get day of week - use the date as is, without adjustments

@@ -40,15 +40,24 @@ export const processBooking = async (bookingData: {
   time: string;
   clientInfo: { name: string; phone: string };
   businessSlug?: string; // Adicionado campo para identificar o negócio
+  businessUserId?: string; // Adicionado field para ID do negócio
 }) => {
-  const { service, employee, date, time, clientInfo, businessSlug } = bookingData;
+  const { service, employee, date, time, clientInfo, businessSlug, businessUserId } = bookingData;
   
   try {
-    // Obter o user_id do negócio pelo slug (importante para as políticas RLS)
-    const businessUserId = businessSlug ? await getBusinessUserId(businessSlug) : null;
-    if (!businessUserId && businessSlug) {
+    // Obter o user_id do negócio pelo slug ou usar o que foi passado
+    let businessId = businessUserId;
+    if (!businessId && businessSlug) {
+      // Definir o slug para a sessão
+      await supabase.rpc('set_slug_for_session', { slug: businessSlug });
+      businessId = await getBusinessUserId(businessSlug);
+    }
+    
+    if (!businessId) {
       throw new Error("Não foi possível identificar o negócio para este agendamento");
     }
+    
+    console.log("Using business ID for booking:", businessId);
     
     // Check if client exists or create new client
     let clientId;
@@ -56,6 +65,7 @@ export const processBooking = async (bookingData: {
       .from('clients')
       .select('id')
       .eq('phone', clientInfo.phone)
+      .eq('user_id', businessId) // Filtrar por user_id do negócio
       .maybeSingle();
     
     if (clientFetchError) throw clientFetchError;
@@ -63,13 +73,13 @@ export const processBooking = async (bookingData: {
     if (existingClient) {
       clientId = existingClient.id;
     } else {
-      // Create new client - agora com o user_id do negócio
+      // Create new client com o user_id do negócio
       const { data: newClient, error: createClientError } = await supabase
         .from('clients')
         .insert({
           name: clientInfo.name,
           phone: clientInfo.phone,
-          user_id: businessUserId // Usar o ID do negócio, não do cliente
+          user_id: businessId // Usar o ID do negócio
         })
         .select('id')
         .single();
@@ -91,7 +101,7 @@ export const processBooking = async (bookingData: {
     const endDate = new Date(startDate);
     endDate.setMinutes(endDate.getMinutes() + service.duration);
     
-    // Create appointment - com o user_id do negócio
+    // Create appointment com o user_id do negócio
     const { data: appointment, error: appointmentError } = await supabase
       .from('appointments')
       .insert({
@@ -101,7 +111,7 @@ export const processBooking = async (bookingData: {
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         status: 'scheduled',
-        user_id: businessUserId // Usar o ID do negócio, não do cliente
+        user_id: businessId // Usar o ID do negócio
       })
       .select()
       .single();
@@ -136,19 +146,47 @@ export const processBooking = async (bookingData: {
 };
 
 // Fetch user appointments by phone number
-export const fetchUserAppointmentsByPhone = async (phone: string): Promise<BookingAppointment[]> => {
+export const fetchUserAppointmentsByPhone = async (phone: string, businessSlug?: string): Promise<BookingAppointment[]> => {
   try {
+    // Se temos um slug, vamos definir o contexto da sessão
+    if (businessSlug) {
+      await supabase.rpc('set_slug_for_session', { slug: businessSlug });
+    }
+    
+    // Obter o ID do negócio pelo slug (se fornecido)
+    let businessId = null;
+    if (businessSlug) {
+      const { data: business } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('slug', businessSlug)
+        .maybeSingle();
+      
+      businessId = business?.id;
+    }
+    
+    if (!businessId && businessSlug) {
+      console.error('Business ID not found for slug:', businessSlug);
+      return [];
+    }
+    
     // First get the client id by phone
-    const { data: client, error: clientError } = await supabase
+    let query = supabase
       .from('clients')
       .select('id')
-      .eq('phone', phone)
-      .maybeSingle();
+      .eq('phone', phone);
+      
+    // Adicionar filtro por negócio se tivermos o ID
+    if (businessId) {
+      query = query.eq('user_id', businessId);
+    }
+    
+    const { data: client, error: clientError } = await query.maybeSingle();
     
     if (clientError || !client) return [];
     
     // Then fetch appointments
-    const { data: appointmentsData, error: appointmentsError } = await supabase
+    let appointmentsQuery = supabase
       .from('appointments')
       .select(`
         id, 
@@ -160,6 +198,13 @@ export const fetchUserAppointmentsByPhone = async (phone: string): Promise<Booki
       .eq('client_id', client.id)
       .neq('status', 'canceled')
       .order('start_time', { ascending: true });
+      
+    // Filtrar por negócio se tivermos o ID
+    if (businessId) {
+      appointmentsQuery = appointmentsQuery.eq('user_id', businessId);
+    }
+    
+    const { data: appointmentsData, error: appointmentsError } = await appointmentsQuery;
     
     if (appointmentsError) throw appointmentsError;
     
@@ -179,8 +224,13 @@ export const fetchUserAppointmentsByPhone = async (phone: string): Promise<Booki
 };
 
 // Cancel an appointment by ID
-export const cancelAppointment = async (id: string): Promise<boolean> => {
+export const cancelAppointment = async (id: string, businessSlug?: string): Promise<boolean> => {
   try {
+    // Se temos um slug, vamos definir o contexto da sessão
+    if (businessSlug) {
+      await supabase.rpc('set_slug_for_session', { slug: businessSlug });
+    }
+    
     const { error } = await supabase
       .from('appointments')
       .update({ status: 'canceled' })

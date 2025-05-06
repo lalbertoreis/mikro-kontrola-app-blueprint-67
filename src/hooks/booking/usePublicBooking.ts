@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,14 +8,20 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { Service, ServicePackage } from "@/types/service";
 import { useBusinessProfile } from "./useBusinessProfile";
 import { useBookingAuth } from "./useBookingAuth";
-import { processBooking, cancelAppointment } from "./utils/bookingUtils";
+import { processBooking, cancelAppointment, fetchUserAppointmentsByPhone } from "./utils/bookingUtils";
 
 export function usePublicBooking(slug: string | undefined, navigate: NavigateFunction) {
   // Fetch data using custom hooks
   const { services, isLoading: isServicesLoading } = useServices();
   const { packages, isLoading: isPackagesLoading } = useServicePackages();
   const { employees, isLoading: isEmployeesLoading } = useEmployees();
-  const { businessProfile, isLoadingBusiness, businessExists } = useBusinessProfile(slug, navigate);
+  const { 
+    businessProfile, 
+    isLoadingBusiness, 
+    businessExists, 
+    businessUserId 
+  } = useBusinessProfile(slug, navigate);
+  
   const { 
     isLoggedIn, 
     userProfile, 
@@ -90,10 +97,11 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
       handleLogin(userData);
       
       try {
-        // Process the booking in the database - agora passando o slug do negócio
+        // Process the booking in the database
         const result = await processBooking({
           ...bookingData,
-          businessSlug: slug // Passar o slug para identificar o negócio correto
+          businessSlug: slug, // Passar o slug para identificar o negócio correto
+          businessUserId: businessUserId // Passar o ID do usuário do negócio
         });
         
         if (result) {
@@ -116,7 +124,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
 
   const handleCancelAppointment = async (id: string) => {
     try {
-      await cancelAppointment(id);
+      await cancelAppointment(id, slug);
       setAppointments((prev) => prev.filter((app) => app.id !== id));
       toast.success("Agendamento cancelado com sucesso!");
     } catch (error) {

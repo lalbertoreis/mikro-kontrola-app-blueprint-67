@@ -7,6 +7,7 @@ import { BusinessSettings } from "@/types/settings";
 export function useBusinessProfile(slug: string | undefined, navigate: NavigateFunction) {
   const [businessProfile, setBusinessProfile] = useState<BusinessSettings | null>(null);
   const [isLoadingBusiness, setIsLoadingBusiness] = useState(true);
+  const [businessUserId, setBusinessUserId] = useState<string | null>(null);
 
   // Fetch business settings based on slug
   useEffect(() => {
@@ -35,6 +36,8 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
         }
         
         if (data) {
+          setBusinessUserId(data.id); // Armazenar o ID do usuário do negócio
+          
           setBusinessProfile({
             businessName: data.business_name || '',
             businessLogo: data.business_logo || '',
@@ -73,6 +76,7 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
   return {
     businessProfile,
     isLoadingBusiness,
-    businessExists
+    businessExists,
+    businessUserId  // Adicionar businessUserId ao retorno
   };
 }
