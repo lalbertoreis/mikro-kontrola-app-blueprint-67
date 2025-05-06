@@ -1,4 +1,3 @@
-
 import { Service, ServicePackage } from "@/types/service";
 import { toast } from "sonner";
 import { useBookingAuth } from "./useBookingAuth";
@@ -69,8 +68,7 @@ export function useBookingHandlers(
             employeeName: result.newAppointment.employee.name,
             date: result.newAppointment.date,
             time: result.newAppointment.time,
-            status: result.newAppointment.status as any,
-            createdAt: result.newAppointment.createdAt
+            status: result.newAppointment.status as any
           };
           
           setAppointments((prev) => [...prev, newAppointment]);
