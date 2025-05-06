@@ -89,7 +89,7 @@ const DashboardOverview = () => {
         setStats({
           todayAppointments: String(todayAppts?.length || 0),
           clients: String(clientsCount || 0),
-          monthlyRevenue: String(monthlyRevenue),
+          monthlyRevenue: String(monthlyRevenue || "0"),
           notificationsSent: "42", // Mock data for now
         });
 
