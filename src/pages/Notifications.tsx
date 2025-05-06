@@ -9,7 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { useNotifications } from "@/hooks/useNotifications";
 
 const Notifications = () => {
-  const { notifications, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, loading } = useNotifications();
   const [filter, setFilter] = useState<"all" | "unread">("all");
   
   const filteredNotifications = filter === "unread" 
@@ -67,7 +67,12 @@ const Notifications = () => {
         </div>
         
         <div className="space-y-4">
-          {filteredNotifications.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin h-8 w-8 border-4 border-kontrola-600 border-t-transparent rounded-full mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Carregando notificações...</p>
+            </div>
+          ) : filteredNotifications.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {filter === "unread" 
                 ? "Não há notificações não lidas." 
