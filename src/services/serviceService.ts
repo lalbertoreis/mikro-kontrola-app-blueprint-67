@@ -2,12 +2,20 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Service, ServiceFormData } from "@/types/service";
 
-export async function fetchServices(): Promise<Service[]> {
+export async function fetchServices(businessUserId?: string | null): Promise<Service[]> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('services')
       .select('*')
       .order('name');
+    
+    // Se for passado um businessUserId, filtra por este ID
+    if (businessUserId) {
+      console.log("Fetching services for business ID:", businessUserId);
+      query = query.eq('user_id', businessUserId);
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
     

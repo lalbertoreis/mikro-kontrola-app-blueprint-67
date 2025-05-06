@@ -10,12 +10,12 @@ import {
 } from "@/services/serviceService";
 import type { Service, ServiceFormData } from "@/types/service";
 
-export function useServices() {
+export function useServices(businessUserId?: string | null) {
   const queryClient = useQueryClient();
 
   const { data: services = [], isLoading, error } = useQuery({
-    queryKey: ["services"],
-    queryFn: fetchServices,
+    queryKey: ["services", businessUserId],
+    queryFn: () => fetchServices(businessUserId),
   });
 
   const createMutation = useMutation({
