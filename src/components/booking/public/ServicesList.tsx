@@ -26,7 +26,8 @@ const ServicesList: React.FC<ServicesListProps> = ({ services, onServiceClick })
       <h2 className="text-xl font-bold mb-4">Serviços ({services.length})</h2>
       <div className="space-y-3">
         {services.map((service) => {
-          const hasEmployees = service.hasEmployees !== false; // Considerar undefined como true também
+          // Considerar undefined como true também para compatibilidade com dados existentes
+          const hasEmployees = service.hasEmployees !== false; 
           
           return (
             <div key={service.id} className="relative">

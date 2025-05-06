@@ -7,12 +7,16 @@ interface ServiceCardProps {
   item: Service | ServicePackage;
   isPackage?: boolean;
   onClick: () => void;
-  disabled?: boolean; // Nova propriedade
+  disabled?: boolean;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ item, isPackage = false, onClick, disabled = false }) => {
   const isService = !isPackage && "duration" in item;
-  const duration = isService ? item.duration : item.totalDuration;
+  
+  // Calculate duration based on whether it's a service or package
+  const duration = isService 
+    ? (item as Service).duration 
+    : (item as ServicePackage).totalDuration || 0;
   
   return (
     <div 

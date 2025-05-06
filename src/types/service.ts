@@ -10,6 +10,7 @@ export interface Service {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  hasEmployees?: boolean; // Added property for employee availability
 }
 
 export interface ServiceFormData {
