@@ -1,8 +1,7 @@
 
 import React from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-
-type Period = "Manhã" | "Tarde" | "Noite";
+import { Period } from "./types";
 
 interface PeriodSelectorProps {
   selectedPeriod: Period | null;

@@ -3,7 +3,7 @@ import { BusinessSettings } from "@/types/settings";
 import { Employee } from "@/types/employee";
 import { Service } from "@/types/service";
 
-// Updated to use Portuguese periods
+// Define Period type to include both English and Portuguese values
 export type Period = "morning" | "afternoon" | "evening" | "Manhã" | "Tarde" | "Noite";
 export type TimeSlot = string;
 export type BookingStep = "datetime" | "clientinfo" | "confirmation";
