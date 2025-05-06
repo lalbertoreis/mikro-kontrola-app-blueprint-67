@@ -42,11 +42,17 @@ export function useServicesWithEmployees(slug: string | undefined) {
 
   // Add hasEmployees property to services
   const servicesWithEmployeeFlag = useMemo(() => {
+    console.log("Calculating servicesWithEmployeeFlag");
+    if (!services || services.length === 0) {
+      console.log("No services available yet");
+      return [];
+    }
+    
     return services.map(service => {
-      const hasEmployees = serviceWithEmployeesMap.has(service.id) && 
-                         (serviceWithEmployeesMap.get(service.id)?.length || 0) > 0;
+      const serviceEmployees = serviceWithEmployeesMap.get(service.id) || [];
+      const hasEmployees = serviceEmployees.length > 0;
       
-      console.log(`Service ${service.name} (${service.id}): hasEmployees=${hasEmployees}`);
+      console.log(`Service ${service.name} (${service.id}): hasEmployees=${hasEmployees}, employeesCount=${serviceEmployees.length}`);
       
       return {
         ...service,
@@ -55,11 +61,15 @@ export function useServicesWithEmployees(slug: string | undefined) {
     });
   }, [services, serviceWithEmployeesMap]);
 
+  // Wait for both services and employees to load before returning data
+  const isLoading = isServicesLoading || isEmployeesLoading;
+  
   return {
-    services: servicesWithEmployeeFlag,
+    services: isLoading ? [] : servicesWithEmployeeFlag,
     isServicesLoading,
     isEmployeesLoading,
     employees,
-    serviceWithEmployeesMap
+    serviceWithEmployeesMap,
+    isLoading
   };
 }

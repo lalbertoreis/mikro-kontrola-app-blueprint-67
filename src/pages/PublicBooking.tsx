@@ -50,7 +50,7 @@ const PublicBooking: React.FC = () => {
   // Log active services when they change
   useEffect(() => {
     console.log(`PublicBooking component: ${activeServices.length} active services available`);
-    activeServices.forEach(service => console.log(`- ${service.name}`));
+    activeServices.forEach(service => console.log(`- ${service.name} (hasEmployees: ${service.hasEmployees})`));
   }, [activeServices]);
 
   if (isLoadingBusiness) {
@@ -74,33 +74,26 @@ const PublicBooking: React.FC = () => {
       onMyAppointmentsClick={() => setIsMyAppointmentsDialogOpen(true)}
       onLogoutClick={handleLogout}
     >
-      {isLoading ? (
-        <div className="flex items-center justify-center min-h-[200px]">
-          <p>Carregando...</p>
+      <ServicesList 
+        services={activeServices} 
+        onServiceClick={handleServiceClick}
+        isLoading={isLoading}
+      />
+
+      {!isLoading && activePackages.length > 0 && (
+        <PackagesList 
+          packages={activePackages} 
+          onPackageClick={handlePackageClick} 
+        />
+      )}
+
+      {!isLoading && activeServices.length === 0 && activePackages.length === 0 && (
+        <div className="py-10 text-center">
+          <h3 className="text-lg font-medium text-gray-900">Nenhum serviço disponível</h3>
+          <p className="mt-2 text-sm text-gray-500">
+            Este negócio ainda não tem serviços disponíveis para agendamento online.
+          </p>
         </div>
-      ) : (
-        <>
-          <ServicesList 
-            services={activeServices} 
-            onServiceClick={handleServiceClick} 
-          />
-
-          {activePackages.length > 0 && (
-            <PackagesList 
-              packages={activePackages} 
-              onPackageClick={handlePackageClick} 
-            />
-          )}
-
-          {!isLoading && activeServices.length === 0 && activePackages.length === 0 && (
-            <div className="py-10 text-center">
-              <h3 className="text-lg font-medium text-gray-900">Nenhum serviço disponível</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Este negócio ainda não tem serviços disponíveis para agendamento online.
-              </p>
-            </div>
-          )}
-        </>
       )}
 
       <BookingDialogs

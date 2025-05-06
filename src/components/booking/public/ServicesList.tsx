@@ -7,9 +7,27 @@ import { AlertCircle } from "lucide-react";
 interface ServicesListProps {
   services: Service[];
   onServiceClick: (service: Service) => void;
+  isLoading?: boolean;
 }
 
-const ServicesList: React.FC<ServicesListProps> = ({ services, onServiceClick }) => {
+const ServicesList: React.FC<ServicesListProps> = ({ services, onServiceClick, isLoading = false }) => {
+  if (isLoading) {
+    return (
+      <div className="mb-8">
+        <h2 className="text-xl font-bold mb-4">Serviços</h2>
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-pulse flex space-x-4">
+            <div className="space-y-6 flex-1">
+              <div className="h-6 bg-gray-200 rounded"></div>
+              <div className="h-24 bg-gray-200 rounded"></div>
+              <div className="h-24 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   if (services.length === 0) {
     return (
       <div className="mb-8">
@@ -19,15 +37,16 @@ const ServicesList: React.FC<ServicesListProps> = ({ services, onServiceClick })
     );
   }
 
-  console.log(`ServicesList rendering ${services.length} services`, services);
+  console.log(`ServicesList rendering ${services.length} services with availability details:`, 
+    services.map(s => `${s.name}: ${s.hasEmployees ? 'Has employees' : 'No employees'}`));
 
   return (
     <div className="mb-8">
       <h2 className="text-xl font-bold mb-4">Serviços ({services.length})</h2>
       <div className="space-y-3">
         {services.map((service) => {
-          // Considerar undefined como true também para compatibilidade com dados existentes
-          const hasEmployees = service.hasEmployees !== false; 
+          // Considerar undefined como false para compatibilidade com dados existentes
+          const hasEmployees = service.hasEmployees === true;
           
           return (
             <div key={service.id} className="relative">

@@ -1,6 +1,5 @@
 import { Service, ServicePackage } from "@/types/service";
 import { toast } from "sonner";
-import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
 import { useBookingAuth } from "./useBookingAuth";
 import { processBooking, cancelAppointment } from "./utils";
 
@@ -18,7 +17,8 @@ export function useBookingHandlers(
   const { isLoggedIn, userProfile, appointments, setAppointments, handleLogin } = useBookingAuth();
   
   const handleServiceClick = (service: Service) => {
-    if (service.hasEmployees === false) {
+    // Explicitly check if hasEmployees is true, treating undefined as false
+    if (service.hasEmployees !== true) {
       toast.info("Este serviço não tem profissionais disponíveis no momento.");
       return;
     }
