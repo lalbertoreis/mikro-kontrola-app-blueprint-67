@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from "react";
 import { BusinessSettings } from "@/types/settings";
 import { UserCircle2, Calendar, Phone, Instagram, MapPin, LogOut } from "lucide-react";
@@ -10,6 +9,7 @@ interface BookingLayoutProps {
   isLoggedIn: boolean;
   userProfile?: { name: string; phone: string } | null;
   onMyAppointmentsClick: () => void;
+  onLoginClick: () => void;  // Added this prop for login functionality
   onLogoutClick: () => void;
 }
 
@@ -19,6 +19,7 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
   isLoggedIn,
   userProfile,
   onMyAppointmentsClick,
+  onLoginClick,        // Added this parameter
   onLogoutClick
 }) => {
   return (
@@ -114,9 +115,9 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
             </Button>
           </>
         ) : (
-          /* Login button when not logged in */
+          /* Login button when not logged in - Now calls onLoginClick */
           <Button
-            onClick={onMyAppointmentsClick}
+            onClick={onLoginClick}
             className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
             size="lg"
             aria-label="Fazer login"

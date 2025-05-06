@@ -77,6 +77,7 @@ const PublicBooking: React.FC = () => {
       isLoggedIn={isLoggedIn}
       userProfile={userProfile}
       onMyAppointmentsClick={() => setIsMyAppointmentsDialogOpen(true)}
+      onLoginClick={() => setIsLoginDialogOpen(true)} // Added dedicated login handler
       onLogoutClick={handleLogout}
     >      
       <ServicesList 
