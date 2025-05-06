@@ -1,6 +1,6 @@
 
 import React from "react";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Check, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,13 +38,10 @@ const NotificationList: React.FC<NotificationListProps> = ({
     return formatDistanceToNow(date, { addSuffix: true, locale: ptBR });
   };
 
-  // Filter unread notifications to show at the top
-  const unreadNotifications = notifications.filter(n => !n.read);
-
   if (notifications.length === 0) {
     return (
       <div className="p-4 text-center text-muted-foreground">
-        Nenhuma notificação no momento.
+        Nenhuma notificação não lida no momento.
       </div>
     );
   }
@@ -58,7 +55,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
             variant="ghost" 
             size="sm"
             onClick={onMarkAllAsRead}
-            disabled={unreadNotifications.length === 0}
+            disabled={notifications.length === 0}
           >
             <Check className="h-3 w-3 mr-1" />
             Marcar todas como lidas
@@ -73,44 +70,38 @@ const NotificationList: React.FC<NotificationListProps> = ({
       
       <ScrollArea className="h-[300px]">
         <div className="flex flex-col">
-          {unreadNotifications.length > 0 ? (
-            unreadNotifications.map((notification) => (
-              <div 
-                key={notification.id}
-                className="p-3 border-b last:border-b-0 bg-accent/20"
-              >
-                <div className="flex items-start">
-                  <div className="p-1 rounded-full bg-primary/10 mr-3">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-medium text-sm">{notification.title}</h4>
-                      <span className="text-xs text-muted-foreground">
-                        {formatNotificationTime(notification.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                      {notification.message}
-                    </p>
-                  </div>
+          {notifications.map((notification) => (
+            <div 
+              key={notification.id}
+              className="p-3 border-b last:border-b-0 bg-accent/20"
+            >
+              <div className="flex items-start">
+                <div className="p-1 rounded-full bg-primary/10 mr-3">
+                  {getNotificationIcon(notification.type)}
                 </div>
-                <div className="mt-2 flex justify-end">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => onMarkAsRead(notification.id)}
-                  >
-                    Marcar como lida
-                  </Button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-medium text-sm">{notification.title}</h4>
+                    <span className="text-xs text-muted-foreground">
+                      {formatNotificationTime(notification.createdAt)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    {notification.message}
+                  </p>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="p-4 text-center text-muted-foreground">
-              Nenhuma notificação não lida.
+              <div className="mt-2 flex justify-end">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onMarkAsRead(notification.id)}
+                >
+                  Marcar como lida
+                </Button>
+              </div>
             </div>
-          )}
+          ))}
         </div>
       </ScrollArea>
     </div>

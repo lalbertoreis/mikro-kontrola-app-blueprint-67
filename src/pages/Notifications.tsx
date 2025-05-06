@@ -3,56 +3,13 @@ import React, { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Check, Bell } from "lucide-react";
-import { Notification } from "@/types/notification";
+import { Badge } from "@/components/ui/badge";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
-
-// Mock data until backend is implemented
-const initialNotifications: Notification[] = [
-  {
-    id: "1",
-    title: "Novo agendamento",
-    message: "Maria Silva agendou um Corte de Cabelo para amanhã às 14:00.",
-    type: "appointment_created",
-    read: false,
-    entityId: "appointment-123",
-    entityType: "appointment",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    title: "Lembrete de agendamento",
-    message: "Você tem um cliente em 1 hora - João Pereira para Manicure.",
-    type: "appointment_reminder",
-    read: true,
-    entityId: "appointment-456",
-    entityType: "appointment",
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "3",
-    title: "Agendamento cancelado",
-    message: "O cliente Carlos Mendes cancelou o agendamento de Barba para hoje às 16:30.",
-    type: "appointment_canceled",
-    read: false,
-    entityId: "appointment-789",
-    entityType: "appointment",
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "4",
-    title: "Novo cliente registrado",
-    message: "Paulo Oliveira se cadastrou no sistema.",
-    type: "system",
-    read: true,
-    entityType: "client",
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+import { useNotifications } from "@/hooks/useNotifications";
 
 const Notifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const { notifications, markAsRead, markAllAsRead } = useNotifications();
   const [filter, setFilter] = useState<"all" | "unread">("all");
   
   const filteredNotifications = filter === "unread" 
@@ -60,16 +17,6 @@ const Notifications = () => {
     : notifications;
 
   const unreadCount = notifications.filter(n => !n.read).length;
-
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
-  };
-  
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
 
   const formatNotificationDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -110,7 +57,7 @@ const Notifications = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={handleMarkAllAsRead}
+              onClick={markAllAsRead}
               disabled={notifications.every(n => n.read)}
             >
               <Check className="h-4 w-4 mr-2" />
@@ -152,7 +99,7 @@ const Notifications = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handleMarkAsRead(notification.id)}
+                          onClick={() => markAsRead(notification.id)}
                         >
                           Marcar como lida
                         </Button>
