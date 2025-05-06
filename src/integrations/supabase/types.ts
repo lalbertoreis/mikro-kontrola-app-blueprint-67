@@ -68,6 +68,13 @@ export type Database = {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
+            referencedRelation: "business_services_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
           },
@@ -140,6 +147,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "business_services_view"
             referencedColumns: ["id"]
           },
           {
@@ -557,6 +571,13 @@ export type Database = {
             foreignKeyName: "transactions_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
+            referencedRelation: "business_services_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
           },
@@ -564,9 +585,64 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      business_services_view: {
+        Row: {
+          business_slug: string | null
+          business_user_id: string | null
+          created_at: string | null
+          description: string | null
+          duration: number | null
+          employee_id: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          price: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_services_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      get_service_by_id_and_slug: {
+        Args: { service_id_param: string; slug_param: string }
+        Returns: {
+          business_slug: string | null
+          business_user_id: string | null
+          created_at: string | null
+          description: string | null
+          duration: number | null
+          employee_id: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          price: number | null
+          updated_at: string | null
+        }[]
+      }
+      get_services_by_slug: {
+        Args: { slug_param: string }
+        Returns: {
+          business_slug: string | null
+          business_user_id: string | null
+          created_at: string | null
+          description: string | null
+          duration: number | null
+          employee_id: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          price: number | null
+          updated_at: string | null
+        }[]
+      }
       set_slug_for_session: {
         Args: { slug: string }
         Returns: undefined

@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "sonner";
-import { useServices } from "@/hooks/useServices";
+import { useServicesBySlug } from "@/hooks/useServices";
 import { useServicePackages } from "@/hooks/useServicePackages";
 import { useEmployees } from "@/hooks/useEmployees";
 import { Service, ServicePackage } from "@/types/service";
@@ -21,8 +21,8 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
   
   console.log("In usePublicBooking, businessUserId:", businessUserId);
   
-  // Fetch data using custom hooks with businessUserId
-  const { services, isLoading: isServicesLoading } = useServices(businessUserId);
+  // Usar o novo hook que busca serviços diretamente pelo slug
+  const { data: services = [], isLoading: isServicesLoading } = useServicesBySlug(slug);
   const { packages, isLoading: isPackagesLoading } = useServicePackages();
   const { employees, isLoading: isEmployeesLoading } = useEmployees();
   
@@ -77,15 +77,15 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
       console.log(`ServiceMap has service ID: ${id} with ${serviceWithEmployeesMap.get(id)?.length} employees`);
     });
     
-    // Filter services that are active and have employees
+    // Filter services that have employees
+    // Agora não precisamos filtrar por services.isActive porque a view já faz isso
     const filtered = services.filter(service => {
-      const isActive = service.isActive === true;
       const hasEmployees = serviceWithEmployeesMap.has(service.id) && 
                           (serviceWithEmployeesMap.get(service.id)?.length || 0) > 0;
       
-      console.log(`Evaluating service ${service.name}: isActive=${isActive}, hasEmployees=${hasEmployees}`);
+      console.log(`Evaluating service ${service.name}: hasEmployees=${hasEmployees}`);
       
-      return isActive && hasEmployees;
+      return hasEmployees;
     });
     
     console.log("Filtered active services:", filtered.length);

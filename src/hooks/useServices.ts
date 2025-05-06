@@ -5,8 +5,10 @@ import {
   fetchServices, 
   fetchServiceById, 
   createService, 
-  updateService, 
-  deleteService 
+  updateService,
+  deleteService,
+  fetchServicesBySlug,
+  fetchServiceByIdAndSlug 
 } from "@/services/serviceService";
 import type { Service, ServiceFormData } from "@/types/service";
 
@@ -87,5 +89,35 @@ export function useServiceById(id?: string) {
       return service;
     },
     enabled: !!id,
+  });
+}
+
+// Novo hook para buscar serviços por slug do negócio
+export function useServicesBySlug(slug?: string) {
+  return useQuery({
+    queryKey: ["services-by-slug", slug],
+    queryFn: async () => {
+      if (!slug) return [];
+      console.log("useServicesBySlug: Fetching services for slug:", slug);
+      const services = await fetchServicesBySlug(slug);
+      console.log(`useServicesBySlug: ${services.length} services returned for slug:`, slug);
+      return services;
+    },
+    enabled: !!slug,
+  });
+}
+
+// Novo hook para buscar um serviço específico por ID e slug
+export function useServiceByIdAndSlug(id?: string, slug?: string) {
+  return useQuery({
+    queryKey: ["service-by-id-and-slug", id, slug],
+    queryFn: async () => {
+      if (!id || !slug) return null;
+      console.log(`useServiceByIdAndSlug: Fetching service ${id} for slug:`, slug);
+      const service = await fetchServiceByIdAndSlug(id, slug);
+      console.log("useServiceByIdAndSlug: Service data returned:", service);
+      return service;
+    },
+    enabled: !!id && !!slug,
   });
 }

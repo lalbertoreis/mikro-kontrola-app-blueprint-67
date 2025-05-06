@@ -18,16 +18,20 @@ const ServicesList: React.FC<ServicesListProps> = ({ services, onServiceClick })
     );
   }
 
+  console.log(`ServicesList rendering ${services.length} services`, services);
+
   return (
     <div className="mb-8">
       <h2 className="text-xl font-bold mb-4">Serviços ({services.length})</h2>
-      {services.map((service) => (
-        <ServiceCard 
-          key={service.id} 
-          item={service} 
-          onClick={() => onServiceClick(service)} 
-        />
-      ))}
+      <div className="space-y-3">
+        {services.map((service) => (
+          <ServiceCard 
+            key={service.id} 
+            item={service} 
+            onClick={() => onServiceClick(service)} 
+          />
+        ))}
+      </div>
     </div>
   );
 };

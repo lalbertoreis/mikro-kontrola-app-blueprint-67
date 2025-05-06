@@ -95,6 +95,88 @@ export async function fetchServiceById(id: string): Promise<Service | null> {
   }
 }
 
+// Nova função para buscar serviços por slug do negócio
+export async function fetchServicesBySlug(slug: string): Promise<Service[]> {
+  try {
+    console.info("Fetching services by business slug:", slug);
+    
+    // Primeiro, definir o slug na sessão para o contexto RLS
+    await setSlugForSession(slug);
+    
+    // Usar a função que criamos no banco de dados
+    const { data, error } = await supabase
+      .rpc('get_services_by_slug', { slug_param: slug });
+    
+    if (error) {
+      console.error("Error fetching services by slug:", error);
+      throw error;
+    }
+    
+    console.info(`Found ${data?.length || 0} services for business slug: ${slug}`);
+    
+    return (data || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || undefined,
+      price: Number(item.price),
+      duration: Number(item.duration),
+      isActive: item.is_active,
+      multipleAttendees: false,
+      maxAttendees: undefined,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    }));
+  } catch (error) {
+    console.error('Erro ao buscar serviços por slug:', error);
+    throw error;
+  }
+}
+
+// Nova função para buscar um serviço específico por ID e slug
+export async function fetchServiceByIdAndSlug(id: string, slug: string): Promise<Service | null> {
+  try {
+    console.info(`Fetching service ID ${id} for business slug: ${slug}`);
+    
+    // Primeiro, definir o slug na sessão para o contexto RLS
+    await setSlugForSession(slug);
+    
+    // Usar a função que criamos no banco de dados
+    const { data, error } = await supabase
+      .rpc('get_service_by_id_and_slug', { 
+        service_id_param: id,
+        slug_param: slug 
+      });
+    
+    if (error) {
+      console.error("Error fetching service by ID and slug:", error);
+      throw error;
+    }
+    
+    if (!data || data.length === 0) {
+      console.log(`No service found with ID ${id} for business slug: ${slug}`);
+      return null;
+    }
+    
+    const item = data[0];
+    
+    return {
+      id: item.id,
+      name: item.name,
+      description: item.description || undefined,
+      price: Number(item.price),
+      duration: Number(item.duration),
+      isActive: item.is_active,
+      multipleAttendees: false,
+      maxAttendees: undefined,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    };
+  } catch (error) {
+    console.error('Erro ao buscar serviço por ID e slug:', error);
+    throw error;
+  }
+}
+
 export async function createService(serviceData: ServiceFormData): Promise<Service> {
   try {
     const { name, description, price, duration, isActive } = serviceData;
