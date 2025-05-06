@@ -61,7 +61,7 @@ const DashboardOverview = () => {
         if (transactionError) throw transactionError;
         
         const monthlyRevenue = monthlyTransactions 
-          ? monthlyTransactions.reduce((sum, transaction) => sum + parseFloat(transaction.amount || 0), 0)
+          ? monthlyTransactions.reduce((sum, transaction) => sum + parseFloat(transaction.amount || "0"), 0)
           : 0;
 
         // Fetch upcoming appointments
