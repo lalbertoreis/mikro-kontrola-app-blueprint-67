@@ -7,7 +7,6 @@ import BookingCalendar from "./BookingCalendar";
 import TimeSlotSelector from "./TimeSlotSelector";
 import PeriodSelector from "./PeriodSelector";
 import DialogStepNavigator from "./DialogStepNavigator";
-import { getDateWithPeriod } from "@/hooks/booking/utils/dateFormatters";
 import { useProfileSettings } from "@/hooks/useProfileSettings";
 
 const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
@@ -43,7 +42,8 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   onPeriodSelect,
   onTimeSelect,
   goToNextWeek,
-  goToPreviousWeek
+  goToPreviousWeek,
+  onNextStep
 }) => {
   const [isNextDisabled, setIsNextDisabled] = useState(true);
   const maxDate = addMonths(new Date(), 3);
@@ -51,8 +51,8 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   const bookingColor = settings?.bookingColor || '#9b87f5';
 
   useEffect(() => {
-    setIsNextDisabled(!date || !time);
-  }, [date, time]);
+    setIsNextDisabled(!selectedDate || !selectedTime);
+  }, [selectedDate, selectedTime]);
   
   const getPeriodFromTime = (time: string): Period => {
     const hour = parseInt(time.split(":")[0], 10);
@@ -62,19 +62,34 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   };
   
   const handleTimeSelect = (newTime: string) => {
-    setTime(newTime);
-    setPeriod(getPeriodFromTime(newTime));
+    if (onTimeSelect) {
+      onTimeSelect(newTime);
+    } else if (setTime) {
+      setTime(newTime);
+      // Se temos a função setPeriod disponível, definimos o período com base no horário
+      if (setPeriod) {
+        setPeriod(getPeriodFromTime(newTime));
+      }
+    }
   };
 
   const handlePeriodChange = (newPeriod: Period) => {
-    setPeriod(newPeriod);
-    setTime(undefined); // Clear selected time when period changes
+    if (onPeriodSelect) {
+      onPeriodSelect(newPeriod);
+    } else if (setPeriod) {
+      setPeriod(newPeriod);
+      // Limpar o horário selecionado quando o período muda
+      if (setTime) {
+        setTime(undefined);
+      }
+    }
   };
 
   // Filter time slots based on selected period
+  const currentPeriod = selectedPeriod || period;
   const filteredTimeSlots = availableTimeSlots.filter((slot) => {
-    if (!period) return true;
-    return getPeriodFromTime(slot) === period;
+    if (!currentPeriod) return true;
+    return getPeriodFromTime(slot) === currentPeriod;
   });
 
   return (
@@ -82,28 +97,29 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
       <h2 className="text-xl font-semibold">Escolha a data e horário</h2>
       
       <div>
-        {date && (
+        {(selectedDate || date) && (
           <div className="text-sm text-gray-500">
-            {format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            {format(selectedDate || date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </div>
         )}
         
         <PeriodSelector 
-          selectedPeriod={period} 
+          selectedPeriod={selectedPeriod || period} 
           onPeriodSelect={handlePeriodChange} 
+          availablePeriods={availablePeriods}
         />
         
         <TimeSlotSelector
           availableTimeSlots={filteredTimeSlots}
-          selectedTime={time}
+          selectedTime={selectedTime || time}
           onTimeSelect={handleTimeSelect}
-          period={period}
-          isLoading={isLoading}
+          period={selectedPeriod || period}
+          isLoading={isLoadingSlots || isLoading}
         />
       </div>
 
       <DialogStepNavigator
-        onNext={onNext}
+        onNext={onNext || onNextStep}
         onPrevious={onPrevious}
         isNextDisabled={isNextDisabled}
       />

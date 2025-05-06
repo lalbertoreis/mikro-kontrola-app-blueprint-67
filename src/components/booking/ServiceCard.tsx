@@ -33,9 +33,13 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   let displayDuration: number | undefined;
   if (item) {
     if (isPackage) {
-      displayDuration = (item as ServicePackage).totalDuration;
+      // Handle ServicePackage with totalDuration
+      const packageItem = item as ServicePackage;
+      displayDuration = packageItem.totalDuration;
     } else {
-      displayDuration = (item as Service).duration;
+      // Handle Service with duration
+      const serviceItem = item as Service;
+      displayDuration = serviceItem.duration;
     }
   } else {
     displayDuration = duration;

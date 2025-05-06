@@ -15,7 +15,7 @@ const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   availablePeriods = ["morning", "afternoon", "evening"], // Default to all periods if not provided
 }) => {
   // Map internal period types to display labels
-  const periodLabels = {
+  const periodLabels: Record<Period, string> = {
     "morning": "Manhã",
     "afternoon": "Tarde",
     "evening": "Noite"

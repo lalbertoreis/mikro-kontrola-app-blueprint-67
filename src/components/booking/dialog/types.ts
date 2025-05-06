@@ -32,15 +32,15 @@ export interface BookingStepProps {
 
 export interface BookingDateTimeStepProps extends BookingStepProps {
   date?: Date;
-  setDate: (date: Date) => void;
+  setDate?: (date: Date) => void;
   time?: string;
-  setTime: (time: string) => void;
+  setTime?: (time: string) => void;
   period?: Period;
-  setPeriod: (period: Period) => void;
+  setPeriod?: (period: Period) => void;
   availableTimeSlots: string[];
   employeeId?: string;
   serviceId?: string;
-  isLoading: boolean;
+  isLoading?: boolean;
   businessSlug?: string;
   service?: Service;
   employees?: Employee[];
@@ -62,4 +62,5 @@ export interface BookingDateTimeStepProps extends BookingStepProps {
   onTimeSelect?: (time: string) => void;
   goToNextWeek?: () => void;
   goToPreviousWeek?: () => void;
+  onNextStep?: () => void;
 }

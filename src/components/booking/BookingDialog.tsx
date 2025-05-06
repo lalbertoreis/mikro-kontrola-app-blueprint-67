@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -357,8 +356,6 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
           />
         ) : (
           <BookingDateTimeStep
-            service={service}
-            employees={employees}
             selectedEmployee={selectedEmployee}
             selectedDate={selectedDate}
             selectedPeriod={selectedPeriod}
@@ -379,6 +376,8 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
             onNextStep={handleNextStep}
             goToNextWeek={goToNextWeek}
             goToPreviousWeek={goToPreviousWeek}
+            service={service}
+            employees={employees}
           />
         )}
       </DialogContent>
