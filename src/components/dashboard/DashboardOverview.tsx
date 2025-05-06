@@ -85,7 +85,7 @@ const DashboardOverview = () => {
         
         if (upcomingError) throw upcomingError;
 
-        // Update stats with string values
+        // Make sure ALL values are stored as strings to match the StatsSummary component interface
         setStats({
           todayAppointments: String(todayAppts?.length || 0),
           clients: String(clientsCount || 0),
