@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "sonner";
@@ -8,7 +7,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { Service, ServicePackage } from "@/types/service";
 import { useBusinessProfile } from "./useBusinessProfile";
 import { useBookingAuth } from "./useBookingAuth";
-import { processBooking, cancelAppointment, fetchUserAppointmentsByPhone } from "./utils/bookingUtils";
+import { processBooking, cancelAppointment, fetchUserAppointmentsByPhone } from "./utils";
 
 export function usePublicBooking(slug: string | undefined, navigate: NavigateFunction) {
   // Fetch business profile first to get the business user ID

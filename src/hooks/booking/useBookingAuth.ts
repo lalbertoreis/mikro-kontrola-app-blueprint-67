@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
-import { fetchUserAppointmentsByPhone } from "./utils/bookingUtils";
+import { fetchUserAppointmentsByPhone } from "./utils";
 
 export function useBookingAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
