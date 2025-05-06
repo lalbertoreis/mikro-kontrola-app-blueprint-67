@@ -114,6 +114,7 @@ const PublicBooking: React.FC = () => {
         onLogin={handleLogin}
         onCancelAppointment={handleCancelAppointment}
         bookingSettings={bookingSettings}
+        businessSlug={slug}
       />
       
       {/* Separate confirmation dialog */}

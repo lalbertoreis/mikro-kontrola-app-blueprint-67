@@ -31,6 +31,7 @@ interface BookingDialogProps {
     futureLimit: number;
     cancelMinHours: number;
   };
+  businessSlug?: string;
 }
 
 const BookingDialog: React.FC<BookingDialogProps> = ({
@@ -40,7 +41,8 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   employees,
   businessSettings,
   onBookingConfirm,
-  bookingSettings
+  bookingSettings,
+  businessSlug
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -96,8 +98,8 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
       
       setIsLoadingDays(true);
       try {
-        // Get all available days for the employee
-        const days = await getEmployeeAvailableDays(selectedEmployee.id);
+        // Get all available days for the employee using the business slug
+        const days = await getEmployeeAvailableDays(selectedEmployee.id, businessSlug);
         
         // Create a map of available days
         const availableDaysMap: { [key: number]: boolean } = {};
@@ -107,8 +109,8 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
           availableDaysMap[i] = days.includes(i);
         }
         
+        console.log("Available days map:", availableDaysMap);
         setAvailableDays(availableDaysMap);
-        console.log("Available days:", availableDaysMap);
       } catch (err) {
         console.error('Error in fetchEmployeeAvailableDays:', err);
       } finally {
@@ -117,7 +119,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     };
     
     fetchEmployeeAvailableDays();
-  }, [selectedEmployee]);
+  }, [selectedEmployee, businessSlug]);
 
   // Check available periods for a date
   const checkAvailablePeriods = async (employee: any, date: Date) => {
@@ -125,8 +127,8 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     
     const dayOfWeek = date.getDay();
     
-    // Get employee shift hours for this day
-    const shiftHours = await getEmployeeShiftHours(employee.id, dayOfWeek);
+    // Get employee shift hours for this day using the business slug
+    const shiftHours = await getEmployeeShiftHours(employee.id, dayOfWeek, businessSlug);
     if (!shiftHours) return [];
     
     const { startTime: shiftStart, endTime: shiftEnd } = shiftHours;
@@ -171,8 +173,8 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     
     const dayOfWeek = date.getDay();
     
-    // Get employee shift hours for this day
-    const shiftHours = await getEmployeeShiftHours(employee.id, dayOfWeek);
+    // Get employee shift hours for this day using the business slug
+    const shiftHours = await getEmployeeShiftHours(employee.id, dayOfWeek, businessSlug);
     if (!shiftHours) return [];
     
     const { startTime: shiftStart, endTime: shiftEnd } = shiftHours;
@@ -238,7 +240,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
       
       // Use the service to fetch available slots considering existing appointments
       const availableSlots = await import("@/services/appointment").then(
-        module => module.fetchAvailableTimeSlots(employee.id, service.id, formattedDate)
+        module => module.fetchAvailableTimeSlots(employee.id, service.id, formattedDate, businessSlug)
       );
       
       console.log("All period slots:", allPeriodSlots);

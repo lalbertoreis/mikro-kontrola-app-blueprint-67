@@ -1,98 +1,117 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { format, addDays } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Employee } from "@/types/employee";
 
 interface BookingCalendarProps {
   weekDays: Date[];
-  availableDays: { [key: number]: boolean };
   selectedDate: Date | null;
+  onDateSelect: (date: Date) => void;
+  availableDays: { [key: number]: boolean };
+  selectedEmployee: Employee | null;
   isLoadingDays: boolean;
-  selectedEmployee: any;
   canGoNext: boolean;
   canGoPrevious: boolean;
   currentWeekStart: Date;
-  onDateSelect: (date: Date) => void;
   goToNextWeek: () => void;
   goToPreviousWeek: () => void;
 }
 
 const BookingCalendar: React.FC<BookingCalendarProps> = ({
   weekDays,
-  availableDays,
   selectedDate,
-  isLoadingDays,
+  onDateSelect,
+  availableDays,
   selectedEmployee,
+  isLoadingDays,
   canGoNext,
   canGoPrevious,
   currentWeekStart,
-  onDateSelect,
   goToNextWeek,
-  goToPreviousWeek,
+  goToPreviousWeek
 }) => {
-  const formatDayOfWeek = (date: Date) => {
-    return format(date, "EEEE", { locale: ptBR }).toUpperCase();
-  };
-
-  const formatDayOfMonth = (date: Date) => {
-    return format(date, "dd");
-  };
-  
-  const isDayAvailable = (date: Date) => {
-    if (isLoadingDays || !selectedEmployee) return false;
-    
-    const dayOfWeek = date.getDay(); // 0 for Sunday, 1 for Monday
-    return availableDays[dayOfWeek] === true;
-  };
+  // Para fins de depuração
+  console.log("BookingCalendar props:", { 
+    availableDays, 
+    isLoadingDays,
+    selectedDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null,
+    weekDays: weekDays.map(d => format(d, 'yyyy-MM-dd')),
+    selectedEmployee: selectedEmployee?.name
+  });
 
   return (
     <div className="mb-6">
+      <p className="text-sm text-gray-500 mb-2">Escolha a data:</p>
       <div className="flex justify-between items-center mb-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={goToPreviousWeek}
           disabled={!canGoPrevious}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Anterior
         </Button>
-        <p className="text-center text-gray-500">
-          {format(currentWeekStart, "MMMM yyyy", { locale: ptBR })}
+        
+        <p className="text-sm font-medium text-center">
+          {format(currentWeekStart, 'MMMM yyyy', { locale: ptBR })}
         </p>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        
+        <Button
+          variant="outline"
+          size="sm"
           onClick={goToNextWeek}
           disabled={!canGoNext}
         >
-          <ChevronRight className="h-4 w-4" />
+          Próxima
+          <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
-      <div className="grid grid-cols-7 text-center">
-        {weekDays.map((date, index) => {
-          const isAvailable = isDayAvailable(date);
-          
-          return (
-            <div key={index} className="text-center">
-              <div className="text-xs text-gray-500">{formatDayOfWeek(date).slice(0, 3)}</div>
-              <button
-                disabled={!isAvailable}
-                className={`w-10 h-10 rounded-lg mx-auto flex items-center justify-center text-lg ${
-                  selectedDate && date.toDateString() === selectedDate.toDateString()
-                    ? "bg-purple-500 text-white"
-                    : !isAvailable
-                      ? "opacity-30 cursor-not-allowed bg-gray-100"
-                      : "hover:bg-gray-100"
+      
+      <div className="grid grid-cols-7 gap-1">
+        {/* Cabeçalhos dos dias da semana */}
+        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, i) => (
+          <div key={`header-${i}`} className="text-center text-xs font-medium py-1">
+            {day}
+          </div>
+        ))}
+        
+        {/* Dias do calendário */}
+        {isLoadingDays ? (
+          // Mostrar skeletons durante carregamento
+          Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={`skeleton-${i}`} className="h-10 rounded-md" />
+          ))
+        ) : (
+          weekDays.map((day) => {
+            const dayOfWeek = day.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+            const isAvailable = availableDays[dayOfWeek] || false;
+            const isSelected = selectedDate && 
+                              selectedDate.getDate() === day.getDate() &&
+                              selectedDate.getMonth() === day.getMonth();
+            
+            // Para debugging
+            console.log(`Dia ${format(day, 'dd/MM')} (${dayOfWeek}): disponível = ${isAvailable}`);
+            
+            return (
+              <Button
+                key={day.toISOString()}
+                variant={isSelected ? "default" : "outline"}
+                className={`h-10 ${isSelected ? "bg-purple-500 hover:bg-purple-600" : ""} ${
+                  !isAvailable ? "opacity-50 cursor-not-allowed" : ""
                 }`}
-                onClick={() => isAvailable && onDateSelect(date)}
+                disabled={!isAvailable}
+                onClick={() => isAvailable && onDateSelect(day)}
               >
-                {formatDayOfMonth(date)}
-              </button>
-            </div>
-          );
-        })}
+                {format(day, 'd')}
+              </Button>
+            );
+          })
+        )}
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ interface BookingDialogsProps {
     futureLimit: number;
     cancelMinHours: number;
   };
+  businessSlug?: string;
 }
 
 const BookingDialogs: React.FC<BookingDialogsProps> = ({
@@ -43,7 +44,8 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
   onBookingConfirm,
   onLogin,
   onCancelAppointment,
-  bookingSettings
+  bookingSettings,
+  businessSlug
 }) => {
   return (
     <>
@@ -56,6 +58,7 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
           businessSettings={businessProfile}
           onBookingConfirm={onBookingConfirm}
           bookingSettings={bookingSettings}
+          businessSlug={businessSlug}
         />
       )}
 

@@ -1,108 +1,99 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { Employee } from "@/types/employee";
 
-// Check if there are overlapping appointments for this employee
-export async function checkOverlappingAppointments(
-  employeeId: string, 
-  startTime: string, 
-  endTime: string,
-  appointmentId?: string // Optional: exclude current appointment when updating
-): Promise<boolean> {
-  let query = supabase
-    .from('appointments')
-    .select('id')
-    .eq('employee_id', employeeId)
-    .lt('start_time', endTime) // appointment starts before the new end time
-    .gt('end_time', startTime); // appointment ends after the new start time
-
-  // If we're updating an existing appointment, exclude it from the check
-  if (appointmentId) {
-    query = query.neq('id', appointmentId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Error checking for overlapping appointments:', error);
-    throw error;
-  }
-
-  return data && data.length > 0;
-}
-
-// Check if an employee is available for a specific day of week
+// Função para verificar disponibilidade de um funcionário para um determinado serviço
 export async function checkEmployeeAvailability(
   employeeId: string,
-  dayOfWeek: number
+  serviceId: string
 ): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from('shifts')
-      .select('id')
+      .from('employee_services')
+      .select('*')
       .eq('employee_id', employeeId)
-      .eq('day_of_week', dayOfWeek);
-      
-    if (error) {
-      console.error('Error checking employee availability:', error);
-      return false;
-    }
+      .eq('service_id', serviceId)
+      .maybeSingle();
     
-    // If we have at least one shift for this day, the employee is available
-    return data && data.length > 0;
+    if (error) throw error;
+    
+    return !!data; // Se existe uma relação, o funcionário está disponível para o serviço
   } catch (error) {
-    console.error('Error in checkEmployeeAvailability:', error);
+    console.error('Erro ao verificar disponibilidade:', error);
     return false;
   }
 }
 
-// Get shift hours for an employee on a specific day
-export async function getEmployeeShiftHours(
-  employeeId: string,
-  dayOfWeek: number
-): Promise<{startTime: string, endTime: string} | null> {
+// Função para obter os horários de turno do funcionário
+export async function getEmployeeShiftHours(employeeId: string, dayOfWeek: number, slug?: string): Promise<{ startTime: string, endTime: string } | null> {
   try {
+    // Definir slug para a sessão se fornecido
+    if (slug) {
+      try {
+        await supabase.rpc('set_slug_for_session', { slug });
+      } catch (error) {
+        console.error('Erro ao definir slug para a sessão:', error);
+      }
+    }
+    
+    // Consulta diretamente na view employees_shifts_view
     const { data, error } = await supabase
-      .from('shifts')
+      .from('employees_shifts_view')
       .select('start_time, end_time')
       .eq('employee_id', employeeId)
       .eq('day_of_week', dayOfWeek)
-      .single();
-      
-    if (error || !data) {
-      console.error('Error fetching employee shift hours:', error);
-      return null;
-    }
+      .maybeSingle();
+    
+    if (error) throw error;
+    if (!data) return null;
+    
+    console.log(`Turno encontrado para funcionário ${employeeId} no dia ${dayOfWeek}:`, data);
     
     return {
       startTime: data.start_time,
       endTime: data.end_time
     };
   } catch (error) {
-    console.error('Error in getEmployeeShiftHours:', error);
+    console.error('Erro ao buscar horários de turno:', error);
     return null;
   }
 }
 
-// Get all available days for an employee
-export async function getEmployeeAvailableDays(
-  employeeId: string
-): Promise<number[]> {
+// Função para obter os dias da semana disponíveis para um funcionário
+export async function getEmployeeAvailableDays(employeeId: string, slug?: string): Promise<number[]> {
   try {
+    // Definir slug para a sessão se fornecido
+    if (slug) {
+      try {
+        await supabase.rpc('set_slug_for_session', { slug });
+      } catch (error) {
+        console.error('Erro ao definir slug para a sessão:', error);
+      }
+    }
+    
+    // Consulta diretamente na view employees_shifts_view
     const { data, error } = await supabase
-      .from('shifts')
+      .from('employees_shifts_view')
       .select('day_of_week')
       .eq('employee_id', employeeId);
-      
-    if (error) {
-      console.error('Error fetching employee available days:', error);
+    
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      console.log(`Nenhum dia disponível encontrado para o funcionário ${employeeId}`);
       return [];
     }
     
-    // Extract unique days of week
-    const availableDays = [...new Set(data?.map(shift => shift.day_of_week) || [])];
+    // Extrair os dias da semana distintos
+    const availableDays = [...new Set(data.map(item => item.day_of_week))];
+    console.log(`Dias disponíveis para funcionário ${employeeId}:`, availableDays);
+    
     return availableDays;
   } catch (error) {
-    console.error('Error in getEmployeeAvailableDays:', error);
+    console.error('Erro ao buscar dias disponíveis:', error);
     return [];
   }
 }
+
+// Exportar outras funções relacionadas
+export * from "./index";
