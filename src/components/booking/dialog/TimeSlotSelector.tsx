@@ -3,12 +3,13 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
+import { Period } from "./types";
 
 interface TimeSlotSelectorProps {
   availableTimeSlots: string[];
   selectedTime?: string;
   onTimeSelect: (time: string) => void;
-  period?: "morning" | "afternoon" | "evening";
+  period?: Period;
   isLoading: boolean;
 }
 

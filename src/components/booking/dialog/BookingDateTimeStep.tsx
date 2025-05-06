@@ -2,27 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { BookingStepProps } from "./types";
+import { BookingStepProps, BookingDateTimeStepProps, Period } from "./types";
 import BookingCalendar from "./BookingCalendar";
 import TimeSlotSelector from "./TimeSlotSelector";
 import PeriodSelector from "./PeriodSelector";
 import DialogStepNavigator from "./DialogStepNavigator";
 import { getDateWithPeriod } from "@/hooks/booking/utils/dateFormatters";
 import { useProfileSettings } from "@/hooks/useProfileSettings";
-
-interface BookingDateTimeStepProps extends BookingStepProps {
-  date: Date | undefined;
-  setDate: (date: Date) => void;
-  time: string | undefined;
-  setTime: (time: string) => void;
-  period: "morning" | "afternoon" | "evening" | undefined;
-  setPeriod: (period: "morning" | "afternoon" | "evening") => void;
-  availableTimeSlots: string[];
-  employeeId?: string;
-  serviceId?: string;
-  isLoading: boolean;
-  businessSlug?: string;
-}
 
 const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   onNext,
@@ -37,7 +23,27 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   employeeId,
   serviceId,
   isLoading,
-  businessSlug
+  businessSlug,
+  service,
+  employees,
+  selectedEmployee,
+  selectedDate,
+  selectedPeriod,
+  selectedTime,
+  availableDays = {},
+  availablePeriods = ["morning", "afternoon", "evening"],
+  isLoadingDays = false,
+  isLoadingSlots = false,
+  weekDays = [],
+  canGoNext = false,
+  canGoPrevious = false,
+  currentWeekStart = new Date(),
+  onEmployeeSelect,
+  onDateSelect,
+  onPeriodSelect,
+  onTimeSelect,
+  goToNextWeek,
+  goToPreviousWeek
 }) => {
   const [isNextDisabled, setIsNextDisabled] = useState(true);
   const maxDate = addMonths(new Date(), 3);
@@ -48,7 +54,7 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
     setIsNextDisabled(!date || !time);
   }, [date, time]);
   
-  const getPeriodFromTime = (time: string): "morning" | "afternoon" | "evening" => {
+  const getPeriodFromTime = (time: string): Period => {
     const hour = parseInt(time.split(":")[0], 10);
     if (hour < 12) return "morning";
     if (hour < 18) return "afternoon";
@@ -60,7 +66,7 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
     setPeriod(getPeriodFromTime(newTime));
   };
 
-  const handlePeriodChange = (newPeriod: "morning" | "afternoon" | "evening") => {
+  const handlePeriodChange = (newPeriod: Period) => {
     setPeriod(newPeriod);
     setTime(undefined); // Clear selected time when period changes
   };

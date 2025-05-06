@@ -1,13 +1,12 @@
 
 import React from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-
-type PeriodType = "morning" | "afternoon" | "evening";
+import { Period } from "./types";
 
 interface PeriodSelectorProps {
-  selectedPeriod: PeriodType | null | undefined;
-  onPeriodSelect: (period: PeriodType) => void;
-  availablePeriods?: PeriodType[]; // Add this prop to filter available periods
+  selectedPeriod: Period | null | undefined;
+  onPeriodSelect: (period: Period) => void;
+  availablePeriods?: Period[]; // Add this prop to filter available periods
 }
 
 const PeriodSelector: React.FC<PeriodSelectorProps> = ({
@@ -23,7 +22,7 @@ const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   };
 
   // Filter periods based on availability
-  const periodsToShow = (["morning", "afternoon", "evening"] as PeriodType[]).filter(
+  const periodsToShow = (["morning", "afternoon", "evening"] as Period[]).filter(
     (period) => availablePeriods.includes(period)
   );
 
@@ -42,7 +41,7 @@ const PeriodSelector: React.FC<PeriodSelectorProps> = ({
         type="single" 
         className="justify-start" 
         value={selectedPeriod || ''} 
-        onValueChange={value => value && onPeriodSelect(value as PeriodType)}
+        onValueChange={value => value && onPeriodSelect(value as Period)}
       >
         {periodsToShow.map((period) => (
           <ToggleGroupItem key={period} value={period} className="px-4">

@@ -28,7 +28,19 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   
   // Use item properties if available, otherwise use the direct props
   const displayName = item ? item.name : name;
-  const displayDuration = item ? (isPackage ? item.totalDuration : (item as Service).duration) : duration;
+  
+  // Handle duration differently based on whether it's a package or service
+  let displayDuration: number | undefined;
+  if (item) {
+    if (isPackage) {
+      displayDuration = (item as ServicePackage).totalDuration;
+    } else {
+      displayDuration = (item as Service).duration;
+    }
+  } else {
+    displayDuration = duration;
+  }
+  
   const displayPrice = item ? item.price : price;
 
   return (
