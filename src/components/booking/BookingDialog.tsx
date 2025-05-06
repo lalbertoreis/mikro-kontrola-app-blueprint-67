@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { format, addDays, addMonths } from "date-fns";
 import { X } from "lucide-react";
 import { checkEmployeeAvailability, getEmployeeShiftHours, getEmployeeAvailableDays } from "@/services/appointment/utils";
-import { BookingDialogProps, BookingStep, Period, TimeSlot } from "./dialog/types";
+import { BookingStep, Period, TimeSlot } from "./dialog/types";
+import { Service } from "@/types/service";
+import { Employee } from "@/types/employee";
+import { BusinessSettings } from "@/types/settings";
 
 // Import all the components we extracted
 import ServiceInfo from "./dialog/ServiceInfo";
