@@ -19,10 +19,6 @@ interface BookingCalendarProps {
   currentWeekStart: Date;
   goToNextWeek: () => void;
   goToPreviousWeek: () => void;
-  maxDate?: Date;  // Add this property to fix the error
-  businessSlug?: string;
-  employeeId?: string;
-  serviceId?: string;
 }
 
 const BookingCalendar: React.FC<BookingCalendarProps> = ({

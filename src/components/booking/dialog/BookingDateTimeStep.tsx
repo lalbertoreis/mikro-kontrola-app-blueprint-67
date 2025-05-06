@@ -1,127 +1,119 @@
 
-import React, { useState, useEffect } from "react";
-import { format, addMonths } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { BookingStepProps, BookingDateTimeStepProps, Period } from "./types";
+import React from "react";
+import { Employee } from "@/types/employee";
+import { Service } from "@/types/service";
+import { Period } from "./types";
+import ServiceInfo from "./ServiceInfo";
+import EmployeeSelector from "./EmployeeSelector";
 import BookingCalendar from "./BookingCalendar";
-import TimeSlotSelector from "./TimeSlotSelector";
 import PeriodSelector from "./PeriodSelector";
-import DialogStepNavigator from "./DialogStepNavigator";
-import { useProfileSettings } from "@/hooks/useProfileSettings";
+import TimeSlotSelector from "./TimeSlotSelector";
+import BookingSummary from "./BookingSummary";
+
+interface BookingDateTimeStepProps {
+  service: Service;
+  employees: Employee[];
+  selectedEmployee: Employee | null;
+  selectedDate: Date | null;
+  selectedPeriod: Period | null;
+  selectedTime: string | null;
+  availableDays: { [key: number]: boolean };
+  availablePeriods: Period[];
+  isLoadingDays: boolean;
+  isLoadingSlots: boolean;
+  availableTimeSlots: string[];
+  weekDays: Date[];
+  canGoNext: boolean;
+  canGoPrevious: boolean;
+  currentWeekStart: Date;
+  onEmployeeSelect: (employee: Employee) => void;
+  onDateSelect: (date: Date) => void;
+  onPeriodSelect: (period: Period) => void;
+  onTimeSelect: (time: string) => void;
+  onNextStep: () => void;
+  goToNextWeek: () => void;
+  goToPreviousWeek: () => void;
+}
 
 const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
-  onNext,
-  onPrevious,
-  date,
-  setDate,
-  time,
-  setTime,
-  period,
-  setPeriod,
-  availableTimeSlots,
-  employeeId,
-  serviceId,
-  isLoading,
-  businessSlug,
   service,
   employees,
   selectedEmployee,
   selectedDate,
   selectedPeriod,
   selectedTime,
-  availableDays = {},
-  availablePeriods = ["morning", "afternoon", "evening"],
-  isLoadingDays = false,
-  isLoadingSlots = false,
-  weekDays = [],
-  canGoNext = false,
-  canGoPrevious = false,
-  currentWeekStart = new Date(),
+  availableDays,
+  availablePeriods,
+  isLoadingDays,
+  isLoadingSlots,
+  availableTimeSlots,
+  weekDays,
+  canGoNext,
+  canGoPrevious,
+  currentWeekStart,
   onEmployeeSelect,
   onDateSelect,
   onPeriodSelect,
   onTimeSelect,
+  onNextStep,
   goToNextWeek,
   goToPreviousWeek,
-  onNextStep
 }) => {
-  const [isNextDisabled, setIsNextDisabled] = useState(true);
-  const maxDate = addMonths(new Date(), 3);
-  const { settings } = useProfileSettings();
-  const bookingColor = settings?.bookingColor || '#9b87f5';
-
-  useEffect(() => {
-    setIsNextDisabled(!selectedDate || !selectedTime);
-  }, [selectedDate, selectedTime]);
-  
-  const getPeriodFromTime = (time: string): Period => {
-    const hour = parseInt(time.split(":")[0], 10);
-    if (hour < 12) return "morning";
-    if (hour < 18) return "afternoon";
-    return "evening";
-  };
-  
-  const handleTimeSelect = (newTime: string) => {
-    if (onTimeSelect) {
-      onTimeSelect(newTime);
-    } else if (setTime) {
-      setTime(newTime);
-      // Se temos a função setPeriod disponível, definimos o período com base no horário
-      if (setPeriod) {
-        setPeriod(getPeriodFromTime(newTime));
-      }
-    }
-  };
-
-  const handlePeriodChange = (newPeriod: Period) => {
-    if (onPeriodSelect) {
-      onPeriodSelect(newPeriod);
-    } else if (setPeriod) {
-      setPeriod(newPeriod);
-      // Limpar o horário selecionado quando o período muda
-      if (setTime) {
-        setTime(undefined);
-      }
-    }
-  };
-
-  // Filter time slots based on selected period
-  const currentPeriod = selectedPeriod || period;
-  const filteredTimeSlots = availableTimeSlots.filter((slot) => {
-    if (!currentPeriod) return true;
-    return getPeriodFromTime(slot) === currentPeriod;
-  });
-
   return (
-    <div className="space-y-4" style={{ '--booking-color': bookingColor } as React.CSSProperties}>
-      <h2 className="text-xl font-semibold">Escolha a data e horário</h2>
-      
-      <div>
-        {(selectedDate || date) && (
-          <div className="text-sm text-gray-500">
-            {format(selectedDate || date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-          </div>
-        )}
-        
-        <PeriodSelector 
-          selectedPeriod={selectedPeriod || period} 
-          onPeriodSelect={handlePeriodChange} 
+    <div className="p-4">
+      {/* Service Info */}
+      <ServiceInfo service={service} />
+
+      {/* Employee Selection */}
+      <EmployeeSelector
+        employees={employees}
+        selectedEmployee={selectedEmployee}
+        onEmployeeSelect={onEmployeeSelect}
+      />
+
+      {/* Calendar */}
+      {selectedEmployee && (
+        <BookingCalendar
+          weekDays={weekDays}
+          availableDays={availableDays}
+          selectedDate={selectedDate}
+          isLoadingDays={isLoadingDays}
+          selectedEmployee={selectedEmployee}
+          canGoNext={canGoNext}
+          canGoPrevious={canGoPrevious}
+          currentWeekStart={currentWeekStart}
+          onDateSelect={onDateSelect}
+          goToNextWeek={goToNextWeek}
+          goToPreviousWeek={goToPreviousWeek}
+        />
+      )}
+
+      {/* Period Selection */}
+      {selectedDate && (
+        <PeriodSelector
+          selectedPeriod={selectedPeriod}
+          onPeriodSelect={onPeriodSelect}
           availablePeriods={availablePeriods}
         />
-        
-        <TimeSlotSelector
-          availableTimeSlots={filteredTimeSlots}
-          selectedTime={selectedTime || time}
-          onTimeSelect={handleTimeSelect}
-          period={selectedPeriod || period}
-          isLoading={isLoadingSlots || isLoading}
-        />
-      </div>
+      )}
 
-      <DialogStepNavigator
-        onNext={onNext || onNextStep}
-        onPrevious={onPrevious}
-        isNextDisabled={isNextDisabled}
+      {/* Time Slots */}
+      {selectedDate && selectedPeriod && (
+        <TimeSlotSelector
+          availableTimeSlots={availableTimeSlots}
+          selectedTime={selectedTime}
+          isLoadingSlots={isLoadingSlots}
+          onTimeSelect={onTimeSelect}
+        />
+      )}
+
+      {/* Booking Summary */}
+      <BookingSummary
+        service={service}
+        selectedEmployee={selectedEmployee}
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+        onNextStep={onNextStep}
       />
     </div>
   );

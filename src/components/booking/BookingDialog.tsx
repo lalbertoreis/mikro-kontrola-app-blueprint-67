@@ -51,7 +51,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   const [clientInfo, setClientInfo] = useState({ name: "", phone: "", pin: "" });
   const [availableDays, setAvailableDays] = useState<{ [key: number]: boolean }>({});
   const [isLoadingDays, setIsLoadingDays] = useState(false);
-  const [availablePeriods, setAvailablePeriods] = useState<Period[]>(["morning", "afternoon", "evening"]);
+  const [availablePeriods, setAvailablePeriods] = useState<Period[]>(["Manhã", "Tarde", "Noite"]);
   
   // Settings
   const timeInterval = businessSettings?.bookingTimeInterval || 30;
@@ -127,9 +127,9 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     
     // Define period time ranges
     const periodRanges = {
-      "morning": { start: "06:00", end: "12:00" },
-      "afternoon": { start: "12:00", end: "18:00" },
-      "evening": { start: "18:00", end: "23:59" }
+      "Manhã": { start: "06:00", end: "12:00" },
+      "Tarde": { start: "12:00", end: "18:00" },
+      "Noite": { start: "18:00", end: "23:59" }
     };
     
     // Parse shift times to calculate overlap with periods
@@ -173,9 +173,9 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     
     // Define period time ranges
     const periodRanges = {
-      "morning": { start: "06:00", end: "12:00" },
-      "afternoon": { start: "12:00", end: "18:00" },
-      "evening": { start: "18:00", end: "23:59" }
+      "Manhã": { start: "06:00", end: "12:00" },
+      "Tarde": { start: "12:00", end: "18:00" },
+      "Noite": { start: "18:00", end: "23:59" }
     };
     
     const periodRange = periodRanges[period];
@@ -259,7 +259,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setSelectedPeriod(null);
     setSelectedTime(null);
     setAvailableTimeSlots([]);
-    setAvailablePeriods(["morning", "afternoon", "evening"]);
+    setAvailablePeriods(["Manhã", "Tarde", "Noite"]);
   }, []);
 
   const handleDateSelect = useCallback(async (date: Date) => {
@@ -328,7 +328,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     setAvailableTimeSlots([]);
     setCurrentStep("datetime");
     setClientInfo({ name: "", phone: "", pin: "" });
-    setAvailablePeriods(["morning", "afternoon", "evening"]);
+    setAvailablePeriods(["Manhã", "Tarde", "Noite"]);
     onClose();
   }, [onClose]);
   
@@ -357,6 +357,8 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
           />
         ) : (
           <BookingDateTimeStep
+            service={service}
+            employees={employees}
             selectedEmployee={selectedEmployee}
             selectedDate={selectedDate}
             selectedPeriod={selectedPeriod}
@@ -377,8 +379,6 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
             onNextStep={handleNextStep}
             goToNextWeek={goToNextWeek}
             goToPreviousWeek={goToPreviousWeek}
-            service={service}
-            employees={employees}
           />
         )}
       </DialogContent>

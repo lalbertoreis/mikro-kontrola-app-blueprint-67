@@ -1,61 +1,44 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2 } from "lucide-react";
-import { Period } from "./types";
 
 interface TimeSlotSelectorProps {
   availableTimeSlots: string[];
-  selectedTime?: string;
+  selectedTime: string | null;
+  isLoadingSlots: boolean;
   onTimeSelect: (time: string) => void;
-  period?: Period;
-  isLoading: boolean;
 }
 
 const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   availableTimeSlots,
   selectedTime,
+  isLoadingSlots,
   onTimeSelect,
-  period,
-  isLoading,
 }) => {
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium">
-        Horários disponíveis:
-      </div>
-      {isLoading ? (
-        <div className="flex justify-center items-center h-20">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+    <div className="mb-6">
+      <p className="text-sm text-gray-500 mb-2">Horários disponíveis:</p>
+      {isLoadingSlots ? (
+        <div className="text-center py-4">Carregando horários...</div>
       ) : availableTimeSlots.length > 0 ? (
-        <ScrollArea className="h-[180px]">
-          <div className="grid grid-cols-3 gap-2">
-            {availableTimeSlots.map((time) => (
-              <Button
-                key={time}
-                variant={selectedTime === time ? "default" : "outline"}
-                onClick={() => onTimeSelect(time)}
-                className={`${
-                  selectedTime === time 
-                  ? "" 
-                  : "hover:border-[color:var(--booking-color,theme(colors.primary))] hover:text-[color:var(--booking-color,theme(colors.primary))]"
-                }`}
-                style={{
-                  backgroundColor: selectedTime === time ? 'var(--booking-color, var(--primary))' : ''
-                }}
-              >
-                {time}
-              </Button>
-            ))}
-          </div>
-        </ScrollArea>
+        <div className="grid grid-cols-4 gap-2">
+          {availableTimeSlots.map((time) => (
+            <Button
+              key={time}
+              variant={selectedTime === time ? "default" : "outline"}
+              className={`${
+                selectedTime === time ? "bg-purple-500 hover:bg-purple-600" : ""
+              }`}
+              onClick={() => onTimeSelect(time)}
+            >
+              {time}
+            </Button>
+          ))}
+        </div>
       ) : (
-        <div className="flex justify-center items-center h-20 text-sm text-muted-foreground">
-          {period 
-            ? "Nenhum horário disponível para este período"
-            : "Nenhum horário disponível para esta data"}
+        <div className="text-center py-4 text-gray-500">
+          Não há horários disponíveis para este período. 
+          Tente outro período ou data.
         </div>
       )}
     </div>

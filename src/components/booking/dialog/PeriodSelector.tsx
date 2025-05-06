@@ -1,10 +1,11 @@
 
 import React from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Period } from "./types";
+
+type Period = "Manhã" | "Tarde" | "Noite";
 
 interface PeriodSelectorProps {
-  selectedPeriod: Period | null | undefined;
+  selectedPeriod: Period | null;
   onPeriodSelect: (period: Period) => void;
   availablePeriods?: Period[]; // Add this prop to filter available periods
 }
@@ -12,17 +13,10 @@ interface PeriodSelectorProps {
 const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   selectedPeriod,
   onPeriodSelect,
-  availablePeriods = ["morning", "afternoon", "evening"], // Default to all periods if not provided
+  availablePeriods = ["Manhã", "Tarde", "Noite"], // Default to all periods if not provided
 }) => {
-  // Map internal period types to display labels
-  const periodLabels: Record<Period, string> = {
-    "morning": "Manhã",
-    "afternoon": "Tarde",
-    "evening": "Noite"
-  };
-
   // Filter periods based on availability
-  const periodsToShow = (["morning", "afternoon", "evening"] as Period[]).filter(
+  const periodsToShow = (["Manhã", "Tarde", "Noite"] as Period[]).filter(
     (period) => availablePeriods.includes(period)
   );
 
@@ -45,7 +39,7 @@ const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       >
         {periodsToShow.map((period) => (
           <ToggleGroupItem key={period} value={period} className="px-4">
-            {periodLabels[period]}
+            {period}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>

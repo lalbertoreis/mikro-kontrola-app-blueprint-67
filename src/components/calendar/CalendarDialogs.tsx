@@ -34,19 +34,6 @@ const CalendarDialogs: React.FC<CalendarDialogsProps> = ({
   onActionsDialogOpenChange,
   onEditAppointment,
 }) => {
-  // Add these mock handlers to fix the type error
-  const handleCancel = () => {
-    console.log("Cancel appointment");
-    onActionsDialogOpenChange(false);
-  };
-  
-  const handlePayment = () => {
-    console.log("Process payment");
-    onActionsDialogOpenChange(false);
-  };
-  
-  const [isProcessing, setIsProcessing] = useState(false);
-  
   return (
     <>
       {/* Appointment Dialog */}
@@ -74,9 +61,6 @@ const CalendarDialogs: React.FC<CalendarDialogsProps> = ({
         onOpenChange={onActionsDialogOpenChange}
         appointment={selectedAppointment}
         onEdit={onEditAppointment}
-        onCancel={handleCancel}
-        onPayment={handlePayment}
-        isProcessing={isProcessing}
       />
     </>
   );

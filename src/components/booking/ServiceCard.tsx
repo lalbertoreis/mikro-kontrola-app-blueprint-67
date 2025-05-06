@@ -1,71 +1,54 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { useProfileSettings } from "@/hooks/useProfileSettings";
 import { Service, ServicePackage } from "@/types/service";
+import { formatCurrency } from "@/lib/utils";
 
 interface ServiceCardProps {
-  name?: string;
-  duration?: number;
-  price?: number;
-  onClick: () => void;
-  item?: Service | ServicePackage;
-  disabled?: boolean;
+  item: Service | ServicePackage;
   isPackage?: boolean;
+  onClick: () => void;
+  disabled?: boolean;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({
-  name,
-  duration,
-  price,
-  onClick,
-  item,
-  disabled = false,
-  isPackage = false,
-}) => {
-  const { settings } = useProfileSettings();
-  const bookingColor = settings?.bookingColor || '#9b87f5';
+const ServiceCard: React.FC<ServiceCardProps> = ({ item, isPackage = false, onClick, disabled = false }) => {
+  const isService = !isPackage && "duration" in item;
   
-  // Use item properties if available, otherwise use the direct props
-  const displayName = item ? item.name : name;
+  // Calculate duration based on whether it's a service or package
+  const duration = isService 
+    ? (item as Service).duration 
+    : (item as ServicePackage).totalDuration || 0;
   
-  // Handle duration differently based on whether it's a package or service
-  let displayDuration: number | undefined;
-  if (item) {
-    if (isPackage) {
-      // Handle ServicePackage with totalDuration
-      const packageItem = item as ServicePackage;
-      displayDuration = packageItem.totalDuration;
-    } else {
-      // Handle Service with duration
-      const serviceItem = item as Service;
-      displayDuration = serviceItem.duration;
-    }
-  } else {
-    displayDuration = duration;
-  }
-  
-  const displayPrice = item ? item.price : price;
-
   return (
-    <Button
-      variant="outline"
-      className={`flex justify-between items-center w-full p-4 h-auto text-left ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-      onClick={onClick}
-      disabled={disabled}
+    <div 
+      className={`p-4 rounded-lg border hover:shadow-md transition-all cursor-pointer ${
+        disabled ? 'opacity-70' : ''
+      }`}
+      onClick={disabled ? undefined : onClick}
     >
-      <div className="space-y-1">
-        <div className="font-medium">{displayName}</div>
-        {displayDuration && (
-          <div className="text-sm text-muted-foreground">{displayDuration} min</div>
-        )}
-      </div>
-      {displayPrice !== undefined && (
-        <div className="font-medium text-lg" style={{ color: bookingColor }}>
-          R$ {displayPrice.toFixed(2).replace('.', ',')}
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
+          {item.description && (
+            <p className="text-sm text-gray-500 mt-1">{item.description}</p>
+          )}
+          <div className="flex items-center mt-2">
+            <span className="text-sm text-gray-500">
+              {duration} min
+            </span>
+          </div>
         </div>
-      )}
-    </Button>
+        <div className="text-right">
+          <span className="text-lg font-bold text-purple-600">
+            {formatCurrency(item.price)}
+          </span>
+          {isPackage && "discount" in item && item.discount > 0 && (
+            <div className="text-xs text-green-600 mt-1">
+              {item.discount}% de desconto
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
