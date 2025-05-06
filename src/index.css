@@ -76,16 +76,68 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground min-h-screen;
+  }
+  
+  /* Melhorar responsividade */
+  h1 {
+    @apply text-xl md:text-2xl font-bold;
+  }
+
+  h2 {
+    @apply text-lg md:text-xl font-semibold;
+  }
+
+  h3 {
+    @apply text-base md:text-lg font-medium;
   }
 }
 
 @layer components {
   .kontrola-container {
-    @apply container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply w-full px-4 sm:px-6 lg:px-8 mx-auto;
   }
   
   .card-hover {
     @apply transition-all hover:shadow-md hover:-translate-y-1;
   }
+
+  /* Layouts responsivos */
+  .responsive-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+
+  .responsive-flex {
+    @apply flex flex-col sm:flex-row gap-4;
+  }
+
+  .page-container {
+    @apply w-full max-w-full mx-auto;
+  }
 }
+
+/* Utilidades para corrigir layout */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Melhorias gerais para responsividade */
+table {
+  @apply w-full table-auto;
+}
+
+/* Cores específicas do tema Kontrola */
+.kontrola-50 {
+  @apply bg-blue-50 dark:bg-blue-900/30;
+}
+
+/* Formatação de espaços */
+.main-content {
+  @apply px-4 py-6 sm:px-6 lg:px-8;
+}
+

@@ -87,7 +87,7 @@ const ServiceList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center p-8">
+      <div className="flex justify-center items-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -95,16 +95,16 @@ const ServiceList: React.FC = () => {
 
   if (error) {
     return (
-      <div className="text-center py-10 text-red-500">
+      <div className="text-center py-8 text-red-500">
         Erro ao carregar serviços. Por favor, tente novamente.
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="relative w-72">
+    <div className="space-y-4 w-full">
+      <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+        <div className="relative w-full sm:w-72">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar serviços..."
@@ -113,21 +113,21 @@ const ServiceList: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button onClick={handleAddNew}>
+        <Button onClick={handleAddNew} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Novo Serviço
         </Button>
       </div>
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-x-auto w-full">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Preço</TableHead>
-              <TableHead>Duração</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+              <TableHead className="whitespace-nowrap">Nome</TableHead>
+              <TableHead className="whitespace-nowrap">Status</TableHead>
+              <TableHead className="whitespace-nowrap">Preço</TableHead>
+              <TableHead className="whitespace-nowrap">Duração</TableHead>
+              <TableHead className="text-right whitespace-nowrap">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

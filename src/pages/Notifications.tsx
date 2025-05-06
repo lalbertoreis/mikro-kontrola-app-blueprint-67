@@ -29,8 +29,8 @@ const Notifications = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
+      <div className="space-y-6 w-full">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">Notificações</h1>
             {unreadCount > 0 && (
@@ -39,11 +39,12 @@ const Notifications = () => {
               </Badge>
             )}
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <Button 
               variant={filter === "all" ? "default" : "outline"}
               onClick={() => setFilter("all")}
               size="sm"
+              className="flex-1 sm:flex-none"
             >
               Todas
             </Button>
@@ -51,6 +52,7 @@ const Notifications = () => {
               variant={filter === "unread" ? "default" : "outline"}
               onClick={() => setFilter("unread")}
               size="sm"
+              className="flex-1 sm:flex-none"
             >
               Não lidas
             </Button>
@@ -59,6 +61,7 @@ const Notifications = () => {
               size="sm"
               onClick={markAllAsRead}
               disabled={notifications.every(n => n.read)}
+              className="flex-1 sm:flex-none"
             >
               <Check className="h-4 w-4 mr-2" />
               Marcar todas como lidas
@@ -73,47 +76,49 @@ const Notifications = () => {
               <p className="mt-4 text-muted-foreground">Carregando notificações...</p>
             </div>
           ) : filteredNotifications.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
               {filter === "unread" 
                 ? "Não há notificações não lidas." 
                 : "Não há notificações para exibir."}
             </div>
           ) : (
-            filteredNotifications.map((notification) => (
-              <div 
-                key={notification.id} 
-                className={`p-4 border rounded-lg ${
-                  notification.read ? "bg-card" : "bg-accent/10"
-                }`}
-              >
-                <div className="flex items-start">
-                  <div className="p-2 rounded-full bg-primary/10 mr-4">
-                    {getNotificationIcon()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-medium">{notification.title}</h3>
-                      <div className="text-sm text-muted-foreground">
-                        {formatNotificationDate(notification.createdAt)}
-                      </div>
+            <div className="grid gap-4">
+              {filteredNotifications.map((notification) => (
+                <div 
+                  key={notification.id} 
+                  className={`p-4 border rounded-lg ${
+                    notification.read ? "bg-card" : "bg-accent/10"
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 rounded-full bg-primary/10 shrink-0">
+                      {getNotificationIcon()}
                     </div>
-                    <p className="text-muted-foreground mt-1 mb-4">{notification.message}</p>
-                    
-                    {!notification.read && (
-                      <div className="flex justify-end">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => markAsRead(notification.id)}
-                        >
-                          Marcar como lida
-                        </Button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
+                        <h3 className="font-medium">{notification.title}</h3>
+                        <div className="text-sm text-muted-foreground whitespace-nowrap">
+                          {formatNotificationDate(notification.createdAt)}
+                        </div>
                       </div>
-                    )}
+                      <p className="text-muted-foreground mt-1 mb-4 break-words">{notification.message}</p>
+                      
+                      {!notification.read && (
+                        <div className="flex justify-end">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => markAsRead(notification.id)}
+                          >
+                            Marcar como lida
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       </div>
