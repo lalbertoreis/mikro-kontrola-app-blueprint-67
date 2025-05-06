@@ -2,6 +2,7 @@
 import { useMemo } from "react";
 import { useServicesBySlug } from "@/hooks/useServices";
 import { Service } from "@/types/service";
+import { Employee } from "@/types/employee";
 import { supabase } from "@/integrations/supabase/client";
 import { setSlugForSession } from "./utils/businessUtils";
 import { useQuery } from "@tanstack/react-query";
@@ -45,7 +46,7 @@ export function useServicesWithEmployees(slug: string | undefined) {
   });
   
   // Usar useQuery para buscar funcionários e seus turnos
-  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
+  const { data: rawEmployees = [], isLoading: isEmployeesLoading } = useQuery({
     queryKey: ["employees-shifts-view", slug],
     queryFn: async () => {
       try {
@@ -57,7 +58,7 @@ export function useServicesWithEmployees(slug: string | undefined) {
         // Buscar da view employees_shifts_view
         const { data, error } = await supabase
           .from('employees_shifts_view')
-          .select('employee_id, employee_name, employee_role')
+          .select('employee_id, employee_name, employee_role, day_of_week, start_time, end_time')
           .eq('business_slug', slug)
           .order('employee_name');
           
@@ -66,13 +67,8 @@ export function useServicesWithEmployees(slug: string | undefined) {
           throw error;
         }
         
-        // Remover duplicatas (um funcionário pode ter múltiplos turnos)
-        const uniqueEmployees = Array.from(
-          new Map(data.map(item => [item.employee_id, item])).values()
-        );
-        
-        console.log(`Retrieved ${uniqueEmployees?.length || 0} employees from view`);
-        return uniqueEmployees;
+        console.log(`Retrieved ${data?.length || 0} employee shift records from view`);
+        return data || [];
       } catch (error) {
         console.error("Error in employees query:", error);
         return [];
@@ -80,6 +76,45 @@ export function useServicesWithEmployees(slug: string | undefined) {
     },
     enabled: !!slug
   });
+
+  // Transformar os dados brutos dos funcionários no formato Employee[]
+  const employees = useMemo(() => {
+    if (!rawEmployees || rawEmployees.length === 0) return [];
+    
+    // Criar um mapa para agrupar turnos por funcionário
+    const employeeMap = new Map();
+    
+    // Processar cada registro da view
+    rawEmployees.forEach(record => {
+      const employeeId = record.employee_id;
+      
+      if (!employeeMap.has(employeeId)) {
+        // Inicializar o funcionário se não existir no mapa
+        employeeMap.set(employeeId, {
+          id: employeeId,
+          name: record.employee_name,
+          role: record.employee_role,
+          shifts: [],
+          services: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      
+      // Adicionar o turno ao funcionário se tiver as informações necessárias
+      if (record.day_of_week !== null && record.start_time && record.end_time) {
+        const employee = employeeMap.get(employeeId);
+        employee.shifts.push({
+          dayOfWeek: record.day_of_week,
+          startTime: record.start_time,
+          endTime: record.end_time
+        });
+      }
+    });
+    
+    // Converter o mapa para um array de funcionários
+    return Array.from(employeeMap.values()) as Employee[];
+  }, [rawEmployees]);
 
   // Criar mapa de serviços para funcionários
   const serviceWithEmployeesMap = useMemo(() => {
