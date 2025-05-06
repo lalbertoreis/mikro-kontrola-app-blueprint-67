@@ -1,7 +1,8 @@
 
 import React, { ReactNode } from "react";
 import { BusinessSettings } from "@/types/settings";
-import { UserCircle2 } from "lucide-react";
+import { UserCircle2, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface BookingLayoutProps {
   children: ReactNode;
@@ -117,6 +118,20 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
           {children}
         </div>
       </main>
+
+      {/* Floating Button for Appointments (only when not logged in) */}
+      {!isLoggedIn && (
+        <div className="fixed bottom-6 right-6 z-10">
+          <Button
+            onClick={onMyAppointmentsClick}
+            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+            size="lg"
+            aria-label="Acessar meus agendamentos"
+          >
+            <Calendar className="w-6 h-6" />
+          </Button>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-white">
