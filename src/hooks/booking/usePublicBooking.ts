@@ -90,8 +90,12 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
       handleLogin(userData);
       
       try {
-        // Process the booking in the database
-        const result = await processBooking(bookingData);
+        // Process the booking in the database - agora passando o slug do negócio
+        const result = await processBooking({
+          ...bookingData,
+          businessSlug: slug // Passar o slug para identificar o negócio correto
+        });
+        
         if (result) {
           // Add to local appointments list
           setAppointments((prev) => [...prev, result.newAppointment]);

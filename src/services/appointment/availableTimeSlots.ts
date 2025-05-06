@@ -68,7 +68,17 @@ async function fetchExistingAppointments(employeeId: string, formattedDate: stri
 /**
  * Fetches business time interval setting
  */
-async function fetchTimeInterval(): Promise<number> {
+async function fetchTimeInterval(slug?: string): Promise<number> {
+  // Se um slug foi fornecido, vamos definir o contexto da sessão
+  if (slug) {
+    try {
+      await supabase.rpc('set_slug_for_session', { slug });
+    } catch (error) {
+      console.error('Error setting slug for session:', error);
+    }
+  }
+  
+  // Agora buscar as configurações do negócio
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('booking_time_interval')
@@ -153,9 +163,15 @@ function filterAvailableSlots(
 export async function fetchAvailableTimeSlots(
   employeeId: string,
   serviceId: string,
-  date: string
+  date: string,
+  slug?: string // Adicionamos o parâmetro slug para definir o contexto da sessão
 ): Promise<string[]> {
   try {
+    // Se um slug foi fornecido, vamos definir o contexto da sessão
+    if (slug) {
+      await supabase.rpc('set_slug_for_session', { slug });
+    }
+    
     // Format date and get day of week - use the date as is, without adjustments
     const formattedDate = date;
     const dateObj = new Date(`${date}T12:00:00`); // Use noon to avoid timezone issues
@@ -175,7 +191,7 @@ export async function fetchAvailableTimeSlots(
     const appointments = await fetchExistingAppointments(employeeId, formattedDate);
     
     // Step 4: Get business settings for time interval
-    const timeInterval = await fetchTimeInterval();
+    const timeInterval = await fetchTimeInterval(slug);
     
     // Step 5: Generate all possible time slots within shift hours
     const allTimeSlots = generateTimeSlots(shiftStartTime, shiftEndTime, timeInterval, serviceDuration);

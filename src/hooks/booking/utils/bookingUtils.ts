@@ -11,6 +11,27 @@ export const formatAppointmentDate = (date: Date): string => {
   return format(date, 'dd/MM/yyyy');
 };
 
+// Função auxiliar para obter o user_id do negócio pelo slug
+const getBusinessUserId = async (slug: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('slug', slug)
+      .single();
+    
+    if (error || !data) {
+      console.error("Error fetching business user id:", error);
+      return null;
+    }
+    
+    return data.id;
+  } catch (error) {
+    console.error("Error in getBusinessUserId:", error);
+    return null;
+  }
+};
+
 // Process booking data and create appointment in the database
 export const processBooking = async (bookingData: {
   service: Service;
@@ -18,10 +39,17 @@ export const processBooking = async (bookingData: {
   date: Date;
   time: string;
   clientInfo: { name: string; phone: string };
+  businessSlug?: string; // Adicionado campo para identificar o negócio
 }) => {
-  const { service, employee, date, time, clientInfo } = bookingData;
+  const { service, employee, date, time, clientInfo, businessSlug } = bookingData;
   
   try {
+    // Obter o user_id do negócio pelo slug (importante para as políticas RLS)
+    const businessUserId = businessSlug ? await getBusinessUserId(businessSlug) : null;
+    if (!businessUserId && businessSlug) {
+      throw new Error("Não foi possível identificar o negócio para este agendamento");
+    }
+    
     // Check if client exists or create new client
     let clientId;
     const { data: existingClient, error: clientFetchError } = await supabase
@@ -35,14 +63,13 @@ export const processBooking = async (bookingData: {
     if (existingClient) {
       clientId = existingClient.id;
     } else {
-      // Create new client - agora funciona para usuários anônimos
+      // Create new client - agora com o user_id do negócio
       const { data: newClient, error: createClientError } = await supabase
         .from('clients')
         .insert({
           name: clientInfo.name,
           phone: clientInfo.phone,
-          // Os usuários anônimos não têm user_id, então definimos como nulo
-          user_id: null
+          user_id: businessUserId // Usar o ID do negócio, não do cliente
         })
         .select('id')
         .single();
@@ -64,7 +91,7 @@ export const processBooking = async (bookingData: {
     const endDate = new Date(startDate);
     endDate.setMinutes(endDate.getMinutes() + service.duration);
     
-    // Create appointment - agora funciona para usuários anônimos
+    // Create appointment - com o user_id do negócio
     const { data: appointment, error: appointmentError } = await supabase
       .from('appointments')
       .insert({
@@ -74,8 +101,7 @@ export const processBooking = async (bookingData: {
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         status: 'scheduled',
-        // Os usuários anônimos não têm user_id, então definimos como nulo
-        user_id: null
+        user_id: businessUserId // Usar o ID do negócio, não do cliente
       })
       .select()
       .single();

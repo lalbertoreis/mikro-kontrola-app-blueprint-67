@@ -13,7 +13,14 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
     const fetchBusinessBySlug = async () => {
       try {
         setIsLoadingBusiness(true);
-        // Agora essa consulta deve funcionar para usuários não autenticados graças às políticas RLS
+        
+        // Primeiro: define o slug atual para a sessão (importante para as políticas RLS)
+        if (slug) {
+          // Definir o slug para a sessão usando a função que criamos no banco de dados
+          await supabase.rpc('set_slug_for_session', { slug });
+        }
+        
+        // Agora podemos buscar o perfil do negócio com o slug definido
         const { data, error } = await supabase
           .from('profiles')
           .select('*')

@@ -567,7 +567,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      set_slug_for_session: {
+        Args: { slug: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
