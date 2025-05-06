@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Service, ServiceFormData } from "@/types/service";
 
@@ -13,12 +12,18 @@ export async function fetchServices(businessUserId?: string): Promise<Service[]>
     
     // If a business user ID is provided, filter by that user ID
     if (businessUserId) {
+      console.log("Filtering services by user_id:", businessUserId);
       query = query.eq('user_id', businessUserId);
+    } else {
+      console.log("No businessUserId provided, fetching services for current authenticated user");
     }
     
     const { data, error } = await query;
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching services:", error);
+      throw error;
+    }
     
     console.info("Services data returned:", data);
     console.info("Number of services found:", data?.length || 0);
@@ -43,14 +48,25 @@ export async function fetchServices(businessUserId?: string): Promise<Service[]>
 
 export async function fetchServiceById(id: string): Promise<Service | null> {
   try {
+    console.log("Fetching service by ID:", id);
+    
     const { data, error } = await supabase
       .from('services')
       .select('*')
       .eq('id', id)
       .single();
     
-    if (error) throw error;
-    if (!data) return null;
+    if (error) {
+      console.error("Error fetching service:", error);
+      throw error;
+    }
+    
+    if (!data) {
+      console.log("No service found with ID:", id);
+      return null;
+    }
+    
+    console.log("Service data returned:", data);
     
     return {
       id: data.id,

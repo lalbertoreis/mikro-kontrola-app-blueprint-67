@@ -78,7 +78,13 @@ export function useServices(businessUserId?: string) {
 export function useServiceById(id?: string) {
   return useQuery({
     queryKey: ["service", id],
-    queryFn: () => (id ? fetchServiceById(id) : null),
+    queryFn: async () => {
+      if (!id) return null;
+      console.log("useServiceById: Fetching service with ID:", id);
+      const service = await fetchServiceById(id);
+      console.log("useServiceById: Service data returned:", service);
+      return service;
+    },
     enabled: !!id,
   });
 }

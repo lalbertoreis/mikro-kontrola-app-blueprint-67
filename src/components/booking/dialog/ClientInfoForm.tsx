@@ -16,6 +16,34 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
   onPreviousStep,
   onNextStep,
 }) => {
+  // Add phone input formatting
+  const formatPhoneNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    let formattedValue = '';
+    
+    if (value.length <= 2) {
+      formattedValue = value;
+    } else if (value.length <= 7) {
+      formattedValue = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+    } else if (value.length <= 11) {
+      formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+    } else {
+      formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7, 11)}`;
+    }
+    
+    // Create a synthetic event to pass to the parent handler
+    const syntheticEvent = {
+      ...e,
+      target: {
+        ...e.target,
+        name: 'phone',
+        value: formattedValue
+      }
+    };
+    
+    onClientInfoChange(syntheticEvent);
+  };
+
   return (
     <div className="p-6">
       <div className="flex items-center mb-4">
@@ -54,11 +82,14 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
             id="phone"
             name="phone"
             value={clientInfo.phone}
-            onChange={onClientInfoChange}
+            onChange={(e) => formatPhoneNumber(e)}
             className="w-full p-2 border rounded-md"
             placeholder="(00) 00000-0000"
             required
           />
+          <p className="text-xs text-muted-foreground">
+            Este número será usado para enviar confirmações e lembretes do agendamento.
+          </p>
         </div>
 
         <Button

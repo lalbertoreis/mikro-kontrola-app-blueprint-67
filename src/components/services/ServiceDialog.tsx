@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useServiceById } from "@/hooks/useServices";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ServiceDialogProps {
   open: boolean;
@@ -42,6 +43,17 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
   const [formDirty, setFormDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
+  
+  // Log for debugging
+  useEffect(() => {
+    if (serviceId) {
+      console.log("ServiceDialog: Attempting to load service with ID:", serviceId);
+    }
+    
+    if (fetchedService) {
+      console.log("ServiceDialog: Service loaded:", fetchedService);
+    }
+  }, [serviceId, fetchedService]);
   
   useEffect(() => {
     if (open) setFormDirty(false);
@@ -101,11 +113,17 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
               </Button>
             </DialogClose>
           </DialogHeader>
-          <ServiceForm 
-            service={service} 
-            onFormChange={handleFormChange}
-            onClose={handleCloseAttempt}
-          />
+          {isLoading ? (
+            <div className="p-6 text-center">
+              <p>Carregando informações do serviço...</p>
+            </div>
+          ) : (
+            <ServiceForm 
+              service={service} 
+              onFormChange={handleFormChange}
+              onClose={handleCloseAttempt}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

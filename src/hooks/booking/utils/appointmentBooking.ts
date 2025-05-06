@@ -24,18 +24,27 @@ export const processBooking = async (bookingData: {
     let businessId = businessUserId;
     if (!businessId && businessSlug) {
       // Definir o slug para a sessão
+      console.log("Setting session slug before booking:", businessSlug);
       await setSlugForSession(businessSlug);
       businessId = await getBusinessUserId(businessSlug);
     }
     
     if (!businessId) {
+      console.error("No business ID found for booking!");
       throw new Error("Não foi possível identificar o negócio para este agendamento");
     }
     
     console.log("Using business ID for booking:", businessId);
     
+    // Ensure session slug is set again right before database operations
+    if (businessSlug) {
+      await setSlugForSession(businessSlug);
+    }
+    
     // Check if client exists or create new client
     let clientId;
+    
+    console.log("Checking for existing client with phone:", clientInfo.phone);
     const { data: existingClient, error: clientFetchError } = await supabase
       .from('clients')
       .select('id')
@@ -43,12 +52,17 @@ export const processBooking = async (bookingData: {
       .eq('user_id', businessId) // Filtrar por user_id do negócio
       .maybeSingle();
     
-    if (clientFetchError) throw clientFetchError;
+    if (clientFetchError) {
+      console.error("Error checking for existing client:", clientFetchError);
+      throw clientFetchError;
+    }
     
     if (existingClient) {
+      console.log("Found existing client:", existingClient.id);
       clientId = existingClient.id;
     } else {
       // Create new client com o user_id do negócio
+      console.log("Creating new client for business:", businessId);
       const { data: newClient, error: createClientError } = await supabase
         .from('clients')
         .insert({
@@ -59,7 +73,11 @@ export const processBooking = async (bookingData: {
         .select('id')
         .single();
       
-      if (createClientError) throw createClientError;
+      if (createClientError) {
+        console.error("Error creating new client:", createClientError);
+        throw createClientError;
+      }
+      console.log("Created new client:", newClient.id);
       clientId = newClient.id;
     }
     
@@ -76,6 +94,15 @@ export const processBooking = async (bookingData: {
     const endDate = new Date(startDate);
     endDate.setMinutes(endDate.getMinutes() + service.duration);
     
+    console.log("Creating appointment with data:", {
+      employee_id: employee.id,
+      service_id: service.id,
+      client_id: clientId,
+      start_time: startDate.toISOString(),
+      end_time: endDate.toISOString(),
+      user_id: businessId
+    });
+    
     // Create appointment com o user_id do negócio
     const { data: appointment, error: appointmentError } = await supabase
       .from('appointments')
@@ -91,7 +118,12 @@ export const processBooking = async (bookingData: {
       .select()
       .single();
     
-    if (appointmentError) throw appointmentError;
+    if (appointmentError) {
+      console.error("Error creating appointment:", appointmentError);
+      throw appointmentError;
+    }
+    
+    console.log("Appointment created successfully:", appointment.id);
     
     // Create a BookingAppointment object from the appointment
     const newAppointment: BookingAppointment = {
