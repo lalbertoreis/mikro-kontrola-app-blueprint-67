@@ -1,7 +1,7 @@
 
 import React, { ReactNode } from "react";
 import { BusinessSettings } from "@/types/settings";
-import { UserCircle2, Calendar, Phone, Instagram, MapPin } from "lucide-react";
+import { UserCircle2, Calendar, Phone, Instagram, MapPin, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BookingLayoutProps {
@@ -89,25 +89,39 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
         </div>
       </main>
 
-      {/* Floating Button for Login/My Appointments */}
-      <div className="fixed bottom-6 right-6 z-10">
+      {/* Floating Buttons - Updated based on login status */}
+      <div className="fixed bottom-6 right-6 z-10 flex flex-col space-y-4">
         {isLoggedIn ? (
-          <Button
-            onClick={onMyAppointmentsClick}
-            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
-            size="lg"
-            aria-label="Acessar meus agendamentos"
-          >
-            <UserCircle2 className="w-6 h-6" />
-          </Button>
+          <>
+            {/* My Appointments button when logged in */}
+            <Button
+              onClick={onMyAppointmentsClick}
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+              size="lg"
+              aria-label="Acessar meus agendamentos"
+            >
+              <Calendar className="w-6 h-6" />
+            </Button>
+            
+            {/* Logout button when logged in */}
+            <Button
+              onClick={onLogoutClick}
+              className="bg-red-600 hover:bg-red-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+              size="lg"
+              aria-label="Fazer logout"
+            >
+              <LogOut className="w-6 h-6" />
+            </Button>
+          </>
         ) : (
+          /* Login button when not logged in */
           <Button
             onClick={onMyAppointmentsClick}
             className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
             size="lg"
             aria-label="Fazer login"
           >
-            <Calendar className="w-6 h-6" />
+            <UserCircle2 className="w-6 h-6" />
           </Button>
         )}
       </div>
