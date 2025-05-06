@@ -27,15 +27,15 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex-shrink-0 flex items-center">
-              {businessProfile?.business_logo ? (
+              {businessProfile?.businessLogo ? (
                 <img
                   className="h-8 w-auto"
-                  src={businessProfile.business_logo}
-                  alt={businessProfile.business_name || "Business logo"}
+                  src={businessProfile.businessLogo}
+                  alt={businessProfile.businessName || "Business logo"}
                 />
               ) : (
                 <h1 className="text-xl font-bold text-gray-900">
-                  {businessProfile?.business_name || "Agendamento Online"}
+                  {businessProfile?.businessName || "Agendamento Online"}
                 </h1>
               )}
             </div>
@@ -76,7 +76,7 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
           <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h2 className="text-2xl font-bold">
-                {businessProfile.business_name || "Agendamento Online"}
+                {businessProfile.businessName || "Agendamento Online"}
               </h2>
               
               {businessProfile.address && (
@@ -122,7 +122,7 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
       <footer className="bg-white">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} {businessProfile?.business_name || "Agendamento Online"}. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} {businessProfile?.businessName || "Agendamento Online"}. Todos os direitos reservados.
           </p>
         </div>
       </footer>
