@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,20 @@ import BookingSummary from "./dialog/BookingSummary";
 import ClientInfoForm from "./dialog/ClientInfoForm";
 import ConfirmationScreen from "./dialog/ConfirmationScreen";
 
+interface BookingDialogProps {
+  open: boolean;
+  onClose: () => void;
+  service: Service;
+  employees: Employee[];
+  businessSettings: BusinessSettings | null;
+  onBookingConfirm: (data: any) => void;
+  bookingSettings?: {
+    simultaneousLimit: number;
+    futureLimit: number;
+    cancelMinHours: number;
+  };
+}
+
 const BookingDialog: React.FC<BookingDialogProps> = ({
   open,
   onClose,
@@ -24,6 +37,7 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   employees,
   businessSettings,
   onBookingConfirm,
+  bookingSettings
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -39,10 +53,10 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
   const [isLoadingDays, setIsLoadingDays] = useState(false);
   const [availablePeriods, setAvailablePeriods] = useState<Period[]>(["Manhã", "Tarde", "Noite"]);
   
-  // Settings defaults
+  // Utilizar os limites do bookingSettings, ou valores padrão
   const timeInterval = businessSettings?.bookingTimeInterval || 30;
-  const futureLimit = businessSettings?.bookingFutureLimit || 3;
-
+  const futureLimit = bookingSettings?.futureLimit || businessSettings?.bookingFutureLimit || 3;
+  
   // Generate week days (7 days from current week start)
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
 
@@ -286,14 +300,15 @@ const BookingDialog: React.FC<BookingDialogProps> = ({
     if (currentStep === "datetime") {
       setCurrentStep("clientinfo");
     } else if (currentStep === "clientinfo") {
-      // Move to confirmation and trigger the callback with client info
+      // Move to confirmation and trigger the callback with client info and booking settings
       if (selectedEmployee && selectedDate && selectedTime) {
         onBookingConfirm({
           service,
           employee: selectedEmployee,
           date: selectedDate,
           time: selectedTime,
-          clientInfo
+          clientInfo,
+          bookingSettings // Passar as configurações de agendamento
         });
         setCurrentStep("confirmation");
         setBookingConfirmed(true);

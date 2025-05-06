@@ -45,7 +45,8 @@ const PublicBooking: React.FC = () => {
     bookingConfirmed,
     setBookingConfirmed,
     confirmationDate,
-    confirmationTime
+    confirmationTime,
+    bookingSettings
   } = usePublicBooking(slug, navigate);
 
   // Log active services when they change
@@ -112,6 +113,7 @@ const PublicBooking: React.FC = () => {
         onBookingConfirm={handleBookingConfirm}
         onLogin={handleLogin}
         onCancelAppointment={handleCancelAppointment}
+        bookingSettings={bookingSettings}
       />
       
       {/* Separate confirmation dialog */}

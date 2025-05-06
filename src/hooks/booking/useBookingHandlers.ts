@@ -55,7 +55,8 @@ export function useBookingHandlers(
         const result = await processBooking({
           ...bookingData,
           businessSlug: slug,
-          businessUserId: businessUserId
+          businessUserId: businessUserId,
+          bookingSettings: bookingData.bookingSettings
         });
         
         if (result) {

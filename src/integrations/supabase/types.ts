@@ -657,6 +657,9 @@ export type Database = {
       }
       business_services_view: {
         Row: {
+          booking_cancel_min_hours: number | null
+          booking_future_limit: number | null
+          booking_simultaneous_limit: number | null
           business_slug: string | null
           business_user_id: string | null
           created_at: string | null
@@ -705,6 +708,9 @@ export type Database = {
       get_service_by_id_and_slug: {
         Args: { service_id_param: string; slug_param: string }
         Returns: {
+          booking_cancel_min_hours: number | null
+          booking_future_limit: number | null
+          booking_simultaneous_limit: number | null
           business_slug: string | null
           business_user_id: string | null
           created_at: string | null
@@ -721,6 +727,9 @@ export type Database = {
       get_services_by_slug: {
         Args: { slug_param: string }
         Returns: {
+          booking_cancel_min_hours: number | null
+          booking_future_limit: number | null
+          booking_simultaneous_limit: number | null
           business_slug: string | null
           business_user_id: string | null
           created_at: string | null

@@ -16,8 +16,13 @@ export const processBooking = async (bookingData: {
   clientInfo: { name: string; phone: string };
   businessSlug?: string;
   businessUserId?: string;
+  bookingSettings?: {
+    simultaneousLimit: number;
+    futureLimit: number;
+    cancelMinHours: number;
+  };
 }) => {
-  const { service, employee, date, time, clientInfo, businessSlug, businessUserId } = bookingData;
+  const { service, employee, date, time, clientInfo, businessSlug, businessUserId, bookingSettings } = bookingData;
   
   try {
     // Obter o user_id do negócio pelo slug ou usar o que foi passado
@@ -39,6 +44,36 @@ export const processBooking = async (bookingData: {
     // Ensure session slug is set again right before database operations
     if (businessSlug) {
       await setSlugForSession(businessSlug);
+    }
+    
+    // Verificar a quantidade de agendamentos simultâneos
+    const simultaneousLimit = bookingSettings?.simultaneousLimit || 3;
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const [hours, minutes] = time.split(':').map(Number);
+    
+    // Criar start e end time
+    const startDate = new Date(`${dateStr}T${time}:00`);
+    startDate.setHours(hours, minutes, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setMinutes(endDate.getMinutes() + service.duration);
+    
+    // Verificar quantos agendamentos já existem nesse horário
+    const { data: existingAppointments, error: appointmentCountError } = await supabase
+      .from('appointments_view')
+      .select('appointment_id')
+      .eq('business_slug', businessSlug)
+      .eq('employee_id', employee.id)
+      .gte('start_time', startDate.toISOString())
+      .lt('start_time', endDate.toISOString())
+      .neq('status', 'canceled');
+      
+    if (appointmentCountError) {
+      console.error("Error checking existing appointments:", appointmentCountError);
+      throw appointmentCountError;
+    }
+    
+    if (existingAppointments && existingAppointments.length >= simultaneousLimit) {
+      throw new Error(`Limite de agendamentos atingido para este horário (máximo: ${simultaneousLimit})`);
     }
     
     // Check if client exists or create new client
@@ -80,19 +115,6 @@ export const processBooking = async (bookingData: {
       console.log("Created new client:", newClient.id);
       clientId = newClient.id;
     }
-    
-    // Format date string correctly to avoid timezone issues
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const [hours, minutes] = time.split(':').map(Number);
-    
-    // Create start and end date objects with the correct date and time
-    const startDate = new Date(`${dateStr}T${time}:00`);
-    // Ensure we're using local time by setting hours/minutes directly
-    startDate.setHours(hours, minutes, 0, 0);
-    
-    // Calculate end time based on service duration
-    const endDate = new Date(startDate);
-    endDate.setMinutes(endDate.getMinutes() + service.duration);
     
     console.log("Creating appointment with data:", {
       employee_id: employee.id,

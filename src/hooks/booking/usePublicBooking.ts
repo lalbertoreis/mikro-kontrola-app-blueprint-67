@@ -1,7 +1,7 @@
 
 import { useEffect } from "react";
 import { NavigateFunction } from "react-router-dom";
-import { Service } from "@/types/service"; // Added the missing Service import
+import { Service } from "@/types/service";
 import { useBusinessProfile } from "./useBusinessProfile";
 import { useServicesWithEmployees } from "./useServicesWithEmployees";
 import { usePackages } from "./usePackages";
@@ -29,7 +29,8 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     isServicesLoading,
     isEmployeesLoading,
     isViewLoading,
-    employees
+    employees,
+    bookingSettings
   } = useServicesWithEmployees(slug);
   
   // Get active packages
@@ -121,6 +122,7 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     bookingConfirmed,
     setBookingConfirmed,
     confirmationDate,
-    confirmationTime
+    confirmationTime,
+    bookingSettings
   };
 }

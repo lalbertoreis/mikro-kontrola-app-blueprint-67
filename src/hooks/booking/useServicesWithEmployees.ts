@@ -27,7 +27,7 @@ export function useServicesWithEmployees(slug: string | undefined) {
         // Buscar da view business_services_view
         const { data, error } = await supabase
           .from('business_services_view')
-          .select('id, employee_id')
+          .select('id, employee_id, booking_simultaneous_limit, booking_future_limit, booking_cancel_min_hours')
           .eq('business_slug', slug);
           
         if (error) {
@@ -116,6 +116,23 @@ export function useServicesWithEmployees(slug: string | undefined) {
     return Array.from(employeeMap.values()) as Employee[];
   }, [rawEmployees]);
 
+  // Extrair configurações de agendamento para retornar
+  const bookingSettings = useMemo(() => {
+    if (serviceEmployees.length === 0) return {
+      simultaneousLimit: 3,
+      futureLimit: 3,
+      cancelMinHours: 1
+    };
+    
+    // Pegar o primeiro registro para obter as configurações
+    const firstService = serviceEmployees[0];
+    return {
+      simultaneousLimit: firstService.booking_simultaneous_limit || 3,
+      futureLimit: firstService.booking_future_limit || 3,
+      cancelMinHours: firstService.booking_cancel_min_hours || 1
+    };
+  }, [serviceEmployees]);
+
   // Criar mapa de serviços para funcionários
   const serviceWithEmployeesMap = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -173,6 +190,7 @@ export function useServicesWithEmployees(slug: string | undefined) {
     isEmployeesLoading,
     employees,
     serviceWithEmployeesMap,
-    isLoading
+    isLoading,
+    bookingSettings
   };
 }
