@@ -11,16 +11,20 @@ import { useBookingAuth } from "./useBookingAuth";
 import { processBooking, cancelAppointment, fetchUserAppointmentsByPhone } from "./utils/bookingUtils";
 
 export function usePublicBooking(slug: string | undefined, navigate: NavigateFunction) {
-  // Fetch data using custom hooks
-  const { services, isLoading: isServicesLoading } = useServices();
-  const { packages, isLoading: isPackagesLoading } = useServicePackages();
-  const { employees, isLoading: isEmployeesLoading } = useEmployees();
+  // Fetch business profile first to get the business user ID
   const { 
     businessProfile, 
     isLoadingBusiness, 
     businessExists, 
     businessUserId 
   } = useBusinessProfile(slug, navigate);
+  
+  console.log("In usePublicBooking, businessUserId:", businessUserId);
+  
+  // Fetch data using custom hooks with businessUserId
+  const { services, isLoading: isServicesLoading } = useServices(businessUserId);
+  const { packages, isLoading: isPackagesLoading } = useServicePackages();
+  const { employees, isLoading: isEmployeesLoading } = useEmployees();
   
   const { 
     isLoggedIn, 
@@ -56,13 +60,18 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     return map;
   }, [employees]);
 
+  console.log("Services available:", services.length);
+  console.log("ServiceWithEmployeesMap size:", Array.from(serviceWithEmployeesMap.keys()).length);
+
   // Filter active services that have associated employees
   const activeServices = useMemo(() => {
-    return services.filter((service) => 
+    const filtered = services.filter((service) => 
       service.isActive && 
       serviceWithEmployeesMap.has(service.id) && 
       serviceWithEmployeesMap.get(service.id)?.length > 0
     );
+    console.log("Filtered active services:", filtered.length);
+    return filtered;
   }, [services, serviceWithEmployeesMap]);
 
   // Filter active packages

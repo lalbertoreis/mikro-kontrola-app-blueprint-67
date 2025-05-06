@@ -10,13 +10,20 @@ import {
 } from "@/services/serviceService";
 import type { Service, ServiceFormData } from "@/types/service";
 
-export function useServices() {
+export function useServices(businessUserId?: string) {
   const queryClient = useQueryClient();
+  
+  console.info("useServices hook called with businessUserId:", businessUserId);
 
   const { data: services = [], isLoading, error } = useQuery({
-    queryKey: ["services"],
-    queryFn: fetchServices,
+    queryKey: ["services", businessUserId],
+    queryFn: () => {
+      console.info("Executing queryFn with businessUserId:", businessUserId);
+      return fetchServices(businessUserId);
+    },
   });
+  
+  console.info("useServices hook returning", services.length, "services");
 
   const createMutation = useMutation({
     mutationFn: (newService: ServiceFormData) => createService(newService),

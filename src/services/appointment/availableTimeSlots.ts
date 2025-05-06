@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -72,13 +73,30 @@ async function fetchTimeInterval(slug?: string): Promise<number> {
   if (slug) {
     try {
       await supabase.rpc('set_slug_for_session', { slug });
-      console.log("Set slug for session in availableTimeSlots:", slug);
+      console.log("Set slug for session in fetchTimeInterval:", slug);
     } catch (error) {
       console.error('Error setting slug for session:', error);
     }
   }
   
-  // Agora buscar as configurações do negócio
+  // Get business ID by slug if provided
+  let businessId = null;
+  if (slug) {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, booking_time_interval')
+      .eq('slug', slug)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error fetching business profile by slug:', error);
+    } else if (profile) {
+      console.log("Found business profile by slug:", profile);
+      return profile.booking_time_interval || 30;
+    }
+  }
+  
+  // Fallback to current user if no slug or couldn't find profile by slug
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('booking_time_interval')
@@ -167,10 +185,14 @@ export async function fetchAvailableTimeSlots(
   slug?: string // Adicionamos o parâmetro slug para definir o contexto da sessão
 ): Promise<string[]> {
   try {
-    // Se um slug foi fornecido, vamos definir o contexto da sessão
+    // Set the session context with the slug if provided
     if (slug) {
-      await supabase.rpc('set_slug_for_session', { slug });
-      console.log("Set slug for session in availableTimeSlots:", slug);
+      try {
+        await supabase.rpc('set_slug_for_session', { slug });
+        console.log("Set slug for session in fetchAvailableTimeSlots:", slug);
+      } catch (error) {
+        console.error('Error setting slug for session in fetchAvailableTimeSlots:', error);
+      }
     }
     
     // Format date and get day of week - use the date as is, without adjustments

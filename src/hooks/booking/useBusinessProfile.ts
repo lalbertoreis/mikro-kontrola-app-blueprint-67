@@ -15,13 +15,18 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
       try {
         setIsLoadingBusiness(true);
         
-        // Primeiro: define o slug atual para a sessão (importante para as políticas RLS)
+        // Define o slug atual para a sessão (importante para as políticas RLS)
         if (slug) {
-          // Definir o slug para a sessão usando a função que criamos no banco de dados
-          await supabase.rpc('set_slug_for_session', { slug });
+          try {
+            // Definir o slug para a sessão usando a função que criamos no banco de dados
+            await supabase.rpc('set_slug_for_session', { slug });
+            console.log("Set slug for session in useBusinessProfile:", slug);
+          } catch (error) {
+            console.error('Error setting slug for session:', error);
+          }
         }
         
-        // Agora podemos buscar o perfil do negócio com o slug definido
+        // Agora buscar o perfil do negócio com o slug definido
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -35,8 +40,11 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
           return;
         }
         
+        console.log("Business profile data:", data);
+        
         if (data) {
           setBusinessUserId(data.id); // Armazenar o ID do usuário do negócio
+          console.log("Setting businessUserId to:", data.id);
           
           setBusinessProfile({
             businessName: data.business_name || '',
@@ -55,6 +63,7 @@ export function useBusinessProfile(slug: string | undefined, navigate: NavigateF
           });
         } else {
           // No business found with this slug
+          console.error("No business found with slug:", slug);
           navigate('/booking/404');
         }
       } catch (error) {
