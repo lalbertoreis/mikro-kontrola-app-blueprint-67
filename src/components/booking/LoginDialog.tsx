@@ -144,7 +144,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
         // Check if user exists
         const { data: existingClient } = await supabase
           .from('clients')
-          .select('id')
+          .select('id, name')
           .eq('phone', phone)
           .maybeSingle();
           
@@ -154,7 +154,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
             .from('clients')
             .update({ 
               pin: hashedPin,
-              name: name || existingClient.name
+              name: name || existingClient.name || ''
             })
             .eq('id', existingClient.id);
         } else {
@@ -174,7 +174,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin }) => 
       
       // Call login function with user data
       onLogin({ 
-        name: name || existingUserData?.name || "Usuário", 
+        name: name || (existingUserData?.name || "Usuário"), 
         phone 
       });
       

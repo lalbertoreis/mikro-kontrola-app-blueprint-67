@@ -3,6 +3,7 @@ import { Service, ServicePackage } from "@/types/service";
 import { toast } from "sonner";
 import { useBookingAuth } from "./useBookingAuth";
 import { processBooking, cancelAppointment } from "./utils";
+import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
 
 /**
  * Hook for booking-related handlers
@@ -61,7 +62,18 @@ export function useBookingHandlers(
         
         if (result) {
           // Add to local appointments list
-          setAppointments((prev) => [...prev, result.newAppointment]);
+          // Convert the formatted appointment to match BookingAppointment type
+          const newAppointment: BookingAppointment = {
+            id: result.newAppointment.id,
+            serviceName: result.newAppointment.service.name,
+            employeeName: result.newAppointment.employee.name,
+            date: result.newAppointment.date,
+            time: result.newAppointment.time,
+            status: result.newAppointment.status as any,
+            createdAt: result.newAppointment.createdAt
+          };
+          
+          setAppointments((prev) => [...prev, newAppointment]);
           
           // Close booking dialog and show confirmation
           setBookingDialogOpen(false);
