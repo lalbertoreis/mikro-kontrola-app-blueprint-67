@@ -27,6 +27,7 @@ interface MyAppointmentsDialogProps {
   appointments: BookingAppointment[];
   onCancelAppointment: (id: string, businessSlug?: string) => void;
   isLoading?: boolean;
+  themeColor?: string; // Add theme color prop
 }
 
 const MyAppointmentsDialog: React.FC<MyAppointmentsDialogProps> = ({
@@ -35,6 +36,7 @@ const MyAppointmentsDialog: React.FC<MyAppointmentsDialogProps> = ({
   appointments,
   onCancelAppointment,
   isLoading = false,
+  themeColor = "#9b87f5" // Default color
 }) => {
   // Group appointments by date
   const appointmentsByDate = appointments.reduce((acc, appointment) => {
@@ -56,7 +58,7 @@ const MyAppointmentsDialog: React.FC<MyAppointmentsDialogProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md max-h-[80vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle>Meus Agendamentos</DialogTitle>
+          <DialogTitle style={{ color: themeColor }}>Meus Agendamentos</DialogTitle>
           <DialogDescription>
             Veja seus agendamentos e gerencie-os.
           </DialogDescription>
@@ -107,6 +109,7 @@ const MyAppointmentsDialog: React.FC<MyAppointmentsDialogProps> = ({
                           variant="destructive"
                           size="sm"
                           onClick={() => onCancelAppointment(appointment.id, appointment.businessSlug)}
+                          style={{ backgroundColor: themeColor }}
                         >
                           Cancelar
                         </Button>

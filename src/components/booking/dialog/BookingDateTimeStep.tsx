@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service } from "@/types/service";
 import { Employee } from "@/types/employee";
-import { DialogStepProps } from "./types";
+import { BookingStep } from "./types";
 import BookingCalendar from "./BookingCalendar";
 import EmployeeSelector from "./EmployeeSelector";
 import PeriodSelector from "./PeriodSelector";
@@ -12,11 +12,12 @@ import TimeSlotSelector from "./TimeSlotSelector";
 import ServiceInfo from "./ServiceInfo";
 import BookingSummary from "./BookingSummary";
 
-interface BookingDateTimeStepProps extends DialogStepProps {
+interface BookingDateTimeStepProps {
   service: Service;
   employees: Employee[];
+  onNextStep: () => void;
   onBookingConfirm: (employeeId: string, date: Date, time: string) => void;
-  themeColor?: string; // Added theme color prop
+  themeColor?: string;
   businessSlug?: string;
 }
 
@@ -62,17 +63,12 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
 
         {selectedEmployee && (
           <BookingCalendar
-            weekDays={[]}
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
-            availableDays={{}}
-            selectedEmployee={selectedEmployee}
-            isLoadingDays={false}
-            canGoNext={true}
-            canGoPrevious={true}
-            currentWeekStart={new Date()}
-            goToNextWeek={() => {}}
-            goToPreviousWeek={() => {}}
+            serviceId={service.id}
+            employeeId={selectedEmployee.id}
+            themeColor={themeColor}
+            businessSlug={businessSlug}
           />
         )}
 
