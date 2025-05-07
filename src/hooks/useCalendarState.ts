@@ -20,14 +20,12 @@ export function useCalendarState() {
   const handleSelectAppointment = (appointment: AppointmentWithDetails) => {
     setSelectedAppointment(appointment);
     setActionsDialogOpen(true);
-    // Ensure other dialogs are closed
-    setAppointmentDialogOpen(false);
-    setBlockTimeDialogOpen(false);
   };
 
   const handleEditAppointment = () => {
     setEditMode(true);
-    // Não fechamos o actions dialog imediatamente - isso será feito através do onActionsDialogOpenChange
+    setActionsDialogOpen(false);
+    setAppointmentDialogOpen(true);
   };
 
   const navigatePrevious = () => {
@@ -48,19 +46,12 @@ export function useCalendarState() {
 
   const handleOpenNewAppointment = () => {
     setEditMode(false);
-    setSelectedAppointment(null);
     setDialogKey(prev => prev + 1);
-    // Ensure other dialogs are closed
-    setActionsDialogOpen(false);
-    setBlockTimeDialogOpen(false);
     setAppointmentDialogOpen(true);
   };
 
   const handleOpenBlockTime = () => {
     setDialogKey(prev => prev + 1);
-    // Ensure other dialogs are closed
-    setActionsDialogOpen(false);
-    setAppointmentDialogOpen(false);
     setBlockTimeDialogOpen(true);
   };
 
@@ -71,33 +62,6 @@ export function useCalendarState() {
   // Convenience function to reset to today
   const goToToday = () => {
     setCurrentDate(startOfToday());
-  };
-
-  // Handle closing dialogs
-  const handleCloseAppointmentDialog = () => {
-    setAppointmentDialogOpen(false);
-    // Se estávamos em modo de edição e fechamos o diálogo de agendamento, 
-    // reabrir o diálogo de ações
-    if (editMode && selectedAppointment) {
-      setActionsDialogOpen(true);
-    }
-    setEditMode(false);
-  };
-
-  const handleCloseBlockTimeDialog = () => {
-    setBlockTimeDialogOpen(false);
-  };
-
-  const handleActionsDialogOpenChange = (open: boolean) => {
-    setActionsDialogOpen(open);
-    
-    // Se estamos fechando o diálogo de ações e estamos em modo de edição,
-    // então devemos abrir o diálogo de edição
-    if (!open && editMode) {
-      setTimeout(() => {
-        setAppointmentDialogOpen(true);
-      }, 100);
-    }
   };
 
   return {
@@ -127,8 +91,5 @@ export function useCalendarState() {
     handleOpenNewAppointment,
     handleOpenBlockTime,
     goToToday,
-    handleCloseAppointmentDialog,
-    handleCloseBlockTimeDialog,
-    handleActionsDialogOpenChange,
   };
 }

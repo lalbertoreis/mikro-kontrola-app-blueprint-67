@@ -21,8 +21,11 @@ export default function CalendarView() {
     selectedEmployee,
     setSelectedEmployee,
     appointmentDialogOpen,
+    setAppointmentDialogOpen,
     blockTimeDialogOpen,
+    setBlockTimeDialogOpen,
     actionsDialogOpen,
+    setActionsDialogOpen,
     selectedAppointment,
     editMode,
     dialogKey,
@@ -34,9 +37,6 @@ export default function CalendarView() {
     navigateNext,
     handleOpenNewAppointment,
     handleOpenBlockTime,
-    handleCloseAppointmentDialog,
-    handleCloseBlockTimeDialog,
-    setActionsDialogOpen,
   } = useCalendarState();
 
   const { appointments, isLoading } = useAppointments();
@@ -152,8 +152,8 @@ export default function CalendarView() {
             currentDate={currentDate}
             selectedEmployeeId={selectedEmployee}
             dialogKey={dialogKey}
-            onAppointmentDialogClose={handleCloseAppointmentDialog}
-            onBlockTimeDialogClose={handleCloseBlockTimeDialog}
+            onAppointmentDialogClose={() => setAppointmentDialogOpen(false)}
+            onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
             onActionsDialogOpenChange={setActionsDialogOpen}
             onEditAppointment={handleEditAppointment}
           />

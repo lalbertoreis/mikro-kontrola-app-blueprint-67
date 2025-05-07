@@ -72,11 +72,6 @@ export default function AppointmentActionsDialog({
     window.open(whatsappUrl, '_blank');
   };
   
-  const handleEditClick = () => {
-    onEdit();
-    // Não vamos fechar o diálogo de ações aqui - isso será feito pelo onOpenChange
-  };
-  
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -140,7 +135,7 @@ export default function AppointmentActionsDialog({
             
             <Button 
               variant="outline" 
-              onClick={handleEditClick}
+              onClick={onEdit}
               className="flex items-center gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <Edit className="h-4 w-4" />
