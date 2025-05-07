@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format, addDays, startOfWeek, getDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -10,13 +9,22 @@ interface WeekCalendarProps {
   date: Date;
   appointments: AppointmentWithDetails[];
   employees: Employee[];
+  selectedEmployee?: string;
   onSelectAppointment: (appointment: AppointmentWithDetails) => void;
+  onSelectTimeSlot?: (date: Date, hour: number) => void;
 }
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8:00 - 20:00
 const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6]; // Sunday - Saturday
 
-const WeekCalendar: React.FC<WeekCalendarProps> = ({ date, appointments, employees, onSelectAppointment }) => {
+const WeekCalendar: React.FC<WeekCalendarProps> = ({ 
+  date, 
+  appointments, 
+  employees,
+  selectedEmployee, 
+  onSelectAppointment,
+  onSelectTimeSlot 
+}) => {
   // Get the starting date of the week (Sunday)
   const weekStart = startOfWeek(date, { weekStartsOn: 0 });
   
@@ -85,6 +93,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({ date, appointments, employe
                 className={`min-h-[80px] p-1 relative ${
                   dayIndex < 6 ? 'border-r' : ''
                 } ${isSameDay(day, new Date()) ? 'bg-accent/20' : ''}`}
+                onClick={() => onSelectTimeSlot && onSelectTimeSlot(day, hour)}
               >
                 {appointmentsInSlot.map((appointment) => (
                   <AppointmentCard

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { 
   format, 
@@ -20,12 +19,21 @@ interface MonthCalendarProps {
   date: Date;
   appointments: AppointmentWithDetails[];
   employees: Employee[];
+  selectedEmployee?: string;
   onSelectAppointment: (appointment: AppointmentWithDetails) => void;
+  onSelectDate?: (date: Date) => void;
 }
 
 const WEEKDAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-const MonthCalendar: React.FC<MonthCalendarProps> = ({ date, appointments, employees, onSelectAppointment }) => {
+const MonthCalendar: React.FC<MonthCalendarProps> = ({ 
+  date, 
+  appointments, 
+  employees, 
+  selectedEmployee, 
+  onSelectAppointment,
+  onSelectDate 
+}) => {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
@@ -86,6 +94,7 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({ date, appointments, emplo
               className={`min-h-[100px] p-1 border-b border-r last:border-r-0 ${
                 isCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'
               } ${isCurrentDay ? 'bg-accent/20' : ''}`}
+              onClick={() => onSelectDate && onSelectDate(day)}
             >
               <div className="text-xs font-medium p-1">
                 {format(day, "d")}

@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { AppointmentWithDetails, CalendarViewOptions } from "@/types/calendar";
-import { addMonths, subMonths, addWeeks, subWeeks } from "date-fns";
+import { addMonths, subMonths, addWeeks, subWeeks, startOfToday } from "date-fns";
 
 export function useCalendarState() {
   const [view, setView] = useState<CalendarViewOptions["view"]>("week");
@@ -59,10 +59,16 @@ export function useCalendarState() {
     setHideCanceled(prev => !prev);
   };
 
+  // Convenience function to reset to today
+  const goToToday = () => {
+    setCurrentDate(startOfToday());
+  };
+
   return {
     view,
     setView,
     currentDate,
+    setCurrentDate,
     selectedEmployee,
     setSelectedEmployee,
     appointmentDialogOpen,
@@ -77,7 +83,6 @@ export function useCalendarState() {
     setEditMode,
     dialogKey,
     hideCanceled,
-    setHideCanceled,
     toggleHideCanceled,
     handleSelectAppointment,
     handleEditAppointment,
@@ -85,5 +90,6 @@ export function useCalendarState() {
     navigateNext,
     handleOpenNewAppointment,
     handleOpenBlockTime,
+    goToToday,
   };
 }
