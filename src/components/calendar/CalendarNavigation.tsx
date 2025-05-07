@@ -11,6 +11,7 @@ interface CalendarNavigationProps {
   view: CalendarViewOptions["view"];
   onNavigatePrevious: () => void;
   onNavigateNext: () => void;
+  onToday: () => void;
 }
 
 const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
@@ -18,6 +19,7 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
   view,
   onNavigatePrevious,
   onNavigateNext,
+  onToday,
 }) => {
   const formattedDate = view === "week" 
     ? format(currentDate, "'Semana de' dd 'de' MMMM", { locale: ptBR })
@@ -26,13 +28,18 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
   return (
     <div className="flex items-center justify-between mb-2">
       <Button variant="outline" size="sm" onClick={onNavigatePrevious}>
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-4 w-4 mr-1" />
         {view === "week" ? "Semana anterior" : "Mês anterior"}
       </Button>
       
-      <h2 className="text-lg font-medium capitalize">
-        {formattedDate}
-      </h2>
+      <div className="flex items-center gap-2">
+        <h2 className="text-lg font-medium capitalize">
+          {formattedDate}
+        </h2>
+        <Button variant="ghost" size="sm" onClick={onToday}>
+          Hoje
+        </Button>
+      </div>
       
       <Button variant="outline" size="sm" onClick={onNavigateNext}>
         {view === "week" ? "Próxima semana" : "Próximo mês"}

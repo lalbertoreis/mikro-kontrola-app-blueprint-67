@@ -17,6 +17,7 @@ export default function CalendarView() {
     view,
     setView,
     currentDate,
+    setCurrentDate,
     selectedEmployee,
     setSelectedEmployee,
     appointmentDialogOpen,
@@ -43,10 +44,44 @@ export default function CalendarView() {
 
   // Filter appointments based on selected employee and canceled status
   const filteredAppointments = appointments.filter(appointment => {
-    const matchesEmployee = !selectedEmployee || appointment.employee_id === selectedEmployee;
+    const matchesEmployee = !selectedEmployee || appointment.employeeId === selectedEmployee;
     const notCanceled = !hideCanceled || appointment.status !== 'canceled';
     return matchesEmployee && notCanceled;
   });
+
+  // Convert Appointment[] to AppointmentWithDetails[] to match component props
+  const appointmentsWithDetails = filteredAppointments.map(appointment => ({
+    ...appointment,
+    employee: appointment.employee || {
+      id: appointment.employeeId,
+      name: 'Unknown Employee',
+      role: '',
+      shifts: [],
+      services: [],
+      createdAt: '',
+      updatedAt: ''
+    },
+    service: appointment.service || {
+      id: appointment.serviceId || '',
+      name: 'Unknown Service',
+      price: 0,
+      duration: 0,
+      multipleAttendees: false,
+      isActive: true,
+      createdAt: '',
+      updatedAt: ''
+    },
+    client: appointment.client || {
+      id: appointment.clientId || '',
+      name: 'Unknown Client',
+      email: '',
+      phone: '',
+      cep: '',
+      address: '',
+      createdAt: '',
+      updatedAt: ''
+    }
+  }));
 
   return (
     <Card className="glass-panel">
@@ -64,17 +99,17 @@ export default function CalendarView() {
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <CalendarNavigation 
+                currentDate={currentDate}
                 view={view}
-                date={currentDate}
-                onPrevious={navigatePrevious}
-                onNext={navigateNext}
+                onNavigatePrevious={navigatePrevious}
+                onNavigateNext={navigateNext}
                 onToday={() => setCurrentDate(startOfToday())}
               />
 
               <EmployeeFilter
                 employees={employees}
-                selectedEmployee={selectedEmployee}
-                onSelectEmployee={setSelectedEmployee}
+                selectedEmployeeId={selectedEmployee}
+                onChange={setSelectedEmployee}
               />
             </div>
           </div>
@@ -86,7 +121,7 @@ export default function CalendarView() {
               </div>
             ) : view === "week" ? (
               <WeekCalendar
-                appointments={filteredAppointments}
+                appointments={appointmentsWithDetails}
                 date={currentDate}
                 employees={employees}
                 selectedEmployee={selectedEmployee}
@@ -95,7 +130,7 @@ export default function CalendarView() {
               />
             ) : (
               <MonthCalendar
-                appointments={filteredAppointments}
+                appointments={appointmentsWithDetails}
                 date={currentDate}
                 employees={employees}
                 selectedEmployee={selectedEmployee}
