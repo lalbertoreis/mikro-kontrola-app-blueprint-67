@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from "react";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { fetchAvailableTimeSlots } from "@/services/appointment/availableTimeSlots";
 
 interface TimeSlotSelectorProps {
   selectedDate: Date;
@@ -10,7 +11,7 @@ interface TimeSlotSelectorProps {
   onSelectTime: (time: string) => void;
   serviceId: string;
   employeeId: string;
-  themeColor?: string; // Add theme color prop
+  themeColor?: string; // Theme color prop
   businessSlug?: string;
 }
 
@@ -28,20 +29,37 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchAvailableSlots = async () => {
+    const fetchSlots = async () => {
       if (!selectedDate || !serviceId || !employeeId) return;
       
       setIsLoading(true);
       
       try {
-        // In a real application, this would make an API call to get available slots
-        // For this demo, we're just generating slots
-        const mockSlots = generateMockTimeSlots(period);
+        console.log("Fetching available time slots:", {
+          employeeId,
+          serviceId,
+          date: format(selectedDate, 'yyyy-MM-dd'),
+          businessSlug
+        });
         
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Format date as yyyy-MM-dd for the API
+        const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         
-        setAvailableSlots(mockSlots);
+        // Fetch real available slots from the API
+        const slots = await fetchAvailableTimeSlots(
+          employeeId,
+          serviceId,
+          formattedDate,
+          businessSlug
+        );
+        
+        console.log("Available slots from API:", slots);
+        
+        // Filter slots based on selected period
+        const filteredSlots = filterSlotsByPeriod(slots, period);
+        console.log("Filtered slots for period", period, ":", filteredSlots);
+        
+        setAvailableSlots(filteredSlots);
       } catch (error) {
         console.error("Error fetching available slots:", error);
         setAvailableSlots([]);
@@ -50,21 +68,23 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
       }
     };
     
-    fetchAvailableSlots();
+    fetchSlots();
   }, [selectedDate, period, serviceId, employeeId, businessSlug]);
   
-  const generateMockTimeSlots = (period: string) => {
-    let slots: string[] = [];
-    
-    if (period === "morning") {
-      slots = ["08:00", "09:00", "10:00", "11:00", "11:30"];
-    } else if (period === "afternoon") {
-      slots = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-    } else if (period === "evening") {
-      slots = ["19:00", "20:00", "21:00"];
-    }
-    
-    return slots;
+  // Helper function to filter slots based on period
+  const filterSlotsByPeriod = (slots: string[], period: string): string[] => {
+    return slots.filter(time => {
+      const hour = parseInt(time.split(':')[0]);
+      
+      if (period === "morning" && hour >= 5 && hour < 12) {
+        return true;
+      } else if (period === "afternoon" && hour >= 12 && hour < 18) {
+        return true;
+      } else if (period === "evening" && hour >= 18 && hour < 24) {
+        return true;
+      }
+      return false;
+    });
   };
   
   if (isLoading) {

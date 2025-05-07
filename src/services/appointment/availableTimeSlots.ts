@@ -16,10 +16,11 @@ interface CachedItem<T> {
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 const CACHE = {
   shifts: new Map<string, CachedItem<Shift>>(),
-  services: new Map<string, CachedItem<number>>(),
+  services: new Map<string, CachedItem<any>>(),
   appointments: new Map<string, CachedItem<any[]>>(),
   timeIntervals: new Map<string, CachedItem<number>>(),
-  timeSlots: new Map<string, CachedItem<string[]>>()
+  timeSlots: new Map<string, CachedItem<string[]>>(),
+  holidays: new Map<string, CachedItem<any[]>>()
 };
 
 /**
@@ -91,9 +92,9 @@ export async function fetchEmployeeShift(employeeId: string, dayOfWeek: number, 
 }
 
 /**
- * Fetches service duration in minutes
+ * Fetches service information including duration and booking constraints
  */
-export async function fetchServiceDuration(serviceId: string, slug?: string): Promise<number> {
+export async function fetchServiceInfo(serviceId: string, slug?: string): Promise<any> {
   const cacheKey = `${serviceId}_${slug || ''}`;
   
   return getFromCache(CACHE.services, cacheKey, async () => {
@@ -101,16 +102,17 @@ export async function fetchServiceDuration(serviceId: string, slug?: string): Pr
     
     const { data: service, error: serviceError } = await supabase
       .from('business_services_view')
-      .select('duration')
+      .select('id, name, duration, booking_simultaneous_limit, booking_future_limit, booking_cancel_min_hours')
       .eq('id', serviceId)
       .maybeSingle();
     
     if (serviceError) {
-      console.error('Error fetching service duration:', serviceError);
-      return 30; // Default duration in minutes
+      console.error('Error fetching service info:', serviceError);
+      return { duration: 30, booking_simultaneous_limit: 3 }; // Default values
     }
     
-    return service?.duration || 30;
+    console.log('Service info:', service);
+    return service || { duration: 30, booking_simultaneous_limit: 3 };
   });
 }
 
@@ -194,6 +196,31 @@ export async function fetchTimeInterval(slug?: string): Promise<number> {
 }
 
 /**
+ * Fetches holidays for a specific date
+ */
+export async function fetchHolidays(formattedDate: string, slug?: string): Promise<any[]> {
+  const cacheKey = `${formattedDate}_${slug || ''}`;
+  
+  return getFromCache(CACHE.holidays, cacheKey, async () => {
+    await setSlugContext(slug);
+    
+    const { data: holidays, error: holidayError } = await supabase
+      .from('holidays')
+      .select('*')
+      .eq('date', formattedDate)
+      .eq('is_active', true);
+    
+    if (holidayError) {
+      console.error('Error fetching holidays:', holidayError);
+      return [];
+    }
+    
+    console.log('Holidays for date', formattedDate, ':', holidays);
+    return holidays || [];
+  });
+}
+
+/**
  * Generates all possible time slots based on shift hours and time interval
  */
 export function generateTimeSlots(
@@ -213,6 +240,7 @@ export function generateTimeSlots(
   
   console.log(`Shift hours: ${shiftStartTime} to ${shiftEndTime}`);
   console.log(`Service duration: ${serviceDuration} minutes`);
+  console.log(`Time interval: ${timeInterval} minutes`);
   
   // Generate slots based on the time interval from settings
   for (let minutes = shiftStartInMinutes; minutes <= shiftEndInMinutes - serviceDuration; minutes += timeInterval) {
@@ -233,25 +261,77 @@ export function filterAvailableSlots(
   timeSlots: string[], 
   appointments: any[], 
   formattedDate: string, 
-  serviceDuration: number
+  serviceDuration: number,
+  simultaneousLimit: number,
+  holidays: any[]
 ): string[] {
-  if (!timeSlots.length || !appointments) {
-    return timeSlots;
+  if (!timeSlots.length) {
+    return [];
   }
+  
+  console.log(`Filtering ${timeSlots.length} time slots with simultaneous limit: ${simultaneousLimit}`);
+  
+  // First, check if there are any full day holidays
+  const hasFullDayHoliday = holidays.some(holiday => 
+    holiday.blocking_type === 'full_day'
+  );
+  
+  if (hasFullDayHoliday) {
+    console.log('Found full day holiday, no slots available');
+    return [];
+  }
+  
+  // Check for morning, afternoon or custom holidays
+  const morningHoliday = holidays.some(holiday => holiday.blocking_type === 'morning');
+  const afternoonHoliday = holidays.some(holiday => holiday.blocking_type === 'afternoon');
+  const customHolidays = holidays.filter(holiday => holiday.blocking_type === 'custom');
   
   return timeSlots.filter(timeSlot => {
     const slotStart = new Date(`${formattedDate}T${timeSlot}:00`);
     const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60000);
+    const slotHour = parseInt(timeSlot.split(':')[0]);
     
-    const hasConflict = appointments.some(appointment => {
+    // Check holiday blocks
+    if (morningHoliday && slotHour < 12) {
+      return false;
+    }
+    
+    if (afternoonHoliday && slotHour >= 12) {
+      return false;
+    }
+    
+    // Check custom holiday blocks
+    for (const holiday of customHolidays) {
+      if (holiday.custom_start_time && holiday.custom_end_time) {
+        const holidayStart = new Date(`${formattedDate}T${holiday.custom_start_time}`);
+        const holidayEnd = new Date(`${formattedDate}T${holiday.custom_end_time}`);
+        
+        if (slotStart < holidayEnd && slotEnd > holidayStart) {
+          return false;
+        }
+      }
+    }
+    
+    // Count overlapping appointments at this time slot
+    let overlappingAppointments = 0;
+    
+    for (const appointment of appointments) {
       const appointmentStart = new Date(appointment.start_time);
       const appointmentEnd = new Date(appointment.end_time);
       
       // Check for overlap
-      return (slotStart < appointmentEnd && slotEnd > appointmentStart);
-    });
+      if (slotStart < appointmentEnd && slotEnd > appointmentStart) {
+        overlappingAppointments++;
+      }
+    }
     
-    return !hasConflict;
+    // Check if we've reached the simultaneous booking limit
+    if (overlappingAppointments >= simultaneousLimit) {
+      console.log(`Slot ${timeSlot} has reached simultaneous limit (${overlappingAppointments}/${simultaneousLimit})`);
+      return false;
+    }
+    
+    return true;
   });
 }
 
@@ -276,6 +356,7 @@ export async function fetchAvailableTimeSlots(
       return cached.data;
     }
     
+    console.log(`Fetching available time slots for employee ${employeeId}, service ${serviceId}, date ${date}`);
     await setSlugContext(slug);
     
     // Format date and get day of week
@@ -285,10 +366,15 @@ export async function fetchAvailableTimeSlots(
     
     // Step 1: Check if the employee has a shift for this day of the week
     const shift = await fetchEmployeeShift(employeeId, dayOfWeek, slug);
-    if (!shift) return [];
+    if (!shift) {
+      console.log(`No shift found for employee ${employeeId} on day ${dayOfWeek}`);
+      return [];
+    }
     
-    // Step 2: Get service duration
-    const serviceDuration = await fetchServiceDuration(serviceId, slug);
+    // Step 2: Get service information including duration and constraints
+    const serviceInfo = await fetchServiceInfo(serviceId, slug);
+    const serviceDuration = serviceInfo?.duration || 30;
+    const simultaneousLimit = serviceInfo?.booking_simultaneous_limit || 3;
     
     // Step 3: Get all existing appointments for this employee on this date
     const appointments = await fetchExistingAppointments(employeeId, formattedDate, slug);
@@ -296,15 +382,25 @@ export async function fetchAvailableTimeSlots(
     // Step 4: Get business settings for time interval
     const timeInterval = await fetchTimeInterval(slug);
     
-    // Step 5: Generate all possible time slots within shift hours
+    // Step 5: Get holidays for this date
+    const holidays = await fetchHolidays(formattedDate, slug);
+    
+    // Step 6: Generate all possible time slots within shift hours
     const allTimeSlots = generateTimeSlots(shift.start_time, shift.end_time, timeInterval, serviceDuration);
     
-    // Step 6: Filter out time slots that conflict with existing appointments
-    const availableSlots = filterAvailableSlots(allTimeSlots, appointments, formattedDate, serviceDuration);
+    // Step 7: Filter out time slots that conflict with existing appointments or holidays
+    const availableSlots = filterAvailableSlots(
+      allTimeSlots, 
+      appointments, 
+      formattedDate, 
+      serviceDuration,
+      simultaneousLimit,
+      holidays
+    );
     
     console.log('Available slots:', availableSlots);
     
-    // Fix: Use the correct property name 'data' instead of 'slots' to match CachedItem<string[]>
+    // Update cache
     CACHE.timeSlots.set(cacheKey, {
       data: availableSlots,
       timestamp: Date.now()
