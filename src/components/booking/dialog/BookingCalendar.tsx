@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Employee } from "@/types/employee";
 import { Tooltip } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { fetchHolidays } from "@/services/holidayService";
 import { Holiday } from "@/types/holiday";
 import { supabase } from "@/integrations/supabase/client";
 import { setSlugContext } from "@/services/appointment/availability/slugContext";
@@ -87,20 +86,30 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
   useEffect(() => {
     const fetchCalendarHolidays = async () => {
       try {
+        if (businessSlug) {
+          await setSlugContext(businessSlug);
+        }
+        
         const startOfCurrentMonth = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
         const endOfNextMonth = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 2, 0);
         
-        // Use the holiday service to get holidays
-        const allHolidays = await fetchHolidays();
+        const startDate = format(startOfCurrentMonth, 'yyyy-MM-dd');
+        const endDate = format(endOfNextMonth, 'yyyy-MM-dd');
         
-        // Filter holidays for the relevant date range
-        const relevantHolidays = allHolidays.filter(holiday => {
-          const holidayDate = parseISO(holiday.date);
-          return holidayDate >= startOfCurrentMonth && holidayDate <= endOfNextMonth;
-        });
+        // Query the holidays_view directly to get active holidays in the date range
+        const { data: allHolidays, error } = await supabase
+          .from('holidays_view')
+          .select('*')
+          .gte('date', startDate)
+          .lte('date', endDate)
+          .eq('is_active', true);
         
-        console.log(`Found ${relevantHolidays.length} holidays for calendar period`);
-        setHolidays(relevantHolidays);
+        if (error) {
+          throw error;
+        }
+        
+        console.log(`Found ${allHolidays?.length || 0} holidays for calendar period`);
+        setHolidays(allHolidays || []);
       } catch (error) {
         console.error("Error fetching holidays:", error);
         setHolidays([]);
@@ -108,7 +117,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
     };
     
     fetchCalendarHolidays();
-  }, [currentWeekStart]);
+  }, [currentWeekStart, businessSlug]);
 
   // Fetch available days for the employee
   useEffect(() => {
@@ -179,14 +188,14 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
   // Check if a day is a holiday
   const getHolidayForDate = (date: Date): Holiday | undefined => {
     const dateString = format(date, 'yyyy-MM-dd');
-    return holidays.find(holiday => holiday.date === dateString && holiday.isActive);
+    return holidays.find(holiday => holiday.date === dateString);
   };
 
   // Memorize the days and their availability
   const calendarDays = useMemo(() => {
     return weekDays.map((day) => {
       const dayOfWeek = day.getDay(); // 0 = Sunday, 1 = Monday, etc.
-      const isAvailable = availableDays[dayOfWeek] || false;
+      const isAvailableDayOfWeek = availableDays[dayOfWeek] || false;
       const isSelected = selectedDate && 
                         selectedDate.getDate() === day.getDate() &&
                         selectedDate.getMonth() === day.getMonth();
@@ -200,7 +209,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
       // 2. It's not a holiday
       // 3. It's not beyond the future booking limit
       // 4. It's not in the past
-      const isTrulyAvailable = isAvailable && !isHoliday && !isFutureLimit && !isPastDay;
+      const isTrulyAvailable = isAvailableDayOfWeek && !isHoliday && !isFutureLimit && !isPastDay;
       
       return { 
         day, 

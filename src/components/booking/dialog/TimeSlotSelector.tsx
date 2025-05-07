@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { fetchAvailableTimeSlots } from "@/services/appointment/availability";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface TimeSlotSelectorProps {
   selectedDate: Date;
@@ -63,6 +64,7 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
         setAvailableSlots(filteredSlots);
       } catch (error) {
         console.error("Error fetching available slots:", error);
+        toast.error("Erro ao buscar horários disponíveis");
         setAvailableSlots([]);
       } finally {
         setIsLoading(false);

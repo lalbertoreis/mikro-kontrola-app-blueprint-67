@@ -709,8 +709,44 @@ export type Database = {
         }
         Relationships: []
       }
+      holidays_view: {
+        Row: {
+          auto_generated: boolean | null
+          blocking_type: string | null
+          created_at: string | null
+          custom_end_time: string | null
+          custom_start_time: string | null
+          date: string | null
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_holidays_by_date_and_slug: {
+        Args: { date_param: string; slug_param?: string }
+        Returns: {
+          auto_generated: boolean
+          blocking_type: string
+          created_at: string | null
+          custom_end_time: string | null
+          custom_start_time: string | null
+          date: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string | null
+          user_id: string | null
+        }[]
+      }
       get_service_by_id_and_slug: {
         Args: { service_id_param: string; slug_param: string }
         Returns: {

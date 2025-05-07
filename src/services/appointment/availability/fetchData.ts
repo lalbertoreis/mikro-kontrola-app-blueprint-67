@@ -147,10 +147,12 @@ export async function fetchHolidays(formattedDate: string, slug?: string): Promi
   return getFromCache(CACHE.holidays, cacheKey, async () => {
     await setSlugContext(slug);
     
+    // Use our new function to get holidays by date and slug
     const { data: holidays, error: holidayError } = await supabase
-      .from('holidays')
-      .select('*')
-      .eq('date', formattedDate);
+      .rpc('get_holidays_by_date_and_slug', {
+        date_param: formattedDate,
+        slug_param: slug || null
+      });
     
     if (holidayError) {
       console.error('Error fetching holidays:', holidayError);
