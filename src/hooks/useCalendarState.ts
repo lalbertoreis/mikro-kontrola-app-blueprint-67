@@ -20,12 +20,17 @@ export function useCalendarState() {
   const handleSelectAppointment = (appointment: AppointmentWithDetails) => {
     setSelectedAppointment(appointment);
     setActionsDialogOpen(true);
+    // Ensure other dialogs are closed
+    setAppointmentDialogOpen(false);
+    setBlockTimeDialogOpen(false);
   };
 
   const handleEditAppointment = () => {
     setEditMode(true);
-    setActionsDialogOpen(false);
-    setAppointmentDialogOpen(true);
+    setActionsDialogOpen(false); // Close the actions dialog first
+    setTimeout(() => {
+      setAppointmentDialogOpen(true); // Then open the appointment dialog with a small delay
+    }, 100);
   };
 
   const navigatePrevious = () => {
@@ -46,12 +51,19 @@ export function useCalendarState() {
 
   const handleOpenNewAppointment = () => {
     setEditMode(false);
+    setSelectedAppointment(null);
     setDialogKey(prev => prev + 1);
+    // Ensure other dialogs are closed
+    setActionsDialogOpen(false);
+    setBlockTimeDialogOpen(false);
     setAppointmentDialogOpen(true);
   };
 
   const handleOpenBlockTime = () => {
     setDialogKey(prev => prev + 1);
+    // Ensure other dialogs are closed
+    setActionsDialogOpen(false);
+    setAppointmentDialogOpen(false);
     setBlockTimeDialogOpen(true);
   };
 
@@ -62,6 +74,19 @@ export function useCalendarState() {
   // Convenience function to reset to today
   const goToToday = () => {
     setCurrentDate(startOfToday());
+  };
+
+  // Handle closing dialogs
+  const handleCloseAppointmentDialog = () => {
+    setAppointmentDialogOpen(false);
+  };
+
+  const handleCloseBlockTimeDialog = () => {
+    setBlockTimeDialogOpen(false);
+  };
+
+  const handleCloseActionsDialog = () => {
+    setActionsDialogOpen(false);
   };
 
   return {
@@ -91,5 +116,8 @@ export function useCalendarState() {
     handleOpenNewAppointment,
     handleOpenBlockTime,
     goToToday,
+    handleCloseAppointmentDialog,
+    handleCloseBlockTimeDialog,
+    handleCloseActionsDialog,
   };
 }

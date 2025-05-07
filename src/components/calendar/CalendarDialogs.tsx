@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { AppointmentWithDetails } from "@/types/calendar";
 import AppointmentDialog from "./AppointmentDialog";
 import BlockTimeDialog from "./BlockTimeDialog";
@@ -37,31 +37,37 @@ const CalendarDialogs: React.FC<CalendarDialogsProps> = ({
   return (
     <>
       {/* Appointment Dialog */}
-      <AppointmentDialog 
-        key={`appointment-dialog-${dialogKey}`}
-        isOpen={appointmentDialogOpen}
-        onClose={onAppointmentDialogClose}
-        selectedDate={currentDate}
-        selectedEmployeeId={selectedEmployeeId}
-        appointmentId={editMode ? selectedAppointment?.id : undefined}
-      />
+      {appointmentDialogOpen && (
+        <AppointmentDialog 
+          key={`appointment-dialog-${dialogKey}`}
+          isOpen={appointmentDialogOpen}
+          onClose={onAppointmentDialogClose}
+          selectedDate={currentDate}
+          selectedEmployeeId={selectedEmployeeId}
+          appointmentId={editMode ? selectedAppointment?.id : undefined}
+        />
+      )}
 
       {/* Block Time Dialog */}
-      <BlockTimeDialog 
-        key={`block-time-dialog-${dialogKey}`}
-        isOpen={blockTimeDialogOpen}
-        onClose={onBlockTimeDialogClose}
-        selectedDate={currentDate}
-        selectedEmployeeId={selectedEmployeeId}
-      />
+      {blockTimeDialogOpen && (
+        <BlockTimeDialog 
+          key={`block-time-dialog-${dialogKey}`}
+          isOpen={blockTimeDialogOpen}
+          onClose={onBlockTimeDialogClose}
+          selectedDate={currentDate}
+          selectedEmployeeId={selectedEmployeeId}
+        />
+      )}
 
       {/* Appointment Actions Dialog */}
-      <AppointmentActionsDialog
-        open={actionsDialogOpen}
-        onOpenChange={onActionsDialogOpenChange}
-        appointment={selectedAppointment}
-        onEdit={onEditAppointment}
-      />
+      {actionsDialogOpen && selectedAppointment && (
+        <AppointmentActionsDialog
+          open={actionsDialogOpen}
+          onOpenChange={onActionsDialogOpenChange}
+          appointment={selectedAppointment}
+          onEdit={onEditAppointment}
+        />
+      )}
     </>
   );
 };

@@ -72,6 +72,11 @@ export default function AppointmentActionsDialog({
     window.open(whatsappUrl, '_blank');
   };
   
+  const handleEditClick = () => {
+    onEdit();
+    onOpenChange(false);
+  };
+  
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -135,7 +140,7 @@ export default function AppointmentActionsDialog({
             
             <Button 
               variant="outline" 
-              onClick={onEdit}
+              onClick={handleEditClick}
               className="flex items-center gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <Edit className="h-4 w-4" />
