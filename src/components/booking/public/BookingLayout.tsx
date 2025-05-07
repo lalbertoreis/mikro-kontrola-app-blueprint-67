@@ -126,7 +126,7 @@ const BookingLayout: React.FC<BookingLayoutProps> = ({
             </Button>
           </>
         ) : (
-          /* Login button when not logged in - Now calls onLoginClick */
+          /* Login button when not logged in - Now uses bookingColor */
           <Button
             onClick={onLoginClick}
             className="text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"

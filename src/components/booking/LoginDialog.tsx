@@ -12,9 +12,16 @@ interface LoginDialogProps {
   onClose: () => void;
   onLogin: (userData: { name: string; phone: string }) => void;
   businessSlug?: string;
+  themeColor?: string; // Add theme color prop
 }
 
-const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin, businessSlug }) => {
+const LoginDialog: React.FC<LoginDialogProps> = ({ 
+  open, 
+  onClose, 
+  onLogin, 
+  businessSlug,
+  themeColor = "#9b87f5" // Default color
+}) => {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
@@ -335,6 +342,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin, busin
             />
           </div>
           
+          {/* Only show name field for new users */}
           {!existingUserData && (
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -430,7 +438,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ open, onClose, onLogin, busin
           
           <Button
             type="submit"
-            className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+            className="w-full text-white"
+            style={{ backgroundColor: themeColor, borderColor: themeColor }}
             disabled={isLoading || 
               !phone || 
               (!existingUserData && !name) ||

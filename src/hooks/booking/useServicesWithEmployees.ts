@@ -46,6 +46,7 @@ export function useServicesWithEmployees(slug: string | undefined) {
     // Reduzir o cache e aumentar tentativas de reconexão
     staleTime: 1000 * 60, // 1 minuto
     retry: 3,
+    refetchOnWindowFocus: true,
     retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000)
   });
   
@@ -90,6 +91,7 @@ export function useServicesWithEmployees(slug: string | undefined) {
     // Reduzir o cache e aumentar tentativas de reconexão
     staleTime: 1000 * 60, // 1 minuto
     retry: 3,
+    refetchOnWindowFocus: true,
     retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000)
   });
 
@@ -119,7 +121,7 @@ export function useServicesWithEmployees(slug: string | undefined) {
           name: record.employee_name || 'Sem nome',
           role: record.employee_role || 'Funcionário',
           shifts: [],
-          services: [],
+          services: [], // Will be populated later from serviceWithEmployeesMap
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
@@ -159,32 +161,57 @@ export function useServicesWithEmployees(slug: string | undefined) {
     };
   }, [serviceEmployees]);
 
-  // Criar mapa de serviços para funcionários
-  const serviceWithEmployeesMap = useMemo(() => {
-    const map = new Map<string, string[]>();
+  // Criar mapa de serviços para funcionários e de funcionários para serviços
+  const { serviceWithEmployeesMap, employeeWithServicesMap } = useMemo(() => {
+    const serviceMap = new Map<string, string[]>();
+    const employeeMap = new Map<string, string[]>();
     
     if (!serviceEmployees || serviceEmployees.length === 0) {
       console.log("No service-employee relationships found");
-      return map;
+      return { serviceWithEmployeesMap: serviceMap, employeeWithServicesMap: employeeMap };
     }
     
     serviceEmployees.forEach(relation => {
       if (relation.employee_id && relation.id) {
-        if (!map.has(relation.id)) {
-          map.set(relation.id, []);
+        // Map services to employees
+        if (!serviceMap.has(relation.id)) {
+          serviceMap.set(relation.id, []);
         }
-        map.get(relation.id)?.push(relation.employee_id);
+        serviceMap.get(relation.id)?.push(relation.employee_id);
+        
+        // Map employees to services
+        if (!employeeMap.has(relation.employee_id)) {
+          employeeMap.set(relation.employee_id, []);
+        }
+        employeeMap.get(relation.employee_id)?.push(relation.id);
       }
     });
     
-    // Debug do mapa
-    console.log(`ServiceWithEmployeesMap size: ${map.size}`);
-    map.forEach((employeeIds, serviceId) => {
+    // Debug do mapa serviço->funcionários
+    console.log(`ServiceWithEmployeesMap size: ${serviceMap.size}`);
+    serviceMap.forEach((employeeIds, serviceId) => {
       console.log(`Service ${serviceId} has ${employeeIds.length} employees`);
     });
     
-    return map;
+    // Debug do mapa funcionário->serviços
+    console.log(`EmployeeWithServicesMap size: ${employeeMap.size}`);
+    employeeMap.forEach((serviceIds, employeeId) => {
+      console.log(`Employee ${employeeId} provides ${serviceIds.length} services`);
+    });
+    
+    return { serviceWithEmployeesMap: serviceMap, employeeWithServicesMap: employeeMap };
   }, [serviceEmployees]);
+
+  // Update employees with their services
+  const employeesWithServices = useMemo(() => {
+    return employees.map(employee => {
+      const serviceIds = employeeWithServicesMap.get(employee.id) || [];
+      return {
+        ...employee,
+        services: serviceIds
+      };
+    });
+  }, [employees, employeeWithServicesMap]);
 
   // Adicionar flag hasEmployees aos serviços
   const servicesWithEmployeeFlag = useMemo(() => {
@@ -194,10 +221,11 @@ export function useServicesWithEmployees(slug: string | undefined) {
     }
     
     return services.map(service => {
-      const serviceEmployees = serviceWithEmployeesMap.get(service.id) || [];
+      const serviceId = typeof service.id === 'object' ? (service.id as any).id : service.id;
+      const serviceEmployees = serviceWithEmployeesMap.get(serviceId) || [];
       const hasEmployees = serviceEmployees.length > 0;
       
-      console.log(`Service ${service.name} (${service.id}): hasEmployees=${hasEmployees}, employeesCount=${serviceEmployees.length}`);
+      console.log(`Service ${service.name} (${serviceId}): hasEmployees=${hasEmployees}, employeesCount=${serviceEmployees.length}`);
       
       return {
         ...service,
@@ -214,8 +242,9 @@ export function useServicesWithEmployees(slug: string | undefined) {
     isServicesLoading,
     isViewLoading,
     isEmployeesLoading,
-    employees,
+    employees: employeesWithServices, // Use the employees with services
     serviceWithEmployeesMap,
+    employeeWithServicesMap,
     isLoading,
     bookingSettings
   };

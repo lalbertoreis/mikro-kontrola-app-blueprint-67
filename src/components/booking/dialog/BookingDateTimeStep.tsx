@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service } from "@/types/service";
 import { Employee } from "@/types/employee";
-import { BookingStep } from "./types";
 import BookingCalendar from "./BookingCalendar";
 import EmployeeSelector from "./EmployeeSelector";
 import PeriodSelector from "./PeriodSelector";
@@ -39,17 +38,39 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
     console.log("BookingDateTimeStep - All employees:", employees?.length || 0);
     console.log("BookingDateTimeStep - Service:", service);
     
-    // Employees that can provide this service
-    const filtered = employees?.filter((emp) => {
-      const canProvideService = emp.services?.some((s) => s === service.id);
-      console.log(`Employee ${emp.name} (${emp.id}) can provide service ${service.id}: ${canProvideService}`);
-      return canProvideService;
-    }) || [];
+    if (!employees || !service) {
+      console.log("Missing employees or service data");
+      setAvailableEmployees([]);
+      return;
+    }
     
-    console.log("BookingDateTimeStep - Filtered employees:", filtered.length);
+    // Filter employees that can provide this service
+    const serviceId = typeof service.id === 'object' ? (service.id as any).id : service.id;
+    console.log("Looking for employees that can provide service ID:", serviceId);
+    
+    const filtered = employees.filter((emp) => {
+      // Check if the employee has services array
+      if (!emp.services || !Array.isArray(emp.services)) {
+        console.log(`Employee ${emp.name} has no services array`);
+        return false;
+      }
+      
+      // Check if service ID is in employee's services
+      const canProvideService = emp.services.some((s) => {
+        const empServiceId = typeof s === 'object' ? (s as any).id : s;
+        const match = empServiceId === serviceId;
+        console.log(`Checking if ${empServiceId} === ${serviceId}: ${match}`);
+        return match;
+      });
+      
+      console.log(`Employee ${emp.name} (${emp.id}) can provide service ${serviceId}: ${canProvideService}`);
+      return canProvideService;
+    });
+    
+    console.log("BookingDateTimeStep - Filtered employees:", filtered);
     setAvailableEmployees(filtered);
     
-    // Reset selection when employees or service change
+    // Reset selections when employees or service change
     setSelectedEmployee(null);
     setSelectedDate(null);
     setSelectedPeriod(null);
@@ -75,7 +96,7 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
           employees={availableEmployees}
           selectedEmployee={selectedEmployee}
           onSelectEmployee={setSelectedEmployee}
-          themeColor={themeColor} // Pass theme color
+          themeColor={themeColor}
         />
 
         {selectedEmployee && (
@@ -93,7 +114,7 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
           <PeriodSelector
             selectedPeriod={selectedPeriod}
             onSelectPeriod={setSelectedPeriod}
-            themeColor={themeColor} // Pass theme color
+            themeColor={themeColor}
           />
         )}
 
@@ -105,7 +126,7 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
             onSelectTime={setSelectedTime}
             serviceId={service.id}
             employeeId={selectedEmployee?.id || ""}
-            themeColor={themeColor} // Pass theme color
+            themeColor={themeColor}
             businessSlug={businessSlug}
           />
         )}
@@ -116,7 +137,7 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
           selectedDate={selectedDate}
           selectedTime={selectedTime}
           onNextStep={handleNextStep}
-          themeColor={themeColor} // Pass theme color
+          themeColor={themeColor}
         />
       </div>
     </div>

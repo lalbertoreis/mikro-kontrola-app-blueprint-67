@@ -67,12 +67,13 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
         businessSlug={businessSlug}
       />
 
-      {/* Diálogo de login */}
+      {/* Diálogo de login - Pass themeColor */}
       <LoginDialog
         open={isLoginDialogOpen}
         onClose={onCloseLoginDialog}
         onLogin={onLogin}
         businessSlug={businessSlug}
+        themeColor={bookingColor}
       />
 
       {/* Diálogo de meus agendamentos */}
