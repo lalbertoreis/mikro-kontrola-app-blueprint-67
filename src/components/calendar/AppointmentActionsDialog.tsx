@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { AppointmentWithDetails } from "@/types/calendar";
+import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Edit } from "lucide-react";
+import { CreditCard, Edit, MessageSquare } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
 
 interface AppointmentActionsDialogProps {
@@ -32,8 +33,44 @@ export default function AppointmentActionsDialog({
     return null;
   }
   
-  const { service } = appointment;
+  const { service, client } = appointment;
   const isBlocked = appointment.status === 'blocked';
+  const isCanceled = appointment.status === 'canceled';
+  
+  // Format date and time for WhatsApp message
+  const formatDateForMessage = (date: Date) => {
+    return format(date, "dd/MM/yyyy");
+  };
+  
+  const formatTimeForMessage = (date: Date) => {
+    return format(date, "HH:mm");
+  };
+  
+  const handleSendWhatsApp = () => {
+    if (!client || !client.phone) return;
+    
+    // Format phone number (remove non-digits)
+    const phone = client.phone.replace(/\D/g, '');
+    
+    // Create message based on appointment status
+    let message = '';
+    
+    if (isCanceled) {
+      // Message for canceled appointments
+      message = encodeURIComponent(
+        `Olá ${client.name}! Notamos que você cancelou seu agendamento de ${service?.name} no dia ${formatDateForMessage(new Date(appointment.start))} às ${formatTimeForMessage(new Date(appointment.start))}. Gostaria de remarcar para outra data? Você pode agendar pelo link: [inserir link de agendamento]`
+      );
+    } else {
+      // Message for regular appointments
+      message = encodeURIComponent(
+        `Olá ${client.name}! Confirmando seu agendamento para ${service?.name} no dia ${formatDateForMessage(new Date(appointment.start))} às ${formatTimeForMessage(new Date(appointment.start))}.`
+      );
+    }
+    
+    // Open WhatsApp with pre-filled message
+    const whatsappUrl = `https://api.whatsapp.com/send/?phone=${phone}&text=${message}&type=phone_number&app_absent=0`;
+    window.open(whatsappUrl, '_blank');
+  };
   
   return (
     <>
@@ -80,6 +117,13 @@ export default function AppointmentActionsDialog({
                 <p>R$ {service.price.toFixed(2)}</p>
               </div>
             )}
+            
+            {client?.phone && (
+              <div className="grid grid-cols-2">
+                <p className="font-medium">Telefone:</p>
+                <p>{client.phone}</p>
+              </div>
+            )}
           </div>
           
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
@@ -95,6 +139,17 @@ export default function AppointmentActionsDialog({
               <Edit className="h-4 w-4" />
               Editar
             </Button>
+            
+            {!isBlocked && client?.phone && (
+              <Button
+                variant="outline"
+                onClick={handleSendWhatsApp}
+                className="flex items-center gap-2"
+              >
+                <MessageSquare className="h-4 w-4" />
+                {isCanceled ? "Perguntar sobre remarcação" : "Confirmar via WhatsApp"}
+              </Button>
+            )}
             
             {!isBlocked && service?.price && (
               <Button 

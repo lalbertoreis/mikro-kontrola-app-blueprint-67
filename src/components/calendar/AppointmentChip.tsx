@@ -37,15 +37,18 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({ appointment, colorCla
     <Tooltip>
       <TooltipTrigger asChild>
         <div 
-          className={cn("text-xs px-2 py-1 rounded-sm w-full border cursor-pointer", chipColorClass)}
+          className={cn(
+            "text-xs px-2 py-1 rounded-sm w-full border cursor-pointer overflow-visible min-h-[24px]", 
+            chipColorClass
+          )}
           onClick={onClick}
         >
           <div className="flex items-center justify-between w-full">
-            <span className="truncate max-w-[calc(100%-40px)]">
+            <span className="truncate max-w-[calc(100%-40px)] whitespace-normal">
               {isBlocked ? "BLOQUEADO" : serviceName}
               {isCanceled && " (C)"}
             </span>
-            <span className="flex-shrink-0">{startTime}</span>
+            <span className="flex-shrink-0 ml-1">{startTime}</span>
           </div>
         </div>
       </TooltipTrigger>
