@@ -52,7 +52,7 @@ export function filterAvailableSlots(
   
   // First, check if there are any full day holidays
   const hasFullDayHoliday = holidays.some(holiday => 
-    holiday.blocking_type === 'full_day' && holiday.is_active
+    holiday.blockingType === 'full_day' && holiday.isActive
   );
   
   if (hasFullDayHoliday) {
@@ -62,15 +62,15 @@ export function filterAvailableSlots(
   
   // Check for morning, afternoon or custom holidays
   const morningHoliday = holidays.some(holiday => 
-    holiday.blocking_type === 'morning' && holiday.is_active
+    holiday.blockingType === 'morning' && holiday.isActive
   );
   
   const afternoonHoliday = holidays.some(holiday => 
-    holiday.blocking_type === 'afternoon' && holiday.is_active
+    holiday.blockingType === 'afternoon' && holiday.isActive
   );
   
   const customHolidays = holidays.filter(holiday => 
-    holiday.blocking_type === 'custom' && holiday.is_active
+    holiday.blockingType === 'custom' && holiday.isActive
   );
   
   return timeSlots.filter(timeSlot => {
@@ -91,9 +91,9 @@ export function filterAvailableSlots(
     
     // Check custom holiday blocks
     for (const holiday of customHolidays) {
-      if (holiday.custom_start_time && holiday.custom_end_time) {
-        const holidayStart = new Date(`${formattedDate}T${holiday.custom_start_time}`);
-        const holidayEnd = new Date(`${formattedDate}T${holiday.custom_end_time}`);
+      if (holiday.customStartTime && holiday.customEndTime) {
+        const holidayStart = new Date(`${formattedDate}T${holiday.customStartTime}`);
+        const holidayEnd = new Date(`${formattedDate}T${holiday.customEndTime}`);
         
         if (slotStart < holidayEnd && slotEnd > holidayStart) {
           console.log(`Slot ${timeSlot} blocked by custom holiday: ${holiday.name}`);

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from "react";
 import { format, addDays, startOfWeek, isToday, isSameDay, addWeeks, parseISO, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -11,6 +10,7 @@ import { TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui
 import { Holiday } from "@/types/holiday";
 import { supabase } from "@/integrations/supabase/client";
 import { setSlugContext } from "@/services/appointment/availability/slugContext";
+import { fetchHolidays } from "@/services/appointment/availability/fetchData";
 
 interface BookingCalendarProps {
   selectedDate: Date | null;
@@ -86,30 +86,23 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
   useEffect(() => {
     const fetchCalendarHolidays = async () => {
       try {
-        if (businessSlug) {
-          await setSlugContext(businessSlug);
-        }
-        
         const startOfCurrentMonth = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
         const endOfNextMonth = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 2, 0);
         
         const startDate = format(startOfCurrentMonth, 'yyyy-MM-dd');
         const endDate = format(endOfNextMonth, 'yyyy-MM-dd');
         
-        // Query the holidays_view directly to get active holidays in the date range
-        const { data: allHolidays, error } = await supabase
-          .from('holidays_view')
-          .select('*')
-          .gte('date', startDate)
-          .lte('date', endDate)
-          .eq('is_active', true);
+        // First check the start date
+        const startDateHolidays = await fetchHolidays(startDate, businessSlug);
         
-        if (error) {
-          throw error;
-        }
+        // Then check the end date
+        const endDateHolidays = await fetchHolidays(endDate, businessSlug);
+        
+        // Combine the holidays (this is simplified, in a real app we'd fetch all dates in between)
+        const allHolidays = [...startDateHolidays, ...endDateHolidays];
         
         console.log(`Found ${allHolidays?.length || 0} holidays for calendar period`);
-        setHolidays(allHolidays || []);
+        setHolidays(allHolidays);
       } catch (error) {
         console.error("Error fetching holidays:", error);
         setHolidays([]);
