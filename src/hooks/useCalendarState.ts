@@ -27,10 +27,7 @@ export function useCalendarState() {
 
   const handleEditAppointment = () => {
     setEditMode(true);
-    setActionsDialogOpen(false); // Close the actions dialog first
-    setTimeout(() => {
-      setAppointmentDialogOpen(true); // Then open the appointment dialog with a small delay
-    }, 100);
+    // Não fechamos o actions dialog imediatamente - isso será feito através do onActionsDialogOpenChange
   };
 
   const navigatePrevious = () => {
@@ -79,14 +76,28 @@ export function useCalendarState() {
   // Handle closing dialogs
   const handleCloseAppointmentDialog = () => {
     setAppointmentDialogOpen(false);
+    // Se estávamos em modo de edição e fechamos o diálogo de agendamento, 
+    // reabrir o diálogo de ações
+    if (editMode && selectedAppointment) {
+      setActionsDialogOpen(true);
+    }
+    setEditMode(false);
   };
 
   const handleCloseBlockTimeDialog = () => {
     setBlockTimeDialogOpen(false);
   };
 
-  const handleCloseActionsDialog = () => {
-    setActionsDialogOpen(false);
+  const handleActionsDialogOpenChange = (open: boolean) => {
+    setActionsDialogOpen(open);
+    
+    // Se estamos fechando o diálogo de ações e estamos em modo de edição,
+    // então devemos abrir o diálogo de edição
+    if (!open && editMode) {
+      setTimeout(() => {
+        setAppointmentDialogOpen(true);
+      }, 100);
+    }
   };
 
   return {
@@ -118,6 +129,6 @@ export function useCalendarState() {
     goToToday,
     handleCloseAppointmentDialog,
     handleCloseBlockTimeDialog,
-    handleCloseActionsDialog,
+    handleActionsDialogOpenChange,
   };
 }

@@ -74,7 +74,7 @@ export default function AppointmentActionsDialog({
   
   const handleEditClick = () => {
     onEdit();
-    onOpenChange(false);
+    // Não vamos fechar o diálogo de ações aqui - isso será feito pelo onOpenChange
   };
   
   return (

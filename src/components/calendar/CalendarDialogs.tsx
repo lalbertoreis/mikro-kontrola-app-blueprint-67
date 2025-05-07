@@ -60,7 +60,7 @@ const CalendarDialogs: React.FC<CalendarDialogsProps> = ({
       )}
 
       {/* Appointment Actions Dialog */}
-      {actionsDialogOpen && selectedAppointment && (
+      {selectedAppointment && (
         <AppointmentActionsDialog
           open={actionsDialogOpen}
           onOpenChange={onActionsDialogOpenChange}
