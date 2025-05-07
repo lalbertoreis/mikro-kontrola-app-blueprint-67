@@ -8,6 +8,16 @@ import bcrypt from "bcryptjs-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { setSlugContext } from "@/services/appointment/availability/slugContext";
 
+// Define the client type to match the database structure
+interface ClientData {
+  id: string;
+  name: string;
+  phone: string;
+  pin?: string;
+  email?: string;
+  user_id: string;
+}
+
 interface LoginDialogProps {
   open: boolean;
   onClose: () => void;
@@ -107,8 +117,12 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               }
               
               // Check if client exists in any business
-              const { data: anyClient } = await supabase
-                .rpc('get_client_by_phone', { phone_param: phone });
+              const { data: anyClientData } = await supabase
+                .from('clients')
+                .select('id, name, phone, pin, user_id')
+                .eq('phone', phone);
+              
+              const anyClient = anyClientData as ClientData[] | null;
               
               if (anyClient && anyClient.length > 0) {
                 // Client exists in another business
@@ -218,16 +232,20 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       if (pinMode === 'verify') {
         // Search the client by phone across all businesses
         const { data: clientsData } = await supabase
-          .rpc('get_client_by_phone', { phone_param: phone });
+          .from('clients')
+          .select('id, name, phone, pin, user_id')
+          .eq('phone', phone);
         
-        if (!clientsData || clientsData.length === 0) {
+        const clientsWithTyping = clientsData as ClientData[] | null;
+        
+        if (!clientsWithTyping || clientsWithTyping.length === 0) {
           toast.error("Conta não encontrada");
           setIsLoading(false);
           return;
         }
         
         // Find a client record with a PIN
-        const clientWithPin = clientsData.find(c => c.pin);
+        const clientWithPin = clientsWithTyping.find(c => c.pin);
         
         if (!clientWithPin || !clientWithPin.pin) {
           toast.error("PIN não encontrado, crie um novo PIN");
@@ -290,8 +308,12 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         const hashedPin = await bcrypt.hash(pin, saltRounds);
         
         // Check if client exists in any business
-        const { data: existingClients } = await supabase
-          .rpc('get_client_by_phone', { phone_param: phone });
+        const { data: existingClientsData } = await supabase
+          .from('clients')
+          .select('id, name, phone, pin, user_id')
+          .eq('phone', phone);
+        
+        const existingClients = existingClientsData as ClientData[] | null;
           
         if (existingClients && existingClients.length > 0) {
           // Update existing clients with PIN across all businesses

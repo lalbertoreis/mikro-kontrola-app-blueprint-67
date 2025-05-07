@@ -33,12 +33,15 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
+  const [userData, setUserData] = useState<Record<string, any> | null>(null);
 
   // Check if user is logged in on mount
   useEffect(() => {
     const storedUser = localStorage.getItem("bookingUser");
     if (storedUser) {
       try {
+        const parsedUser = JSON.parse(storedUser);
+        setUserData(parsedUser);
         setUserLoggedIn(true);
       } catch (e) {
         localStorage.removeItem("bookingUser");
@@ -72,6 +75,8 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
   const handleLoginSuccess = (userData: { name: string; phone: string }) => {
     setShowLoginDialog(false);
     setUserLoggedIn(true);
+    setUserData(userData);
+    localStorage.setItem("bookingUser", JSON.stringify(userData));
     setCurrentStep(1);
     toast.success(`Bem-vindo(a), ${userData.name}!`);
   };
@@ -105,7 +110,7 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
               onPrevStep={() => setCurrentStep(0)}
               onSubmit={handleClientInfoSubmit}
               themeColor={themeColor}
-              prefilledData={userLoggedIn ? JSON.parse(localStorage.getItem("bookingUser") || "{}") : undefined}
+              prefilledData={userData}
             />
           )}
         </DialogContent>

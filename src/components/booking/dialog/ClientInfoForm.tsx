@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -12,7 +12,8 @@ import { ChevronLeft } from "lucide-react";
 interface ClientInfoFormProps {
   onPrevStep: () => void;
   onSubmit: () => void;
-  themeColor?: string; // Add theme color prop
+  themeColor?: string;
+  prefilledData?: Record<string, any>; // Add prefilledData prop
 }
 
 const formSchema = z.object({
@@ -24,7 +25,8 @@ const formSchema = z.object({
 const ClientInfoForm: React.FC<ClientInfoFormProps> = ({ 
   onPrevStep, 
   onSubmit, 
-  themeColor = "#9b87f5" // Default color
+  themeColor = "#9b87f5", // Default color
+  prefilledData
 }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -34,6 +36,17 @@ const ClientInfoForm: React.FC<ClientInfoFormProps> = ({
       phone: ""
     }
   });
+
+  // Initialize form with prefilled data if available
+  useEffect(() => {
+    if (prefilledData) {
+      form.reset({
+        name: prefilledData.name || "",
+        email: prefilledData.email || "",
+        phone: prefilledData.phone || ""
+      });
+    }
+  }, [prefilledData, form]);
 
   const handleSubmit = (data: z.infer<typeof formSchema>) => {
     console.log("Form data:", data);
