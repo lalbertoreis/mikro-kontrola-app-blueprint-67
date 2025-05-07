@@ -6,13 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import bcrypt from "bcryptjs-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { setSlugContext } from "@/services/appointment/availability/slugContext";
 
 interface LoginDialogProps {
   open: boolean;
   onClose: () => void;
   onLogin: (userData: { name: string; phone: string }) => void;
   businessSlug?: string;
-  themeColor?: string; // Add theme color prop
+  themeColor?: string;
 }
 
 const LoginDialog: React.FC<LoginDialogProps> = ({ 
@@ -20,7 +21,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   onClose, 
   onLogin, 
   businessSlug,
-  themeColor = "#9b87f5" // Default color
+  themeColor = "#9b87f5"
 }) => {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -57,40 +58,98 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           
           // Set slug context if available
           if (businessSlug) {
-            await supabase.rpc('set_slug_for_session', { slug: businessSlug });
+            await setSlugContext(businessSlug);
           }
           
-          // Verificar cliente em qualquer estabelecimento
-          const { data, error } = await supabase
+          // First try to find a client within the current business context
+          const { data: localClient, error: localError } = await supabase
             .from('clients')
             .select('name, pin')
             .eq('phone', phone)
             .maybeSingle();
           
-          if (error) {
-            console.error('Error checking user:', error);
-            setIsLoading(false);
-            return;
-          }
-          
-          // If user exists
-          if (data) {
-            if (data.name) {
-              setName(data.name);
+          if (localError) {
+            if (localError.message.includes('multiple') || localError.message.includes('no rows')) {
+              // If multiple results, need to get the specific client for this business
+              if (businessSlug) {
+                // First get the business user ID
+                const { data: business } = await supabase
+                  .from('profiles')
+                  .select('id')
+                  .eq('slug', businessSlug)
+                  .maybeSingle();
+                  
+                if (business && business.id) {
+                  // Then get the client for this specific business
+                  const { data: specificClient } = await supabase
+                    .from('clients')
+                    .select('name, pin')
+                    .eq('phone', phone)
+                    .eq('user_id', business.id) 
+                    .maybeSingle();
+                  
+                  if (specificClient) {
+                    setName(specificClient.name || '');
+                    setExistingUserData({
+                      name: specificClient.name,
+                      hasPin: !!specificClient.pin
+                    });
+                    
+                    if (specificClient.pin) {
+                      setPinMode('verify');
+                    } else {
+                      setPinMode('create');
+                    }
+                    setIsLoading(false);
+                    return;
+                  }
+                }
+              }
+              
+              // Check if client exists in any business
+              const { data: anyClient } = await supabase
+                .rpc('get_client_by_phone', { phone_param: phone });
+              
+              if (anyClient && anyClient.length > 0) {
+                // Client exists in another business
+                setName(anyClient[0].name || '');
+                setExistingUserData({
+                  name: anyClient[0].name,
+                  hasPin: !!anyClient[0].pin
+                });
+                
+                if (anyClient[0].pin) {
+                  setPinMode('verify');
+                } else {
+                  setPinMode('create');
+                }
+              } else {
+                // New client
+                setExistingUserData(null);
+                setPinMode('create');
+              }
+            } else {
+              console.error('Error checking user:', localError);
+              toast.error("Erro ao verificar cadastro");
+            }
+          } else if (localClient) {
+            // Found client in current business
+            if (localClient.name) {
+              setName(localClient.name);
             }
             
-            // Check if user has a PIN
-            setExistingUserData({ 
-              name: data.name,
-              hasPin: !!data.pin 
+            setExistingUserData({
+              name: localClient.name,
+              hasPin: !!localClient.pin
             });
             
-            if (data.pin) {
+            if (localClient.pin) {
               setPinMode('verify');
             } else {
               setPinMode('create');
             }
           } else {
+            // New client for this business
             setExistingUserData(null);
             setPinMode('create');
           }
@@ -131,7 +190,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       
       // Set slug context if available
       if (businessSlug) {
-        await supabase.rpc('set_slug_for_session', { slug: businessSlug });
+        await setSlugContext(businessSlug);
       }
       
       // Get business user ID if slug is provided
@@ -144,39 +203,49 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           .maybeSingle();
         
         businessUserId = business?.id;
+        if (!businessUserId) {
+          toast.error("Erro ao identificar o negócio");
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        // If no slug, try to get the current user ID
+        const { data: { user } } = await supabase.auth.getUser();
+        businessUserId = user?.id;
       }
 
       // PIN validation
       if (pinMode === 'verify') {
-        // Check PIN
-        const { data, error } = await supabase
-          .from('clients')
-          .select('pin, name, id, user_id')
-          .eq('phone', phone)
-          .maybeSingle();
-          
-        if (error) {
-          toast.error("Erro ao verificar PIN");
-          setIsLoading(false);
-          return;
-        }
+        // Search the client by phone across all businesses
+        const { data: clientsData } = await supabase
+          .rpc('get_client_by_phone', { phone_param: phone });
         
-        if (!data || !data.pin) {
+        if (!clientsData || clientsData.length === 0) {
           toast.error("Conta não encontrada");
           setIsLoading(false);
           return;
         }
         
+        // Find a client record with a PIN
+        const clientWithPin = clientsData.find(c => c.pin);
+        
+        if (!clientWithPin || !clientWithPin.pin) {
+          toast.error("PIN não encontrado, crie um novo PIN");
+          setPinMode('create');
+          setIsLoading(false);
+          return;
+        }
+        
         // Compare PIN with stored hash
-        const pinMatch = await bcrypt.compare(pin, data.pin);
+        const pinMatch = await bcrypt.compare(pin, clientWithPin.pin);
         if (!pinMatch) {
           toast.error("PIN incorreto");
           setIsLoading(false);
           return;
         }
         
-        // Se o cliente existe em outro estabelecimento, mas não neste, copiar para este estabelecimento
-        if (businessUserId && data.user_id !== businessUserId) {
+        // If the client exists in another business, but not in this one, copy it
+        if (businessUserId) {
           const { data: existingLocalClient } = await supabase
             .from('clients')
             .select('id')
@@ -185,22 +254,21 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
             .maybeSingle();
             
           if (!existingLocalClient) {
-            // Clona o cliente para este estabelecimento
+            // Clone the client to this business
             await supabase
               .from('clients')
               .insert({
-                name: data.name,
+                name: clientWithPin.name || name,
                 phone: phone,
-                pin: data.pin,  // Mantém o mesmo PIN
+                pin: clientWithPin.pin,
                 user_id: businessUserId
               });
           }
         }
         
-        // Se chegou aqui, o PIN está correto
-        // Call login function with user data
+        // Login successful
         onLogin({ 
-          name: data.name || "Usuário", 
+          name: clientWithPin.name || "Usuário", 
           phone 
         });
       } else if (pinMode === 'create') {
@@ -221,51 +289,40 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         const saltRounds = 10;
         const hashedPin = await bcrypt.hash(pin, saltRounds);
         
-        // Check if user exists in any business
-        const { data: existingClient } = await supabase
-          .from('clients')
-          .select('id, name, user_id')
-          .eq('phone', phone)
-          .maybeSingle();
+        // Check if client exists in any business
+        const { data: existingClients } = await supabase
+          .rpc('get_client_by_phone', { phone_param: phone });
           
-        if (existingClient) {
-          // Update existing client with PIN
-          await supabase
-            .from('clients')
-            .update({ 
-              pin: hashedPin,
-              name: name || existingClient.name || ''
-            })
-            .eq('id', existingClient.id);
-            
-          // Se o cliente existe em outro estabelecimento, mas não neste, copiar para este estabelecimento
-          if (businessUserId && existingClient.user_id !== businessUserId) {
-            const { data: existingLocalClient } = await supabase
+        if (existingClients && existingClients.length > 0) {
+          // Update existing clients with PIN across all businesses
+          for (const client of existingClients) {
+            await supabase
               .from('clients')
-              .select('id')
-              .eq('phone', phone)
-              .eq('user_id', businessUserId)
-              .maybeSingle();
-              
-            if (!existingLocalClient) {
-              // Clona o cliente para este estabelecimento
-              await supabase
-                .from('clients')
-                .insert({
-                  name: name || existingClient.name || '',
-                  phone: phone,
-                  pin: hashedPin,
-                  user_id: businessUserId
-                });
-            }
+              .update({ 
+                pin: hashedPin,
+                name: name || client.name || ''
+              })
+              .eq('id', client.id);
+          }
+          
+          // If the client doesn't exist in this business, create it
+          if (businessUserId && !existingClients.some(c => c.user_id === businessUserId)) {
+            await supabase
+              .from('clients')
+              .insert({
+                name: name || existingClients[0].name || '',
+                phone: phone,
+                pin: hashedPin,
+                user_id: businessUserId
+              });
           }
           
           // Call login function with user data
           onLogin({ 
-            name: name || existingClient.name || "Usuário", 
+            name: name || existingClients[0].name || "Usuário", 
             phone 
           });
-        } else {
+        } else if (businessUserId) {
           // Create new client with PIN
           const { data: newClient, error } = await supabase
             .from('clients')
@@ -274,7 +331,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                 name, 
                 phone,
                 pin: hashedPin,
-                user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
+                user_id: businessUserId
               }
             ])
             .select()
@@ -292,6 +349,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
             name: newClient.name, 
             phone 
           });
+        } else {
+          toast.error("Erro ao identificar o negócio para cadastro");
+          setIsLoading(false);
+          return;
         }
       }
       

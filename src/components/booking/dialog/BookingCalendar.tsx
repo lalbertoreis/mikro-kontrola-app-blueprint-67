@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo } from "react";
 import { format, addDays, startOfWeek, isToday, isSameDay, addWeeks, parseISO, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -69,8 +70,16 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
           .maybeSingle();
           
         if (serviceData && serviceData.booking_future_limit) {
-          console.log(`Setting booking future limit to ${serviceData.booking_future_limit} days`);
-          setBookingFutureLimit(serviceData.booking_future_limit);
+          // Convert months to days (e.g. 1 month = 30 days)
+          let futureLimitInDays = serviceData.booking_future_limit;
+          
+          // Convert from months to days if needed
+          if (futureLimitInDays < 10) {  // Assuming small numbers are months
+            futureLimitInDays = Math.round(futureLimitInDays * 30);
+          }
+          
+          console.log(`Setting booking future limit to ${futureLimitInDays} days (from ${serviceData.booking_future_limit})`);
+          setBookingFutureLimit(futureLimitInDays);
         }
       } catch (error) {
         console.error("Error fetching booking settings:", error);
@@ -174,7 +183,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
 
   // Calculate if we can navigate to other weeks
   const today = new Date();
-  const maxFutureDate = addWeeks(today, Math.ceil(bookingFutureLimit / 7));
+  const maxFutureDate = addDays(today, bookingFutureLimit);
   const canGoNext = currentWeekStart < maxFutureDate;
   const canGoPrevious = currentWeekStart > today;
 
@@ -261,7 +270,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
             <Skeleton key={`skeleton-${i}`} className="h-10 rounded-md" />
           ))
         ) : (
-          calendarDays.map(({ day, isAvailable, isSelected, isHoliday, holiday }) => {
+          calendarDays.map(({ day, isAvailable, isSelected, isHoliday, holiday, isPastDay, isFutureLimit }) => {
             // Calculate button style based on state
             let buttonStyle: React.CSSProperties = {};
             let textColorClass = "";
@@ -278,8 +287,25 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
               textColorClass = "";
             }
             
+            // Apply different styling for unavailable dates
             if (!isAvailable) {
               className += " opacity-50 cursor-not-allowed";
+              
+              // Special styling for holidays
+              if (isHoliday) {
+                buttonStyle = { backgroundColor: "#FFDEE2", borderColor: "#ea384c" };
+                textColorClass = "text-red-700";
+              } 
+              // Special styling for days beyond future limit
+              else if (isFutureLimit) {
+                buttonStyle = { backgroundColor: "#f5f5f5", borderColor: "#e0e0e0" };
+                textColorClass = "text-gray-400";
+              }
+              // Special styling for past days
+              else if (isPastDay) {
+                buttonStyle = { backgroundColor: "#f5f5f5", borderColor: "#e0e0e0" };
+                textColorClass = "text-gray-400";
+              }
             }
             
             // Different month dates should be dimmed
@@ -287,20 +313,25 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
               textColorClass = "text-gray-400";
             }
             
-            // Create the calendar day button with optional tooltip for holidays
+            // Create the calendar day button with tooltip for holidays
             return (
               <TooltipProvider key={day.toISOString()}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant={isSelected ? "default" : "outline"}
-                      className={`${className} ${textColorClass} hover:${isAvailable ? "" : "opacity-50"}`}
-                      style={buttonStyle}
-                      disabled={!isAvailable}
-                      onClick={() => isAvailable && onDateSelect(day)}
-                    >
-                      {format(day, 'd')}
-                    </Button>
+                    <div className="relative">
+                      <Button
+                        variant={isSelected ? "default" : "outline"}
+                        className={`${className} ${textColorClass} w-full`}
+                        style={buttonStyle}
+                        disabled={!isAvailable}
+                        onClick={() => isAvailable && onDateSelect(day)}
+                      >
+                        {format(day, 'd')}
+                      </Button>
+                      {isHoliday && (
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-red-500 rounded-full" />
+                      )}
+                    </div>
                   </TooltipTrigger>
                   {isHoliday && holiday && (
                     <TooltipContent>
