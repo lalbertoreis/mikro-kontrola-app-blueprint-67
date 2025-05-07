@@ -8,6 +8,11 @@ export type Period = "morning" | "afternoon" | "evening" | "Manhã" | "Tarde" | 
 export type TimeSlot = string;
 export type BookingStep = "datetime" | "clientinfo" | "confirmation";
 
+export interface DialogStepProps {
+  onNextStep: () => void;
+  onSubmit?: () => void;
+}
+
 export interface BookingDialogProps {
   open: boolean;
   onClose: () => void;

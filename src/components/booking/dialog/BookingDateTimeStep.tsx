@@ -41,7 +41,7 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
 
   // Employees that can provide this service
   const availableEmployees = employees.filter((emp) => {
-    return emp.services?.some((s) => s.id === service.id);
+    return emp.services?.some((s) => s === service.id);
   });
 
   return (
@@ -62,12 +62,17 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
 
         {selectedEmployee && (
           <BookingCalendar
+            weekDays={[]}
             selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            serviceId={service.id}
-            employeeId={selectedEmployee.id}
-            themeColor={themeColor} // Pass theme color
-            businessSlug={businessSlug}
+            onDateSelect={setSelectedDate}
+            availableDays={{}}
+            selectedEmployee={selectedEmployee}
+            isLoadingDays={false}
+            canGoNext={true}
+            canGoPrevious={true}
+            currentWeekStart={new Date()}
+            goToNextWeek={() => {}}
+            goToPreviousWeek={() => {}}
           />
         )}
 

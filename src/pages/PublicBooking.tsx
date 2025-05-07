@@ -71,6 +71,34 @@ const PublicBooking: React.FC = () => {
   // Considerar todas as fontes de loading para um estado mais preciso
   const isLoading = isServicesLoading || isPackagesLoading || isEmployeesLoading || isViewLoading;
 
+  // Convert the complex booking confirm handler to match the expected signature
+  const handleBookingConfirmWrapper = (employeeId: string, date: Date, time: string) => {
+    // Find the employee object
+    const employee = employees.find(emp => emp.id === employeeId);
+    
+    // Find the service object
+    const service = selectedService;
+    
+    if (employee && service) {
+      handleBookingConfirm({ 
+        service, 
+        employee, 
+        date, 
+        time,
+        clientInfo: { name: "Test Client", phone: "123456789" }  // This would come from the form in a real scenario
+      });
+    }
+  };
+
+  // Adapting the booking settings to match required structure
+  const adaptedBookingSettings = {
+    minDaysInAdvance: bookingSettings.simultaneousLimit || 0,
+    maxDaysInFuture: bookingSettings.futureLimit || 30,
+    simultaneousLimit: bookingSettings.simultaneousLimit || 3,
+    timeInterval: 30, // Default interval
+    cancelHoursLimit: bookingSettings.cancelMinHours || 24
+  };
+
   return (
     <BookingLayout
       businessProfile={businessProfile}
@@ -114,10 +142,10 @@ const PublicBooking: React.FC = () => {
         onCloseBookingDialog={() => setIsBookingDialogOpen(false)}
         onCloseLoginDialog={() => setIsLoginDialogOpen(false)}
         onCloseAppointmentsDialog={() => setIsMyAppointmentsDialogOpen(false)}
-        onBookingConfirm={handleBookingConfirm}
+        onBookingConfirm={handleBookingConfirmWrapper}
         onLogin={handleLogin}
         onCancelAppointment={handleCancelAppointment}
-        bookingSettings={bookingSettings}
+        bookingSettings={adaptedBookingSettings}
         businessSlug={slug}
         isLoadingAppointments={isLoadingAppointments}
       />

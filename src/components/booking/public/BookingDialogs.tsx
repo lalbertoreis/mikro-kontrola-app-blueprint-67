@@ -82,7 +82,6 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
         appointments={appointments}
         isLoading={isLoadingAppointments}
         onCancelAppointment={onCancelAppointment}
-        cancelHoursLimit={bookingSettings.cancelHoursLimit}
         themeColor={bookingColor}
       />
     </>

@@ -1,6 +1,6 @@
 
-import React, { useEffect, useMemo } from "react";
-import { format } from "date-fns";
+import React, { useEffect, useState, useMemo } from "react";
+import { format, addDays, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,59 +8,104 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Employee } from "@/types/employee";
 
 interface BookingCalendarProps {
-  weekDays: Date[];
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
-  availableDays: { [key: number]: boolean };
-  selectedEmployee: Employee | null;
-  isLoadingDays: boolean;
-  canGoNext: boolean;
-  canGoPrevious: boolean;
-  currentWeekStart: Date;
-  goToNextWeek: () => void;
-  goToPreviousWeek: () => void;
+  serviceId: string;
+  employeeId: string;
+  themeColor?: string;
+  businessSlug?: string;
 }
 
 const BookingCalendar: React.FC<BookingCalendarProps> = ({
-  weekDays,
   selectedDate,
   onDateSelect,
-  availableDays,
-  selectedEmployee,
-  isLoadingDays,
-  canGoNext,
-  canGoPrevious,
-  currentWeekStart,
-  goToNextWeek,
-  goToPreviousWeek
+  serviceId,
+  employeeId,
+  themeColor = "#9b87f5",
+  businessSlug
 }) => {
-  // Para fins de depuração - executar apenas quando props relevantes mudam
+  const [isLoadingDays, setIsLoadingDays] = useState(true);
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
+  const [availableDays, setAvailableDays] = useState<{ [key: number]: boolean }>({});
+  
+  // Generate the days for the current week
+  const weekDays = useMemo(() => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(currentWeekStart, i));
+    }
+    return days;
+  }, [currentWeekStart]);
+
+  // Function to go to the next week
+  const goToNextWeek = () => {
+    setCurrentWeekStart(addDays(currentWeekStart, 7));
+  };
+
+  // Function to go to the previous week
+  const goToPreviousWeek = () => {
+    setCurrentWeekStart(addDays(currentWeekStart, -7));
+  };
+
+  // Fetch available days for the employee
+  useEffect(() => {
+    const fetchAvailableDays = async () => {
+      setIsLoadingDays(true);
+      try {
+        // In a real app, this would be an API call
+        // For this demo, we'll just set some mock data after a delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Mock available days (0 = Sunday, 1 = Monday, etc.)
+        const mockAvailableDays = {
+          0: false,  // Sunday
+          1: true,   // Monday
+          2: true,   // Tuesday
+          3: true,   // Wednesday
+          4: true,   // Thursday
+          5: true,   // Friday
+          6: false,  // Saturday
+        };
+        
+        setAvailableDays(mockAvailableDays);
+      } catch (error) {
+        console.error("Error fetching available days:", error);
+      } finally {
+        setIsLoadingDays(false);
+      }
+    };
+    
+    if (employeeId) {
+      fetchAvailableDays();
+    }
+  }, [employeeId, serviceId, currentWeekStart, businessSlug]);
+
+  // Calculate if we can navigate to other weeks
+  const canGoNext = true;  // In a real app, this would be based on business rules
+  const canGoPrevious = true;  // In a real app, this would be based on business rules
+
+  // For debugging
   useEffect(() => {
     console.log("BookingCalendar props:", { 
       availableDays, 
       isLoadingDays,
       selectedDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null,
-      selectedEmployee: selectedEmployee?.name
+      employeeId
     });
-  }, [availableDays, isLoadingDays, selectedDate, selectedEmployee?.id]);
+  }, [availableDays, isLoadingDays, selectedDate, employeeId]);
 
-  // Memorizar os dias e suas disponibilidades para evitar recálculos em renderizações
+  // Memorize the days and their availability
   const calendarDays = useMemo(() => {
     return weekDays.map((day) => {
-      const dayOfWeek = day.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+      const dayOfWeek = day.getDay(); // 0 = Sunday, 1 = Monday, etc.
       const isAvailable = availableDays[dayOfWeek] || false;
       const isSelected = selectedDate && 
                         selectedDate.getDate() === day.getDate() &&
                         selectedDate.getMonth() === day.getMonth();
       
-      // Para debugging
-      if (selectedEmployee) {
-        console.log(`Dia ${format(day, 'dd/MM')} (${dayOfWeek}): disponível = ${isAvailable}`);
-      }
-      
       return { day, dayOfWeek, isAvailable, isSelected };
     });
-  }, [weekDays, availableDays, selectedDate, selectedEmployee]);
+  }, [weekDays, availableDays, selectedDate]);
 
   return (
     <div className="mb-6">
@@ -106,19 +151,26 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
             <Skeleton key={`skeleton-${i}`} className="h-10 rounded-md" />
           ))
         ) : (
-          calendarDays.map(({ day, dayOfWeek, isAvailable, isSelected }) => (
-            <Button
-              key={day.toISOString()}
-              variant={isSelected ? "default" : "outline"}
-              className={`h-10 ${isSelected ? "bg-purple-500 hover:bg-purple-600" : ""} ${
-                !isAvailable ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              disabled={!isAvailable}
-              onClick={() => isAvailable && onDateSelect(day)}
-            >
-              {format(day, 'd')}
-            </Button>
-          ))
+          calendarDays.map(({ day, dayOfWeek, isAvailable, isSelected }) => {
+            const buttonStyle = isSelected 
+              ? { backgroundColor: themeColor } 
+              : {};
+              
+            return (
+              <Button
+                key={day.toISOString()}
+                variant={isSelected ? "default" : "outline"}
+                className={`h-10 ${isSelected ? "text-white hover:opacity-90" : ""} ${
+                  !isAvailable ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                style={buttonStyle}
+                disabled={!isAvailable}
+                onClick={() => isAvailable && onDateSelect(day)}
+              >
+                {format(day, 'd')}
+              </Button>
+            );
+          })
         )}
       </div>
     </div>

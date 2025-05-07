@@ -9,8 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { DialogStepProps } from "./types";
 import { ChevronLeft } from "lucide-react";
 
-interface ClientInfoFormProps extends DialogStepProps {
+interface ClientInfoFormProps {
   onPrevStep: () => void;
+  onSubmit: () => void;
   themeColor?: string; // Add theme color prop
 }
 
