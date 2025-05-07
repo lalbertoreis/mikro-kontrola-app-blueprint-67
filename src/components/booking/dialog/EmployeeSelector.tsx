@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Employee } from "@/types/employee";
 
 interface EmployeeSelectorProps {
@@ -15,11 +15,21 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   onSelectEmployee,
   themeColor = "#9b87f5" // Default color
 }) => {
-  if (employees.length === 0) {
+  // Adicionar logs para diagnóstico
+  useEffect(() => {
+    console.log("EmployeeSelector - Employees received:", employees);
+    console.log("EmployeeSelector - Selected employee:", selectedEmployee);
+  }, [employees, selectedEmployee]);
+
+  // Se não houver funcionários, mostre uma mensagem clara
+  if (!employees || employees.length === 0) {
     return (
       <div className="mb-4">
         <p className="text-sm text-red-500">
-          Não há profissionais disponíveis para este serviço.
+          Não há profissionais disponíveis para este serviço no momento.
+        </p>
+        <p className="text-sm text-gray-500 mt-1">
+          Por favor, tente novamente mais tarde ou entre em contato conosco.
         </p>
       </div>
     );

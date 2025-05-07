@@ -42,7 +42,11 @@ export function useServicesWithEmployees(slug: string | undefined) {
         return [];
       }
     },
-    enabled: !!slug
+    enabled: !!slug,
+    // Reduzir o cache e aumentar tentativas de reconexão
+    staleTime: 1000 * 60, // 1 minuto
+    retry: 3,
+    retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000)
   });
   
   // Usar useQuery para buscar funcionários e seus turnos
@@ -51,6 +55,8 @@ export function useServicesWithEmployees(slug: string | undefined) {
     queryFn: async () => {
       try {
         if (!slug) return [];
+        
+        console.log("Fetching employees for slug:", slug);
         
         // Configurar o slug para a sessão
         await setSlugForSession(slug);
@@ -68,18 +74,31 @@ export function useServicesWithEmployees(slug: string | undefined) {
         }
         
         console.log(`Retrieved ${data?.length || 0} employee shift records from view`);
+        if (data && data.length > 0) {
+          console.log("Sample employee data:", data[0]);
+        } else {
+          console.log("No employees found for this business");
+        }
+        
         return data || [];
       } catch (error) {
         console.error("Error in employees query:", error);
         return [];
       }
     },
-    enabled: !!slug
+    enabled: !!slug,
+    // Reduzir o cache e aumentar tentativas de reconexão
+    staleTime: 1000 * 60, // 1 minuto
+    retry: 3,
+    retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000)
   });
 
   // Transformar os dados brutos dos funcionários no formato Employee[]
   const employees = useMemo(() => {
-    if (!rawEmployees || rawEmployees.length === 0) return [];
+    if (!rawEmployees || rawEmployees.length === 0) {
+      console.log("No employee data available to transform");
+      return [];
+    }
     
     // Criar um mapa para agrupar turnos por funcionário
     const employeeMap = new Map();
@@ -88,12 +107,17 @@ export function useServicesWithEmployees(slug: string | undefined) {
     rawEmployees.forEach(record => {
       const employeeId = record.employee_id;
       
+      if (!employeeId) {
+        console.warn("Found record without employee_id:", record);
+        return;
+      }
+      
       if (!employeeMap.has(employeeId)) {
         // Inicializar o funcionário se não existir no mapa
         employeeMap.set(employeeId, {
           id: employeeId,
-          name: record.employee_name,
-          role: record.employee_role,
+          name: record.employee_name || 'Sem nome',
+          role: record.employee_role || 'Funcionário',
           shifts: [],
           services: [],
           createdAt: new Date().toISOString(),
@@ -113,7 +137,9 @@ export function useServicesWithEmployees(slug: string | undefined) {
     });
     
     // Converter o mapa para um array de funcionários
-    return Array.from(employeeMap.values()) as Employee[];
+    const employeeList = Array.from(employeeMap.values()) as Employee[];
+    console.log(`Transformed ${employeeList.length} employees from raw data`);
+    return employeeList;
   }, [rawEmployees]);
 
   // Extrair configurações de agendamento para retornar

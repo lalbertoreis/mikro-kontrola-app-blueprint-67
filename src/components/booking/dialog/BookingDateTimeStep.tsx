@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service } from "@/types/service";
@@ -33,17 +33,34 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<"morning" | "afternoon" | "evening" | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
+
+  useEffect(() => {
+    console.log("BookingDateTimeStep - All employees:", employees?.length || 0);
+    console.log("BookingDateTimeStep - Service:", service);
+    
+    // Employees that can provide this service
+    const filtered = employees?.filter((emp) => {
+      const canProvideService = emp.services?.some((s) => s === service.id);
+      console.log(`Employee ${emp.name} (${emp.id}) can provide service ${service.id}: ${canProvideService}`);
+      return canProvideService;
+    }) || [];
+    
+    console.log("BookingDateTimeStep - Filtered employees:", filtered.length);
+    setAvailableEmployees(filtered);
+    
+    // Reset selection when employees or service change
+    setSelectedEmployee(null);
+    setSelectedDate(null);
+    setSelectedPeriod(null);
+    setSelectedTime(null);
+  }, [employees, service]);
 
   const handleNextStep = () => {
     if (selectedEmployee && selectedDate && selectedTime) {
       onBookingConfirm(selectedEmployee.id, selectedDate, selectedTime);
     }
   };
-
-  // Employees that can provide this service
-  const availableEmployees = employees.filter((emp) => {
-    return emp.services?.some((s) => s === service.id);
-  });
 
   return (
     <div>
