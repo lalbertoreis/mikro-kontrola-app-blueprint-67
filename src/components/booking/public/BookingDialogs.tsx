@@ -3,10 +3,10 @@ import React from "react";
 import { Service } from "@/types/service";
 import { Employee } from "@/types/employee";
 import { BusinessSettings } from "@/types/settings";
-import { ClientAppointment } from "@/types/calendar";
+import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
 import { BookingDialog } from "@/components/booking/BookingDialog";
-import { LoginDialog } from "@/components/booking/LoginDialog";
-import { MyAppointmentsDialog } from "@/components/booking/MyAppointmentsDialog";
+import LoginDialog from "@/components/booking/LoginDialog";
+import MyAppointmentsDialog from "@/components/booking/MyAppointmentsDialog";
 
 interface BookingDialogsProps {
   selectedService: Service | null;
@@ -15,14 +15,14 @@ interface BookingDialogsProps {
   isMyAppointmentsDialogOpen: boolean;
   employees: Employee[];
   businessProfile: BusinessSettings | null;
-  appointments: ClientAppointment[];
+  appointments: BookingAppointment[];
   isLoadingAppointments?: boolean;
   onCloseBookingDialog: () => void;
   onCloseLoginDialog: () => void;
   onCloseAppointmentsDialog: () => void;
   onBookingConfirm: (employeeId: string, date: Date, time: string) => void;
-  onLogin: (email: string, password: string) => void;
-  onCancelAppointment: (appointmentId: string) => Promise<void>;
+  onLogin: (userData: { name: string; phone: string }) => void;
+  onCancelAppointment: (appointmentId: string, businessSlug?: string) => Promise<void>;
   bookingSettings: {
     minDaysInAdvance: number;
     maxDaysInFuture: number;
@@ -69,15 +69,15 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
 
       {/* Diálogo de login */}
       <LoginDialog
-        isOpen={isLoginDialogOpen}
+        open={isLoginDialogOpen}
         onClose={onCloseLoginDialog}
         onLogin={onLogin}
-        themeColor={bookingColor}
+        businessSlug={businessSlug}
       />
 
       {/* Diálogo de meus agendamentos */}
       <MyAppointmentsDialog
-        isOpen={isMyAppointmentsDialogOpen}
+        open={isMyAppointmentsDialogOpen}
         onClose={onCloseAppointmentsDialog}
         appointments={appointments}
         isLoading={isLoadingAppointments}

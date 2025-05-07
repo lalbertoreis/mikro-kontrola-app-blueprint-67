@@ -15,6 +15,7 @@ const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   const periods = [
     { id: "morning", label: "Manhã" },
     { id: "afternoon", label: "Tarde" },
+    { id: "evening", label: "Noite" }
   ];
 
   return (
