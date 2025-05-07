@@ -77,13 +77,14 @@ const PublicBooking: React.FC = () => {
       isLoggedIn={isLoggedIn}
       userProfile={userProfile}
       onMyAppointmentsClick={() => setIsMyAppointmentsDialogOpen(true)}
-      onLoginClick={() => setIsLoginDialogOpen(true)} // Added dedicated login handler
+      onLoginClick={() => setIsLoginDialogOpen(true)} 
       onLogoutClick={handleLogout}
     >      
       <ServicesList 
         services={activeServices} 
         onServiceClick={handleServiceClick}
         isLoading={isLoading}
+        bookingColor={businessProfile?.bookingColor}
       />
 
       {!isLoading && activePackages.length > 0 && (

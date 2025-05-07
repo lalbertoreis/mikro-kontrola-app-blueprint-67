@@ -1,47 +1,44 @@
 
 import React from "react";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Period } from "./types";
 
 interface PeriodSelectorProps {
-  selectedPeriod: Period | null;
-  onPeriodSelect: (period: Period) => void;
-  availablePeriods?: Period[]; // Add this prop to filter available periods
+  selectedPeriod: "morning" | "afternoon" | "evening" | null;
+  onSelectPeriod: (period: "morning" | "afternoon" | "evening") => void;
+  themeColor?: string; // Add theme color prop
 }
 
-const PeriodSelector: React.FC<PeriodSelectorProps> = ({
-  selectedPeriod,
-  onPeriodSelect,
-  availablePeriods = ["Manhã", "Tarde", "Noite"], // Default to all periods if not provided
+const PeriodSelector: React.FC<PeriodSelectorProps> = ({ 
+  selectedPeriod, 
+  onSelectPeriod,
+  themeColor = "#9b87f5" // Default color
 }) => {
-  // Filter periods based on availability
-  const periodsToShow = (["Manhã", "Tarde", "Noite"] as Period[]).filter(
-    (period) => availablePeriods.includes(period)
-  );
-
-  if (periodsToShow.length === 0) {
-    return (
-      <div className="mb-6">
-        <p className="text-sm text-gray-500 mb-2">Nenhum período disponível para este dia.</p>
-      </div>
-    );
-  }
+  const periods = [
+    { id: "morning", label: "Manhã" },
+    { id: "afternoon", label: "Tarde" },
+  ];
 
   return (
-    <div className="mb-6">
-      <p className="text-sm text-gray-500 mb-2">Escolha o período:</p>
-      <ToggleGroup 
-        type="single" 
-        className="justify-start" 
-        value={selectedPeriod || ''} 
-        onValueChange={value => value && onPeriodSelect(value as Period)}
-      >
-        {periodsToShow.map((period) => (
-          <ToggleGroupItem key={period} value={period} className="px-4">
-            {period}
-          </ToggleGroupItem>
+    <div className="mb-4">
+      <p className="text-sm text-gray-600 mb-2">Escolha o período:</p>
+      <div className="flex gap-2">
+        {periods.map((period) => (
+          <button
+            key={period.id}
+            className={`py-2 px-4 rounded-md border transition-all ${
+              selectedPeriod === period.id
+                ? "text-white"
+                : "text-gray-700 hover:bg-gray-50"
+            }`}
+            style={{ 
+              backgroundColor: selectedPeriod === period.id ? themeColor : "transparent",
+              borderColor: selectedPeriod === period.id ? themeColor : "#e5e7eb" 
+            }}
+            onClick={() => onSelectPeriod(period.id as "morning" | "afternoon" | "evening")}
+          >
+            {period.label}
+          </button>
         ))}
-      </ToggleGroup>
+      </div>
     </div>
   );
 };

@@ -11,6 +11,7 @@ interface BookingSummaryProps {
   selectedDate: Date | null;
   selectedTime: string | null;
   onNextStep: () => void;
+  themeColor?: string; // Add theme color prop
 }
 
 const BookingSummary: React.FC<BookingSummaryProps> = ({
@@ -19,10 +20,13 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
   selectedDate,
   selectedTime,
   onNextStep,
+  themeColor = "#9b87f5" // Default color
 }) => {
   return (
     <div className="mt-8 space-y-2 border-t pt-4">
-      <h3 className="font-semibold text-lg">Resumo do agendamento</h3>
+      <h3 className="font-semibold text-lg" style={{ color: themeColor }}>
+        Resumo do agendamento
+      </h3>
       <div className="grid grid-cols-3 gap-2">
         <div>
           <p className="text-sm text-gray-500">Serviço</p>
@@ -43,9 +47,10 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
       </div>
 
       <Button
-        className="w-full mt-4 bg-purple-500 hover:bg-purple-600"
+        className="w-full mt-4 text-white hover:opacity-90"
         disabled={!selectedEmployee || !selectedDate || !selectedTime}
         onClick={onNextStep}
+        style={{ backgroundColor: themeColor }}
       >
         Continuar
       </Button>

@@ -1,34 +1,50 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { Employee } from "@/types/employee";
 
 interface EmployeeSelectorProps {
   employees: Employee[];
   selectedEmployee: Employee | null;
-  onEmployeeSelect: (employee: Employee) => void;
+  onSelectEmployee: (employee: Employee) => void;
+  themeColor?: string; // Add theme color prop
 }
 
-const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
-  employees,
-  selectedEmployee,
-  onEmployeeSelect,
+const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({ 
+  employees, 
+  selectedEmployee, 
+  onSelectEmployee,
+  themeColor = "#9b87f5" // Default color
 }) => {
+  if (employees.length === 0) {
+    return (
+      <div className="mb-4">
+        <p className="text-sm text-red-500">
+          Não há profissionais disponíveis para este serviço.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="mb-6">
-      <p className="text-sm text-gray-500 mb-2">Escolha o profissional:</p>
-      <div className="flex overflow-x-auto space-x-2 pb-2">
+    <div className="mb-4">
+      <p className="text-sm text-gray-600 mb-2">Escolha o profissional:</p>
+      <div className="flex flex-wrap gap-2">
         {employees.map((employee) => (
-          <Button
+          <button
             key={employee.id}
-            variant={selectedEmployee?.id === employee.id ? "default" : "outline"}
-            className={`whitespace-nowrap ${
-              selectedEmployee?.id === employee.id ? "bg-purple-500 hover:bg-purple-600" : ""
+            className={`py-2 px-4 rounded-md border transition-all ${
+              selectedEmployee?.id === employee.id
+                ? "text-white"
+                : "text-gray-700 hover:bg-gray-50"
             }`}
-            onClick={() => onEmployeeSelect(employee)}
+            style={{ 
+              backgroundColor: selectedEmployee?.id === employee.id ? themeColor : "transparent",
+              borderColor: selectedEmployee?.id === employee.id ? themeColor : "#e5e7eb"
+            }}
+            onClick={() => onSelectEmployee(employee)}
           >
             {employee.name}
-          </Button>
+          </button>
         ))}
       </div>
     </div>

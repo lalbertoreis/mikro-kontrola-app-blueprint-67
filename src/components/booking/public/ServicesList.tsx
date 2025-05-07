@@ -8,9 +8,15 @@ interface ServicesListProps {
   services: Service[];
   onServiceClick: (service: Service) => void;
   isLoading?: boolean;
+  bookingColor?: string;
 }
 
-const ServicesList: React.FC<ServicesListProps> = ({ services, onServiceClick, isLoading = false }) => {
+const ServicesList: React.FC<ServicesListProps> = ({ 
+  services, 
+  onServiceClick, 
+  isLoading = false,
+  bookingColor = "#9b87f5"
+}) => {
   if (isLoading) {
     return (
       <div className="mb-8">
@@ -42,7 +48,12 @@ const ServicesList: React.FC<ServicesListProps> = ({ services, onServiceClick, i
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-bold mb-4">Serviços ({services.length})</h2>
+      <h2 
+        className="text-xl font-bold mb-4"
+        style={{ color: bookingColor }}
+      >
+        Serviços ({services.length})
+      </h2>
       <div className="space-y-3">
         {services.map((service) => {
           // Considerar undefined como false para compatibilidade com dados existentes
@@ -54,6 +65,7 @@ const ServicesList: React.FC<ServicesListProps> = ({ services, onServiceClick, i
                 item={service}
                 onClick={() => onServiceClick(service)}
                 disabled={!hasEmployees}
+                color={bookingColor}
               />
               
               {!hasEmployees && (

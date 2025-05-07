@@ -1,12 +1,12 @@
 
 import React from "react";
-import BookingDialog from "@/components/booking/BookingDialog";
-import LoginDialog from "@/components/booking/LoginDialog";
-import MyAppointmentsDialog from "@/components/booking/MyAppointmentsDialog";
 import { Service } from "@/types/service";
 import { Employee } from "@/types/employee";
 import { BusinessSettings } from "@/types/settings";
-import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
+import { ClientAppointment } from "@/types/calendar";
+import { BookingDialog } from "@/components/booking/BookingDialog";
+import { LoginDialog } from "@/components/booking/LoginDialog";
+import { MyAppointmentsDialog } from "@/components/booking/MyAppointmentsDialog";
 
 interface BookingDialogsProps {
   selectedService: Service | null;
@@ -15,20 +15,22 @@ interface BookingDialogsProps {
   isMyAppointmentsDialogOpen: boolean;
   employees: Employee[];
   businessProfile: BusinessSettings | null;
-  appointments: BookingAppointment[];
+  appointments: ClientAppointment[];
+  isLoadingAppointments?: boolean;
   onCloseBookingDialog: () => void;
   onCloseLoginDialog: () => void;
   onCloseAppointmentsDialog: () => void;
-  onBookingConfirm: (data: any) => void;
-  onLogin: (userData: { name: string; phone: string }) => void;
-  onCancelAppointment: (id: string, businessSlug?: string) => void;
-  bookingSettings?: {
+  onBookingConfirm: (employeeId: string, date: Date, time: string) => void;
+  onLogin: (email: string, password: string) => void;
+  onCancelAppointment: (appointmentId: string) => Promise<void>;
+  bookingSettings: {
+    minDaysInAdvance: number;
+    maxDaysInFuture: number;
     simultaneousLimit: number;
-    futureLimit: number;
-    cancelMinHours: number;
+    timeInterval: number;
+    cancelHoursLimit: number;
   };
   businessSlug?: string;
-  isLoadingAppointments?: boolean;
 }
 
 const BookingDialogs: React.FC<BookingDialogsProps> = ({
@@ -39,6 +41,7 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
   employees,
   businessProfile,
   appointments,
+  isLoadingAppointments = false,
   onCloseBookingDialog,
   onCloseLoginDialog,
   onCloseAppointmentsDialog,
@@ -47,36 +50,40 @@ const BookingDialogs: React.FC<BookingDialogsProps> = ({
   onCancelAppointment,
   bookingSettings,
   businessSlug,
-  isLoadingAppointments
 }) => {
+  // Recuperar a cor configurada
+  const bookingColor = businessProfile?.bookingColor || "#9b87f5";
+
   return (
     <>
-      {selectedService && (
-        <BookingDialog
-          open={isBookingDialogOpen}
-          onClose={onCloseBookingDialog}
-          service={selectedService}
-          employees={employees}
-          businessSettings={businessProfile}
-          onBookingConfirm={onBookingConfirm}
-          bookingSettings={bookingSettings}
-          businessSlug={businessSlug}
-        />
-      )}
-
-      <LoginDialog
-        open={isLoginDialogOpen}
-        onClose={onCloseLoginDialog}
-        onLogin={onLogin}
+      {/* Diálogo de agendamento */}
+      <BookingDialog
+        service={selectedService}
+        isOpen={isBookingDialogOpen}
+        onClose={onCloseBookingDialog}
+        employees={employees}
+        onBookingConfirm={onBookingConfirm}
+        themeColor={bookingColor}
         businessSlug={businessSlug}
       />
 
+      {/* Diálogo de login */}
+      <LoginDialog
+        isOpen={isLoginDialogOpen}
+        onClose={onCloseLoginDialog}
+        onLogin={onLogin}
+        themeColor={bookingColor}
+      />
+
+      {/* Diálogo de meus agendamentos */}
       <MyAppointmentsDialog
-        open={isMyAppointmentsDialogOpen}
+        isOpen={isMyAppointmentsDialogOpen}
         onClose={onCloseAppointmentsDialog}
         appointments={appointments}
-        onCancelAppointment={onCancelAppointment}
         isLoading={isLoadingAppointments}
+        onCancelAppointment={onCancelAppointment}
+        cancelHoursLimit={bookingSettings.cancelHoursLimit}
+        themeColor={bookingColor}
       />
     </>
   );

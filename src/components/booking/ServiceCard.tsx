@@ -1,54 +1,67 @@
 
 import React from "react";
 import { Service, ServicePackage } from "@/types/service";
-import { formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+
+type ServiceCardItem = Service | ServicePackage;
 
 interface ServiceCardProps {
-  item: Service | ServicePackage;
-  isPackage?: boolean;
+  item: ServiceCardItem;
   onClick: () => void;
+  color?: string;
   disabled?: boolean;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ item, isPackage = false, onClick, disabled = false }) => {
-  const isService = !isPackage && "duration" in item;
+const ServiceCard: React.FC<ServiceCardProps> = ({ 
+  item, 
+  onClick, 
+  color = "#9b87f5",
+  disabled = false 
+}) => {
+  // Determine if the item is a service or package
+  const isService = 'duration' in item;
   
-  // Calculate duration based on whether it's a service or package
-  const duration = isService 
-    ? (item as Service).duration 
-    : (item as ServicePackage).totalDuration || 0;
+  // Format price to BRL
+  const formattedPrice = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(item.price);
+  
+  // Format duration for services
+  const duration = isService ? `${item.duration} min` : '';
   
   return (
-    <div 
-      className={`p-4 rounded-lg border hover:shadow-md transition-all cursor-pointer ${
-        disabled ? 'opacity-70' : ''
-      }`}
-      onClick={disabled ? undefined : onClick}
+    <button
+      className={cn(
+        "w-full p-4 border rounded-lg text-left transition-all",
+        "hover:shadow-md focus:outline-none focus:ring-2",
+        disabled 
+          ? "bg-gray-100 cursor-not-allowed opacity-70" 
+          : "bg-white cursor-pointer"
+      )}
+      onClick={() => !disabled && onClick()}
+      disabled={disabled}
+      style={!disabled ? { borderColor: color } : undefined}
     >
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
-          {item.description && (
-            <p className="text-sm text-gray-500 mt-1">{item.description}</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+        <div>
+          <h3 className="font-semibold text-lg">{item.name}</h3>
+          {isService && (
+            <p className="text-sm text-gray-500">{duration}</p>
           )}
-          <div className="flex items-center mt-2">
-            <span className="text-sm text-gray-500">
-              {duration} min
-            </span>
-          </div>
+          {!isService && (
+            <p className="text-sm text-gray-500">Pacote com {item.services?.length || 0} serviços</p>
+          )}
         </div>
-        <div className="text-right">
-          <span className="text-lg font-bold text-purple-600">
-            {formatCurrency(item.price)}
-          </span>
-          {isPackage && "discount" in item && item.discount > 0 && (
-            <div className="text-xs text-green-600 mt-1">
-              {item.discount}% de desconto
-            </div>
-          )}
+        
+        <div 
+          className="px-3 py-1 rounded-full text-white font-medium"
+          style={{ backgroundColor: color }}
+        >
+          {formattedPrice}
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 
