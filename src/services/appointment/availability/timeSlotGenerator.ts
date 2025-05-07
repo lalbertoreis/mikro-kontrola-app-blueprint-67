@@ -34,7 +34,7 @@ export function generateTimeSlots(
 }
 
 /**
- * Filters time slots that conflict with existing appointments
+ * Filters time slots that conflict with existing appointments or holidays
  */
 export function filterAvailableSlots(
   timeSlots: string[], 
@@ -52,7 +52,7 @@ export function filterAvailableSlots(
   
   // First, check if there are any full day holidays
   const hasFullDayHoliday = holidays.some(holiday => 
-    holiday.blocking_type === 'full_day'
+    holiday.blocking_type === 'full_day' && holiday.is_active
   );
   
   if (hasFullDayHoliday) {
@@ -61,9 +61,17 @@ export function filterAvailableSlots(
   }
   
   // Check for morning, afternoon or custom holidays
-  const morningHoliday = holidays.some(holiday => holiday.blocking_type === 'morning');
-  const afternoonHoliday = holidays.some(holiday => holiday.blocking_type === 'afternoon');
-  const customHolidays = holidays.filter(holiday => holiday.blocking_type === 'custom');
+  const morningHoliday = holidays.some(holiday => 
+    holiday.blocking_type === 'morning' && holiday.is_active
+  );
+  
+  const afternoonHoliday = holidays.some(holiday => 
+    holiday.blocking_type === 'afternoon' && holiday.is_active
+  );
+  
+  const customHolidays = holidays.filter(holiday => 
+    holiday.blocking_type === 'custom' && holiday.is_active
+  );
   
   return timeSlots.filter(timeSlot => {
     const slotStart = new Date(`${formattedDate}T${timeSlot}:00`);
@@ -72,10 +80,12 @@ export function filterAvailableSlots(
     
     // Check holiday blocks
     if (morningHoliday && slotHour < 12) {
+      console.log(`Slot ${timeSlot} blocked by morning holiday`);
       return false;
     }
     
     if (afternoonHoliday && slotHour >= 12) {
+      console.log(`Slot ${timeSlot} blocked by afternoon holiday`);
       return false;
     }
     
@@ -86,6 +96,7 @@ export function filterAvailableSlots(
         const holidayEnd = new Date(`${formattedDate}T${holiday.custom_end_time}`);
         
         if (slotStart < holidayEnd && slotEnd > holidayStart) {
+          console.log(`Slot ${timeSlot} blocked by custom holiday: ${holiday.name}`);
           return false;
         }
       }

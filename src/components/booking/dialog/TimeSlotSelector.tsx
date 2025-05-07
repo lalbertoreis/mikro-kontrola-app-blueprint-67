@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { fetchAvailableTimeSlots } from "@/services/appointment/availability";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TimeSlotSelectorProps {
   selectedDate: Date;
@@ -92,7 +94,7 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
         <p className="text-sm text-gray-600 mb-2">Carregando horários disponíveis...</p>
         <div className="flex flex-wrap gap-2">
           {[1, 2, 3, 4].map((item) => (
-            <div 
+            <Skeleton 
               key={item} 
               className="w-20 h-10 bg-gray-200 animate-pulse rounded-md"
             />

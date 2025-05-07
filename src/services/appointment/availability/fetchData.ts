@@ -150,8 +150,7 @@ export async function fetchHolidays(formattedDate: string, slug?: string): Promi
     const { data: holidays, error: holidayError } = await supabase
       .from('holidays')
       .select('*')
-      .eq('date', formattedDate)
-      .eq('is_active', true);
+      .eq('date', formattedDate);
     
     if (holidayError) {
       console.error('Error fetching holidays:', holidayError);

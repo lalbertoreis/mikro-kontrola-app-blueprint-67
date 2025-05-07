@@ -1,11 +1,17 @@
 
 import React, { useEffect, useState, useMemo } from "react";
-import { format, addDays, startOfWeek } from "date-fns";
+import { format, addDays, startOfWeek, isToday, isSameDay, addWeeks, parseISO, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Employee } from "@/types/employee";
+import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { fetchHolidays } from "@/services/holidayService";
+import { Holiday } from "@/types/holiday";
+import { supabase } from "@/integrations/supabase/client";
+import { setSlugContext } from "@/services/appointment/availability/slugContext";
 
 interface BookingCalendarProps {
   selectedDate: Date | null;
@@ -27,6 +33,8 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
   const [isLoadingDays, setIsLoadingDays] = useState(true);
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const [availableDays, setAvailableDays] = useState<{ [key: number]: boolean }>({});
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [bookingFutureLimit, setBookingFutureLimit] = useState(30); // Default 30 days
   
   // Generate the days for the current week
   const weekDays = useMemo(() => {
@@ -46,30 +54,112 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
   const goToPreviousWeek = () => {
     setCurrentWeekStart(addDays(currentWeekStart, -7));
   };
+  
+  // Get the booking settings (including future limit)
+  useEffect(() => {
+    const fetchBookingSettings = async () => {
+      try {
+        if (businessSlug) {
+          await setSlugContext(businessSlug);
+        }
+        
+        const { data: serviceData } = await supabase
+          .from('business_services_view')
+          .select('booking_future_limit')
+          .eq('id', serviceId)
+          .maybeSingle();
+          
+        if (serviceData && serviceData.booking_future_limit) {
+          console.log(`Setting booking future limit to ${serviceData.booking_future_limit} days`);
+          setBookingFutureLimit(serviceData.booking_future_limit);
+        }
+      } catch (error) {
+        console.error("Error fetching booking settings:", error);
+      }
+    };
+    
+    if (serviceId) {
+      fetchBookingSettings();
+    }
+  }, [serviceId, businessSlug]);
+
+  // Fetch holidays for the current month and next month
+  useEffect(() => {
+    const fetchCalendarHolidays = async () => {
+      try {
+        const startOfCurrentMonth = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
+        const endOfNextMonth = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 2, 0);
+        
+        // Use the holiday service to get holidays
+        const allHolidays = await fetchHolidays();
+        
+        // Filter holidays for the relevant date range
+        const relevantHolidays = allHolidays.filter(holiday => {
+          const holidayDate = parseISO(holiday.date);
+          return holidayDate >= startOfCurrentMonth && holidayDate <= endOfNextMonth;
+        });
+        
+        console.log(`Found ${relevantHolidays.length} holidays for calendar period`);
+        setHolidays(relevantHolidays);
+      } catch (error) {
+        console.error("Error fetching holidays:", error);
+        setHolidays([]);
+      }
+    };
+    
+    fetchCalendarHolidays();
+  }, [currentWeekStart]);
 
   // Fetch available days for the employee
   useEffect(() => {
     const fetchAvailableDays = async () => {
       setIsLoadingDays(true);
       try {
-        // In a real app, this would be an API call
-        // For this demo, we'll just set some mock data after a delay
-        await new Promise(resolve => setTimeout(resolve, 500));
+        if (!employeeId) {
+          console.log("No employee ID provided");
+          setAvailableDays({});
+          return;
+        }
         
-        // Mock available days (0 = Sunday, 1 = Monday, etc.)
-        const mockAvailableDays = {
-          0: false,  // Sunday
-          1: true,   // Monday
-          2: true,   // Tuesday
-          3: true,   // Wednesday
-          4: true,   // Thursday
-          5: true,   // Friday
-          6: false,  // Saturday
+        console.log(`Fetching available days for employee ${employeeId}`);
+        
+        // Set the business slug context
+        if (businessSlug) {
+          await setSlugContext(businessSlug);
+        }
+        
+        // Fetch shifts directly from employees_shifts_view
+        const { data: shifts, error } = await supabase
+          .from('employees_shifts_view')
+          .select('day_of_week')
+          .eq('employee_id', employeeId);
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Create a map of available days based on shifts
+        const dayMap: { [key: number]: boolean } = {
+          0: false, // Sunday
+          1: false, // Monday
+          2: false, // Tuesday
+          3: false, // Wednesday
+          4: false, // Thursday
+          5: false, // Friday
+          6: false  // Saturday
         };
         
-        setAvailableDays(mockAvailableDays);
+        shifts?.forEach(shift => {
+          if (shift.day_of_week !== null) {
+            dayMap[shift.day_of_week] = true;
+          }
+        });
+        
+        console.log("Employee available days:", dayMap);
+        setAvailableDays(dayMap);
       } catch (error) {
         console.error("Error fetching available days:", error);
+        setAvailableDays({});
       } finally {
         setIsLoadingDays(false);
       }
@@ -78,21 +168,19 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
     if (employeeId) {
       fetchAvailableDays();
     }
-  }, [employeeId, serviceId, currentWeekStart, businessSlug]);
+  }, [employeeId, businessSlug]);
 
   // Calculate if we can navigate to other weeks
-  const canGoNext = true;  // In a real app, this would be based on business rules
-  const canGoPrevious = true;  // In a real app, this would be based on business rules
+  const today = new Date();
+  const maxFutureDate = addWeeks(today, Math.ceil(bookingFutureLimit / 7));
+  const canGoNext = currentWeekStart < maxFutureDate;
+  const canGoPrevious = currentWeekStart > today;
 
-  // For debugging
-  useEffect(() => {
-    console.log("BookingCalendar props:", { 
-      availableDays, 
-      isLoadingDays,
-      selectedDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null,
-      employeeId
-    });
-  }, [availableDays, isLoadingDays, selectedDate, employeeId]);
+  // Check if a day is a holiday
+  const getHolidayForDate = (date: Date): Holiday | undefined => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    return holidays.find(holiday => holiday.date === dateString && holiday.isActive);
+  };
 
   // Memorize the days and their availability
   const calendarDays = useMemo(() => {
@@ -102,10 +190,30 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
       const isSelected = selectedDate && 
                         selectedDate.getDate() === day.getDate() &&
                         selectedDate.getMonth() === day.getMonth();
+      const holiday = getHolidayForDate(day);
+      const isHoliday = !!holiday;
+      const isFutureLimit = day > maxFutureDate;
+      const isPastDay = day < today;
       
-      return { day, dayOfWeek, isAvailable, isSelected };
+      // A day is available if:
+      // 1. The employee has a shift on this day
+      // 2. It's not a holiday
+      // 3. It's not beyond the future booking limit
+      // 4. It's not in the past
+      const isTrulyAvailable = isAvailable && !isHoliday && !isFutureLimit && !isPastDay;
+      
+      return { 
+        day, 
+        dayOfWeek, 
+        isAvailable: isTrulyAvailable,
+        isSelected,
+        isHoliday,
+        holiday,
+        isFutureLimit,
+        isPastDay
+      };
     });
-  }, [weekDays, availableDays, selectedDate]);
+  }, [weekDays, availableDays, selectedDate, holidays, maxFutureDate, today]);
 
   return (
     <div className="mb-6">
@@ -151,24 +259,54 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
             <Skeleton key={`skeleton-${i}`} className="h-10 rounded-md" />
           ))
         ) : (
-          calendarDays.map(({ day, dayOfWeek, isAvailable, isSelected }) => {
-            const buttonStyle = isSelected 
-              ? { backgroundColor: themeColor } 
-              : {};
-              
+          calendarDays.map(({ day, isAvailable, isSelected, isHoliday, holiday }) => {
+            // Calculate button style based on state
+            let buttonStyle: React.CSSProperties = {};
+            let textColorClass = "";
+            let className = "h-10";
+            
+            if (isSelected) {
+              buttonStyle = { backgroundColor: themeColor };
+              textColorClass = "text-white";
+            } else if (isHoliday) {
+              buttonStyle = { backgroundColor: "#FFDEE2", borderColor: "#ea384c" };
+              textColorClass = "text-red-700";
+            } else if (isToday(day)) {
+              buttonStyle = { borderColor: themeColor };
+              textColorClass = "";
+            }
+            
+            if (!isAvailable) {
+              className += " opacity-50 cursor-not-allowed";
+            }
+            
+            // Different month dates should be dimmed
+            if (!isSameMonth(day, currentWeekStart)) {
+              textColorClass = "text-gray-400";
+            }
+            
+            // Create the calendar day button with optional tooltip for holidays
             return (
-              <Button
-                key={day.toISOString()}
-                variant={isSelected ? "default" : "outline"}
-                className={`h-10 ${isSelected ? "text-white hover:opacity-90" : ""} ${
-                  !isAvailable ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-                style={buttonStyle}
-                disabled={!isAvailable}
-                onClick={() => isAvailable && onDateSelect(day)}
-              >
-                {format(day, 'd')}
-              </Button>
+              <TooltipProvider key={day.toISOString()}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isSelected ? "default" : "outline"}
+                      className={`${className} ${textColorClass} hover:${isAvailable ? "" : "opacity-50"}`}
+                      style={buttonStyle}
+                      disabled={!isAvailable}
+                      onClick={() => isAvailable && onDateSelect(day)}
+                    >
+                      {format(day, 'd')}
+                    </Button>
+                  </TooltipTrigger>
+                  {isHoliday && holiday && (
+                    <TooltipContent>
+                      <p>{holiday.name}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             );
           })
         )}
