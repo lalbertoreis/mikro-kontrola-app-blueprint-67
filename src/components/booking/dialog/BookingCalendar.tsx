@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo } from "react";
-import { format, addDays, startOfWeek, isToday, isSameDay, addWeeks, parseISO, isSameMonth } from "date-fns";
+import { format, addDays, startOfWeek, isToday, isSameDay, addWeeks, parseISO, isSameMonth, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
   onDateSelect,
   serviceId,
   employeeId,
-  themeColor = "#9b87f5",
+  themeColor = "#9b87f5", // Default color
   businessSlug
 }) => {
   const [isLoadingDays, setIsLoadingDays] = useState(true);
@@ -70,11 +70,11 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
           .maybeSingle();
           
         if (serviceData && serviceData.booking_future_limit) {
-          // Convert months to days (e.g. 1 month = 30 days)
+          // Sempre converter para dias (independentemente se está em meses ou dias)
           let futureLimitInDays = serviceData.booking_future_limit;
           
-          // Convert from months to days if needed
-          if (futureLimitInDays < 10) {  // Assuming small numbers are months
+          // Se o valor for pequeno (provavelmente representando meses), converter para dias
+          if (futureLimitInDays <= 12) {  // Valores até 12 são provavelmente meses
             futureLimitInDays = Math.round(futureLimitInDays * 30);
           }
           
@@ -200,18 +200,25 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
       const isAvailableDayOfWeek = availableDays[dayOfWeek] || false;
       const isSelected = selectedDate && 
                         selectedDate.getDate() === day.getDate() &&
-                        selectedDate.getMonth() === day.getMonth();
+                        selectedDate.getMonth() === day.getMonth() &&
+                        selectedDate.getFullYear() === day.getFullYear();
       const holiday = getHolidayForDate(day);
       const isHoliday = !!holiday;
       const isFutureLimit = day > maxFutureDate;
-      const isPastDay = day < today;
+      const isPastDay = isBefore(day, today) && !isSameDay(day, today); // Hoje é considerado válido
+      const isDifferentMonth = !isSameMonth(day, currentWeekStart);
       
-      // A day is available if:
-      // 1. The employee has a shift on this day
-      // 2. It's not a holiday
-      // 3. It's not beyond the future booking limit
-      // 4. It's not in the past
-      const isTrulyAvailable = isAvailableDayOfWeek && !isHoliday && !isFutureLimit && !isPastDay;
+      // Um dia é disponível se:
+      // 1. O funcionário tem um turno neste dia
+      // 2. Não é um feriado
+      // 3. Não está além do limite de agendamento futuro
+      // 4. Não está no passado
+      // 5. Está no mesmo mês que estamos visualizando
+      const isTrulyAvailable = isAvailableDayOfWeek && 
+                              !isHoliday && 
+                              !isFutureLimit && 
+                              !isPastDay &&
+                              !isDifferentMonth;
       
       return { 
         day, 
@@ -221,10 +228,11 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
         isHoliday,
         holiday,
         isFutureLimit,
-        isPastDay
+        isPastDay,
+        isDifferentMonth
       };
     });
-  }, [weekDays, availableDays, selectedDate, holidays, maxFutureDate, today]);
+  }, [weekDays, availableDays, selectedDate, holidays, maxFutureDate, today, currentWeekStart]);
 
   return (
     <div className="mb-6">
@@ -270,50 +278,60 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
             <Skeleton key={`skeleton-${i}`} className="h-10 rounded-md" />
           ))
         ) : (
-          calendarDays.map(({ day, isAvailable, isSelected, isHoliday, holiday, isPastDay, isFutureLimit }) => {
+          calendarDays.map(({ day, isAvailable, isSelected, isHoliday, holiday, isPastDay, isFutureLimit, isDifferentMonth }) => {
             // Calculate button style based on state
             let buttonStyle: React.CSSProperties = {};
             let textColorClass = "";
             let className = "h-10";
             
+            // Aplicar estilo especial para dia selecionado
             if (isSelected) {
               buttonStyle = { backgroundColor: themeColor };
               textColorClass = "text-white";
-            } else if (isHoliday) {
+            } 
+            // Aplicar estilo para feriados
+            else if (isHoliday) {
               buttonStyle = { backgroundColor: "#FFDEE2", borderColor: "#ea384c" };
               textColorClass = "text-red-700";
-            } else if (isToday(day)) {
+            } 
+            // Destacar o dia atual
+            else if (isToday(day)) {
               buttonStyle = { borderColor: themeColor };
               textColorClass = "";
             }
             
-            // Apply different styling for unavailable dates
-            if (!isAvailable) {
-              className += " opacity-50 cursor-not-allowed";
+            // Mês diferente ou indisponível mostra opaco
+            if (isDifferentMonth || !isAvailable) {
+              className += " opacity-50";
               
-              // Special styling for holidays
+              // Dias de outro mês ou indisponíveis não são clicáveis
+              if (isDifferentMonth) {
+                className += " cursor-not-allowed";
+              }
+              
+              // Estilos específicos para diferentes tipos de indisponibilidade
               if (isHoliday) {
                 buttonStyle = { backgroundColor: "#FFDEE2", borderColor: "#ea384c" };
                 textColorClass = "text-red-700";
               } 
-              // Special styling for days beyond future limit
+              // Estilo para dias além do limite futuro
               else if (isFutureLimit) {
                 buttonStyle = { backgroundColor: "#f5f5f5", borderColor: "#e0e0e0" };
                 textColorClass = "text-gray-400";
               }
-              // Special styling for past days
+              // Estilo para dias passados
               else if (isPastDay) {
                 buttonStyle = { backgroundColor: "#f5f5f5", borderColor: "#e0e0e0" };
                 textColorClass = "text-gray-400";
               }
+              
+              // Dias de mês diferente ficam mais claros
+              if (isDifferentMonth) {
+                textColorClass = "text-gray-400";
+              }
             }
             
-            // Different month dates should be dimmed
-            if (!isSameMonth(day, currentWeekStart)) {
-              textColorClass = "text-gray-400";
-            }
-            
-            // Create the calendar day button with tooltip for holidays
+            // Criar o botão do dia com tooltip para feriados
             return (
               <TooltipProvider key={day.toISOString()}>
                 <Tooltip>

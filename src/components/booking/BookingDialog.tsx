@@ -57,10 +57,31 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
     // Check if user is logged in
     const storedUser = localStorage.getItem("bookingUser");
     if (storedUser) {
-      // User is logged in, proceed to confirmation
-      setCurrentStep(1);
+      // Se o usuário estiver logado, enviar diretamente para confirmação final
+      // ou processar o agendamento diretamente se não precisar de dados adicionais
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUserData(parsedUser);
+        
+        // Se tivermos todos os dados necessários para o agendamento, podemos processar
+        // diretamente sem mostrar o formulário de cliente
+        if (parsedUser && parsedUser.name && parsedUser.phone) {
+          // Finalizar o agendamento diretamente
+          if (selectedEmployeeId && selectedDate && selectedTime) {
+            onBookingConfirm(employeeId, date, time);
+          }
+          handleClose();
+          return;
+        }
+        
+        // Se precisar de dados adicionais (como email), mostrar o formulário
+        setCurrentStep(1);
+      } catch (e) {
+        localStorage.removeItem("bookingUser");
+        setShowLoginDialog(true);
+      }
     } else {
-      // User is not logged in, show login dialog
+      // Usuário não está logado, mostrar o diálogo de login
       setShowLoginDialog(true);
     }
   };
@@ -77,7 +98,16 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
     setUserLoggedIn(true);
     setUserData(userData);
     localStorage.setItem("bookingUser", JSON.stringify(userData));
-    setCurrentStep(1);
+    
+    // Se selecionou data e funcionário, processar o agendamento diretamente
+    if (selectedEmployeeId && selectedDate && selectedTime) {
+      onBookingConfirm(selectedEmployeeId, selectedDate, selectedTime);
+      handleClose();
+    } else {
+      // Caso contrário, continue no fluxo normal
+      setCurrentStep(1);
+    }
+    
     toast.success(`Bem-vindo(a), ${userData.name}!`);
   };
 

@@ -72,86 +72,34 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           }
           
           // First try to find a client within the current business context
-          const { data: localClient, error: localError } = await supabase
-            .from('clients')
-            .select('name, pin')
-            .eq('phone', phone)
-            .maybeSingle();
+          let localClient = null;
           
-          if (localError) {
-            if (localError.message.includes('multiple') || localError.message.includes('no rows')) {
-              // If multiple results, need to get the specific client for this business
-              if (businessSlug) {
-                // First get the business user ID
-                const { data: business } = await supabase
-                  .from('profiles')
-                  .select('id')
-                  .eq('slug', businessSlug)
-                  .maybeSingle();
-                  
-                if (business && business.id) {
-                  // Then get the client for this specific business
-                  const { data: specificClient } = await supabase
-                    .from('clients')
-                    .select('name, pin')
-                    .eq('phone', phone)
-                    .eq('user_id', business.id) 
-                    .maybeSingle();
-                  
-                  if (specificClient) {
-                    setName(specificClient.name || '');
-                    setExistingUserData({
-                      name: specificClient.name,
-                      hasPin: !!specificClient.pin
-                    });
-                    
-                    if (specificClient.pin) {
-                      setPinMode('verify');
-                    } else {
-                      setPinMode('create');
-                    }
-                    setIsLoading(false);
-                    return;
-                  }
-                }
-              }
+          if (businessSlug) {
+            // First get the business user ID
+            const { data: business } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('slug', businessSlug)
+              .maybeSingle();
               
-              // Check if client exists in any business
-              const { data: anyClientData } = await supabase
+            if (business && business.id) {
+              // Then get the client for this specific business
+              const { data: specificClient } = await supabase
                 .from('clients')
-                .select('id, name, phone, pin, user_id')
-                .eq('phone', phone);
+                .select('id, name, phone, pin')
+                .eq('phone', phone)
+                .eq('user_id', business.id) 
+                .maybeSingle();
               
-              const anyClient = anyClientData as ClientData[] | null;
-              
-              if (anyClient && anyClient.length > 0) {
-                // Client exists in another business
-                setName(anyClient[0].name || '');
-                setExistingUserData({
-                  name: anyClient[0].name,
-                  hasPin: !!anyClient[0].pin
-                });
-                
-                if (anyClient[0].pin) {
-                  setPinMode('verify');
-                } else {
-                  setPinMode('create');
-                }
-              } else {
-                // New client
-                setExistingUserData(null);
-                setPinMode('create');
+              if (specificClient) {
+                localClient = specificClient;
               }
-            } else {
-              console.error('Error checking user:', localError);
-              toast.error("Erro ao verificar cadastro");
             }
-          } else if (localClient) {
+          }
+          
+          if (localClient) {
             // Found client in current business
-            if (localClient.name) {
-              setName(localClient.name);
-            }
-            
+            setName(localClient.name || '');
             setExistingUserData({
               name: localClient.name,
               hasPin: !!localClient.pin
@@ -163,9 +111,32 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               setPinMode('create');
             }
           } else {
-            // New client for this business
-            setExistingUserData(null);
-            setPinMode('create');
+            // Check if client exists in any business
+            const { data: anyClientData } = await supabase
+              .from('clients')
+              .select('id, name, phone, pin, user_id')
+              .eq('phone', phone);
+            
+            const anyClient = anyClientData as ClientData[] | null;
+            
+            if (anyClient && anyClient.length > 0) {
+              // Client exists in another business
+              setName(anyClient[0].name || '');
+              setExistingUserData({
+                name: anyClient[0].name,
+                hasPin: !!anyClient[0].pin
+              });
+              
+              if (anyClient[0].pin) {
+                setPinMode('verify');
+              } else {
+                setPinMode('create');
+              }
+            } else {
+              // New client
+              setExistingUserData(null);
+              setPinMode('create');
+            }
           }
         } catch (err) {
           console.error('Error in checkUserExists:', err);

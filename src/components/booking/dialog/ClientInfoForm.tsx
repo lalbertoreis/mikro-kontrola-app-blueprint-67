@@ -13,7 +13,7 @@ interface ClientInfoFormProps {
   onPrevStep: () => void;
   onSubmit: () => void;
   themeColor?: string;
-  prefilledData?: Record<string, any>; // Add prefilledData prop
+  prefilledData?: Record<string, any> | null; // Add prefilledData prop
 }
 
 const formSchema = z.object({
