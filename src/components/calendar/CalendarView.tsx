@@ -1,19 +1,18 @@
 
 import React from "react";
-import { useEmployees } from "@/hooks/useEmployees";
+import { startOfToday } from "date-fns";
+import { useCalendarState } from "@/hooks/useCalendarState";
 import { useAppointments } from "@/hooks/useAppointments";
-import { AppointmentWithDetails } from "@/types/calendar";
-import EmployeeFilter from "./EmployeeFilter";
+import { useEmployees } from "@/hooks/useEmployees";
 import CalendarHeader from "./CalendarHeader";
 import CalendarNavigation from "./CalendarNavigation";
-import CalendarContent from "./CalendarContent";
+import EmployeeFilter from "./EmployeeFilter";
+import WeekCalendar from "./WeekCalendar";
+import MonthCalendar from "./MonthCalendar";
 import CalendarDialogs from "./CalendarDialogs";
-import { useCalendarState } from "@/hooks/useCalendarState";
+import { Card, CardContent } from "@/components/ui/card";
 
-const CalendarView: React.FC = () => {
-  const { employees, isLoading } = useEmployees();
-  const { appointments } = useAppointments();
-  
+export default function CalendarView() {
   const {
     view,
     setView,
@@ -39,104 +38,92 @@ const CalendarView: React.FC = () => {
     handleOpenBlockTime,
   } = useCalendarState();
 
-  if (isLoading) {
-    return <div>Carregando...</div>;
-  }
+  const { appointments, isLoading } = useAppointments();
+  const { employees } = useEmployees();
 
-  // Map appointments to AppointmentWithDetails with complete employee, service, and client objects
-  const appointmentsWithDetails = appointments.map(appointment => {
-    return {
-      ...appointment,
-      employee: appointment.employee || {
-        id: appointment.employeeId,
-        name: "Profissional não especificado",
-        role: "",
-        shifts: [],
-        services: [],
-        createdAt: "",
-        updatedAt: ""
-      },
-      service: appointment.service || {
-        id: appointment.serviceId || "",
-        name: "Serviço não especificado",
-        price: 0,
-        duration: 0,
-        multipleAttendees: false,
-        isActive: true,
-        createdAt: "",
-        updatedAt: ""
-      },
-      client: appointment.client || {
-        id: appointment.clientId || "",
-        name: "Cliente não especificado",
-        email: "",
-        phone: "",
-        cep: "",
-        address: "",
-        createdAt: "",
-        updatedAt: ""
-      }
-    } as AppointmentWithDetails;
+  // Filter appointments based on selected employee and canceled status
+  const filteredAppointments = appointments.filter(appointment => {
+    const matchesEmployee = !selectedEmployee || appointment.employee_id === selectedEmployee;
+    const notCanceled = !hideCanceled || appointment.status !== 'canceled';
+    return matchesEmployee && notCanceled;
   });
 
-  // Filter out canceled appointments if hideCanceled is true
-  const filteredAppointments = hideCanceled 
-    ? appointmentsWithDetails.filter(app => app.status !== 'canceled')
-    : appointmentsWithDetails;
-
   return (
-    <div className="space-y-4">
-      {/* Calendar Header with View Tabs and Action Buttons */}
-      <CalendarHeader
-        view={view}
-        onViewChange={setView}
-        onNewAppointment={handleOpenNewAppointment}
-        onBlockTime={handleOpenBlockTime}
-        hideCanceled={hideCanceled}
-        onToggleHideCanceled={toggleHideCanceled}
-      />
+    <Card className="glass-panel">
+      <CardContent className="p-0">
+        <div className="p-6 space-y-6">
+          <div className="space-y-4">
+            <CalendarHeader 
+              view={view}
+              onViewChange={setView}
+              onNewAppointment={handleOpenNewAppointment}
+              onBlockTime={handleOpenBlockTime}
+              hideCanceled={hideCanceled}
+              onToggleHideCanceled={toggleHideCanceled}
+            />
 
-      {/* Employee Filter */}
-      <EmployeeFilter
-        employees={employees}
-        selectedEmployeeId={selectedEmployee}
-        onChange={setSelectedEmployee}
-      />
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <CalendarNavigation 
+                view={view}
+                date={currentDate}
+                onPrevious={navigatePrevious}
+                onNext={navigateNext}
+                onToday={() => setCurrentDate(startOfToday())}
+              />
 
-      {/* Calendar Navigation */}
-      <CalendarNavigation
-        currentDate={currentDate}
-        view={view}
-        onNavigatePrevious={navigatePrevious}
-        onNavigateNext={navigateNext}
-      />
+              <EmployeeFilter
+                employees={employees}
+                selectedEmployee={selectedEmployee}
+                onSelectEmployee={setSelectedEmployee}
+              />
+            </div>
+          </div>
 
-      {/* Calendar Content */}
-      <CalendarContent
-        view={view}
-        currentDate={currentDate}
-        appointments={filteredAppointments}
-        employees={employees}
-        onSelectAppointment={handleSelectAppointment}
-      />
+          <div className="relative min-h-[500px]">
+            {isLoading ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p>Carregando agendamentos...</p>
+              </div>
+            ) : view === "week" ? (
+              <WeekCalendar
+                appointments={filteredAppointments}
+                date={currentDate}
+                employees={employees}
+                selectedEmployee={selectedEmployee}
+                onSelectAppointment={handleSelectAppointment}
+                onSelectTimeSlot={handleOpenNewAppointment}
+              />
+            ) : (
+              <MonthCalendar
+                appointments={filteredAppointments}
+                date={currentDate}
+                employees={employees}
+                selectedEmployee={selectedEmployee}
+                onSelectAppointment={handleSelectAppointment}
+                onSelectDate={(date) => {
+                  setCurrentDate(date);
+                  setView("week");
+                }}
+              />
+            )}
+          </div>
 
-      {/* Calendar Dialogs */}
-      <CalendarDialogs
-        appointmentDialogOpen={appointmentDialogOpen}
-        blockTimeDialogOpen={blockTimeDialogOpen}
-        actionsDialogOpen={actionsDialogOpen}
-        selectedAppointment={selectedAppointment}
-        editMode={editMode}
-        currentDate={currentDate}
-        selectedEmployeeId={selectedEmployee}
-        dialogKey={dialogKey}
-        onAppointmentDialogClose={() => setAppointmentDialogOpen(false)}
-        onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
-        onActionsDialogOpenChange={setActionsDialogOpen}
-        onEditAppointment={handleEditAppointment}
-      />
-    </div>
+          <CalendarDialogs
+            appointmentDialogOpen={appointmentDialogOpen}
+            blockTimeDialogOpen={blockTimeDialogOpen}
+            actionsDialogOpen={actionsDialogOpen}
+            selectedAppointment={selectedAppointment}
+            editMode={editMode}
+            currentDate={currentDate}
+            selectedEmployeeId={selectedEmployee}
+            dialogKey={dialogKey}
+            onAppointmentDialogClose={() => setAppointmentDialogOpen(false)}
+            onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+            onActionsDialogOpenChange={setActionsDialogOpen}
+            onEditAppointment={handleEditAppointment}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
-};
-
-export default CalendarView;
+}

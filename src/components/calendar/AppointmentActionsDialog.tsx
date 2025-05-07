@@ -75,30 +75,32 @@ export default function AppointmentActionsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800 shadow-lg backdrop-blur-sm">
           <DialogHeader>
-            <DialogTitle>{appointment.title}</DialogTitle>
+            <DialogTitle className="text-xl text-center bg-gradient-to-r from-blue-600 to-purple-500 text-transparent bg-clip-text font-bold">
+              {appointment.title}
+            </DialogTitle>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2">
-              <p className="font-medium">Cliente:</p>
-              <p>{appointment.client?.name}</p>
+              <p className="font-medium text-slate-700 dark:text-slate-300">Cliente:</p>
+              <p className="text-slate-900 dark:text-white">{appointment.client?.name}</p>
             </div>
             
             <div className="grid grid-cols-2">
-              <p className="font-medium">Profissional:</p>
-              <p>{appointment.employee?.name}</p>
+              <p className="font-medium text-slate-700 dark:text-slate-300">Profissional:</p>
+              <p className="text-slate-900 dark:text-white">{appointment.employee?.name}</p>
             </div>
             
             <div className="grid grid-cols-2">
-              <p className="font-medium">Data:</p>
-              <p>{new Date(appointment.start).toLocaleDateString()}</p>
+              <p className="font-medium text-slate-700 dark:text-slate-300">Data:</p>
+              <p className="text-slate-900 dark:text-white">{new Date(appointment.start).toLocaleDateString()}</p>
             </div>
             
             <div className="grid grid-cols-2">
-              <p className="font-medium">Horário:</p>
-              <p>
+              <p className="font-medium text-slate-700 dark:text-slate-300">Horário:</p>
+              <p className="text-slate-900 dark:text-white">
                 {new Date(appointment.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
                 {new Date(appointment.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
@@ -106,35 +108,35 @@ export default function AppointmentActionsDialog({
             
             {appointment.notes && (
               <div className="grid grid-cols-2">
-                <p className="font-medium">Observações:</p>
-                <p>{appointment.notes}</p>
+                <p className="font-medium text-slate-700 dark:text-slate-300">Observações:</p>
+                <p className="text-slate-900 dark:text-white">{appointment.notes}</p>
               </div>
             )}
             
             {!isBlocked && service?.price && (
               <div className="grid grid-cols-2">
-                <p className="font-medium">Valor:</p>
-                <p>R$ {service.price.toFixed(2)}</p>
+                <p className="font-medium text-slate-700 dark:text-slate-300">Valor:</p>
+                <p className="font-semibold text-green-600 dark:text-green-400">R$ {service.price.toFixed(2)}</p>
               </div>
             )}
             
             {client?.phone && (
               <div className="grid grid-cols-2">
-                <p className="font-medium">Telefone:</p>
-                <p>{client.phone}</p>
+                <p className="font-medium text-slate-700 dark:text-slate-300">Telefone:</p>
+                <p className="text-slate-900 dark:text-white">{client.phone}</p>
               </div>
             )}
           </div>
           
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
             <DialogClose asChild>
-              <Button variant="outline">Fechar</Button>
+              <Button variant="outline" className="border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">Fechar</Button>
             </DialogClose>
             
             <Button 
               variant="outline" 
               onClick={onEdit}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <Edit className="h-4 w-4" />
               Editar
@@ -144,7 +146,7 @@ export default function AppointmentActionsDialog({
               <Button
                 variant="outline"
                 onClick={handleSendWhatsApp}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 border-green-600 text-green-600 dark:border-green-500 dark:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40"
               >
                 <MessageSquare className="h-4 w-4" />
                 {isCanceled ? "Perguntar sobre remarcação" : "Confirmar via WhatsApp"}
@@ -157,7 +159,7 @@ export default function AppointmentActionsDialog({
                   setShowPaymentDialog(true);
                   onOpenChange(false);
                 }}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
                 <CreditCard className="h-4 w-4" />
                 Registrar Pagamento
