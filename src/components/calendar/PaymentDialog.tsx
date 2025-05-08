@@ -1,7 +1,6 @@
 
 import React from "react";
 import { toast } from "sonner";
-import { registerAppointmentPayment } from "@/services/appointment";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { fetchPaymentMethods } from "@/services/transactionService";
+import { useAppointments } from "@/hooks/useAppointments";
 import { useEffect, useState } from "react";
 
 const paymentSchema = z.object({
@@ -58,6 +58,7 @@ export default function PaymentDialog({
 }: PaymentDialogProps) {
   const [paymentMethods, setPaymentMethods] = useState<Array<{ id: string, name: string }>>([]);
   const queryClient = useQueryClient();
+  const { registerPayment, isRegisteringPayment } = useAppointments();
   
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
@@ -83,26 +84,13 @@ export default function PaymentDialog({
     loadPaymentMethods();
   }, [open]);
   
-  const registerPaymentMutation = useMutation({
-    mutationFn: ({ appointmentId, paymentMethod }: { appointmentId: string, paymentMethod: string }) => 
-      registerAppointmentPayment(appointmentId, paymentMethod),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      toast.success("Pagamento registrado com sucesso!");
-      onOpenChange(false);
-      form.reset();
-    },
-    onError: (error: any) => {
-      console.error("Erro ao registrar pagamento:", error);
-      toast.error(error.message || "Erro ao registrar pagamento");
-    },
-  });
-  
   const onSubmit = (values: PaymentFormValues) => {
-    registerPaymentMutation.mutate({
+    registerPayment({
       appointmentId,
       paymentMethod: values.paymentMethod,
     });
+    onOpenChange(false);
+    form.reset();
   };
   
   return (
@@ -156,9 +144,9 @@ export default function PaymentDialog({
                 </DialogClose>
                 <Button 
                   type="submit" 
-                  disabled={registerPaymentMutation.isPending}
+                  disabled={isRegisteringPayment}
                 >
-                  {registerPaymentMutation.isPending ? "Processando..." : "Confirmar Pagamento"}
+                  {isRegisteringPayment ? "Processando..." : "Confirmar Pagamento"}
                 </Button>
               </DialogFooter>
             </form>

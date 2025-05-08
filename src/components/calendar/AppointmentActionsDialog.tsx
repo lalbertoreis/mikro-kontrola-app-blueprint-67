@@ -11,7 +11,9 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Edit, MessageSquare } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { CreditCard, Edit, MessageSquare, Ban } from "lucide-react";
+import { useAppointments } from "@/hooks/useAppointments";
 import PaymentDialog from "./PaymentDialog";
 
 interface AppointmentActionsDialogProps {
@@ -28,6 +30,7 @@ export default function AppointmentActionsDialog({
   onEdit
 }: AppointmentActionsDialogProps) {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const { cancelAppointment, isCanceling } = useAppointments();
   
   if (!appointment) {
     return null;
@@ -36,6 +39,7 @@ export default function AppointmentActionsDialog({
   const { service, client } = appointment;
   const isBlocked = appointment.status === 'blocked';
   const isCanceled = appointment.status === 'canceled';
+  const isCompleted = appointment.status === 'completed';
   
   // Format date and time for WhatsApp message
   const formatDateForMessage = (date: Date) => {
@@ -72,6 +76,15 @@ export default function AppointmentActionsDialog({
     window.open(whatsappUrl, '_blank');
   };
   
+  const handleCancelAppointment = async () => {
+    try {
+      await cancelAppointment(appointment.id);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error canceling appointment:", error);
+    }
+  };
+  
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,6 +116,20 @@ export default function AppointmentActionsDialog({
               <p className="text-slate-900 dark:text-white">
                 {new Date(appointment.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
                 {new Date(appointment.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2">
+              <p className="font-medium text-slate-700 dark:text-slate-300">Status:</p>
+              <p className={`font-semibold ${
+                isCompleted ? "text-green-600" : 
+                isCanceled ? "text-red-600" : 
+                "text-blue-600"
+              }`}>
+                {isCompleted ? "Concluído" : 
+                 isCanceled ? "Cancelado" : 
+                 isBlocked ? "Bloqueado" : 
+                 "Agendado"}
               </p>
             </div>
             
@@ -142,7 +169,39 @@ export default function AppointmentActionsDialog({
               Editar
             </Button>
             
-            {!isBlocked && client?.phone && (
+            {!isBlocked && !isCompleted && !isCanceled && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2 border-red-600 text-red-600 hover:bg-red-50"
+                    disabled={isCanceling}
+                  >
+                    <Ban className="h-4 w-4" />
+                    Cancelar
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar cancelamento</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Não, manter</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleCancelAppointment}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Sim, cancelar agendamento
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            
+            {!isBlocked && client?.phone && !isCompleted && (
               <Button
                 variant="outline"
                 onClick={handleSendWhatsApp}
@@ -153,7 +212,7 @@ export default function AppointmentActionsDialog({
               </Button>
             )}
             
-            {!isBlocked && service?.price && (
+            {!isBlocked && service?.price && !isCompleted && !isCanceled && (
               <Button 
                 onClick={() => {
                   setShowPaymentDialog(true);

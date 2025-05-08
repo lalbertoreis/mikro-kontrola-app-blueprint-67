@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -99,6 +100,34 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
       serviceType: "service",
     },
   });
+  
+  // Effect to populate form with existing appointment data when editing
+  useEffect(() => {
+    if (existingAppointment && !isLoadingAppointment) {
+      // Determine if it's a service or package (for this example, assuming all are services)
+      const appointmentServiceType = "service"; // You may need logic to determine if it's a package
+      
+      setServiceType(appointmentServiceType);
+      
+      // Format the start and end times
+      const startDateTime = new Date(existingAppointment.start);
+      const endDateTime = new Date(existingAppointment.end);
+      const startTimeFormatted = format(startDateTime, "HH:mm");
+      const endTimeFormatted = format(endDateTime, "HH:mm");
+      
+      // Set form values
+      form.reset({
+        client: existingAppointment.clientId || "",
+        employee: existingAppointment.employeeId,
+        service: existingAppointment.serviceId || undefined,
+        serviceType: appointmentServiceType as "service" | "package",
+        date: startDateTime,
+        startTime: startTimeFormatted,
+        endTime: endTimeFormatted,
+        notes: existingAppointment.notes || undefined,
+      });
+    }
+  }, [existingAppointment, isLoadingAppointment, form]);
   
   const selectedEmployee = form.watch("employee");
   const selectedService = form.watch("service");
@@ -299,6 +328,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -373,6 +403,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -425,6 +456,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      value={field.value}
                       disabled={!selectedEmployee}
                     >
                       <FormControl>
@@ -466,6 +498,7 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      value={field.value}
                       disabled={!selectedEmployee}
                     >
                       <FormControl>

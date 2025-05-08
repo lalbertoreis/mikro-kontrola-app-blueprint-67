@@ -49,7 +49,7 @@ export async function registerAppointmentPayment(
       throw new Error('Não foi possível registrar o pagamento');
     }
     
-    // Update appointment status to completed (optional)
+    // Update appointment status to completed
     const { error: updateError } = await supabase
       .from('appointments')
       .update({ status: 'completed' })
@@ -57,7 +57,7 @@ export async function registerAppointmentPayment(
       
     if (updateError) {
       console.error("Error updating appointment status:", updateError);
-      // Don't throw error here, payment was already registered
+      throw new Error('Pagamento registrado mas não foi possível atualizar o status do agendamento');
     }
     
     return true;
