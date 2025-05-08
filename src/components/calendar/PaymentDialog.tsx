@@ -95,20 +95,20 @@ export default function PaymentDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Registrar Pagamento</DialogTitle>
+          <DialogTitle className="text-lg font-semibold">Registrar Pagamento</DialogTitle>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <div className="font-medium">Serviço</div>
-            <div>{serviceName}</div>
+            <div className="font-medium text-sm">Serviço</div>
+            <div className="text-base">{serviceName}</div>
           </div>
           
           <div className="grid gap-2">
-            <div className="font-medium">Valor</div>
-            <div>R$ {servicePrice.toFixed(2)}</div>
+            <div className="font-medium text-sm">Valor</div>
+            <div className="text-base text-green-600 font-semibold">R$ {servicePrice.toFixed(2)}</div>
           </div>
           
           <Form {...form}>

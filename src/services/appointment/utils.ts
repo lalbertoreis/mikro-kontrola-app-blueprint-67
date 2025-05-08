@@ -141,16 +141,29 @@ export async function getEmployeeAvailableDays(employeeId: string, slug?: string
 export async function checkOverlappingAppointments(
   employeeId: string,
   startTime: string,
-  endTime: string
+  endTime: string,
+  excludeAppointmentId?: string
 ): Promise<boolean> {
   try {
-    // Verificar agendamentos existentes que se sobrepõem ao período solicitado
-    const { data, error } = await supabase
+    // Construir a consulta base
+    let query = supabase
       .from('appointments')
       .select('id')
       .eq('employee_id', employeeId)
-      .neq('status', 'canceled')
-      .or(`end_time.gt.${startTime},start_time.lt.${endTime}`)
+      .neq('status', 'canceled');
+    
+    // Excluir o próprio agendamento se estiver editando
+    if (excludeAppointmentId) {
+      query = query.neq('id', excludeAppointmentId);
+    }
+    
+    // Verificar sobreposição de horário
+    // Um agendamento sobrepõe se:
+    // 1. O início do agendamento existente está entre o início e o fim do novo agendamento, ou
+    // 2. O fim do agendamento existente está entre o início e o fim do novo agendamento, ou
+    // 3. O agendamento existente contém completamente o novo agendamento
+    const { data, error } = await query
+      .or(`start_time.gte.${startTime},start_time.lt.${endTime},end_time.gt.${startTime},end_time.lte.${endTime},and(start_time.lte.${startTime},end_time.gte.${endTime})`)
       .limit(1);
     
     if (error) {

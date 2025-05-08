@@ -88,32 +88,32 @@ export default function AppointmentActionsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px] bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800 shadow-lg backdrop-blur-sm">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800 shadow-lg backdrop-blur-sm">
           <DialogHeader>
             <DialogTitle className="text-xl text-center bg-gradient-to-r from-blue-600 to-purple-500 text-transparent bg-clip-text font-bold">
               {appointment.title}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-4 overflow-y-auto">
             <div className="grid grid-cols-2">
               <p className="font-medium text-slate-700 dark:text-slate-300">Cliente:</p>
-              <p className="text-slate-900 dark:text-white">{appointment.client?.name}</p>
+              <p className="text-slate-900 dark:text-white text-right">{appointment.client?.name}</p>
             </div>
             
             <div className="grid grid-cols-2">
               <p className="font-medium text-slate-700 dark:text-slate-300">Profissional:</p>
-              <p className="text-slate-900 dark:text-white">{appointment.employee?.name}</p>
+              <p className="text-slate-900 dark:text-white text-right">{appointment.employee?.name}</p>
             </div>
             
             <div className="grid grid-cols-2">
               <p className="font-medium text-slate-700 dark:text-slate-300">Data:</p>
-              <p className="text-slate-900 dark:text-white">{new Date(appointment.start).toLocaleDateString()}</p>
+              <p className="text-slate-900 dark:text-white text-right">{new Date(appointment.start).toLocaleDateString()}</p>
             </div>
             
             <div className="grid grid-cols-2">
               <p className="font-medium text-slate-700 dark:text-slate-300">Horário:</p>
-              <p className="text-slate-900 dark:text-white">
+              <p className="text-slate-900 dark:text-white text-right">
                 {new Date(appointment.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
                 {new Date(appointment.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
@@ -121,7 +121,7 @@ export default function AppointmentActionsDialog({
             
             <div className="grid grid-cols-2">
               <p className="font-medium text-slate-700 dark:text-slate-300">Status:</p>
-              <p className={`font-semibold ${
+              <p className={`font-semibold text-right ${
                 isCompleted ? "text-green-600" : 
                 isCanceled ? "text-red-600" : 
                 "text-blue-600"
@@ -136,21 +136,21 @@ export default function AppointmentActionsDialog({
             {appointment.notes && (
               <div className="grid grid-cols-2">
                 <p className="font-medium text-slate-700 dark:text-slate-300">Observações:</p>
-                <p className="text-slate-900 dark:text-white">{appointment.notes}</p>
+                <p className="text-slate-900 dark:text-white text-right">{appointment.notes}</p>
               </div>
             )}
             
             {!isBlocked && service?.price && (
               <div className="grid grid-cols-2">
                 <p className="font-medium text-slate-700 dark:text-slate-300">Valor:</p>
-                <p className="font-semibold text-green-600 dark:text-green-400">R$ {service.price.toFixed(2)}</p>
+                <p className="font-semibold text-green-600 dark:text-green-400 text-right">R$ {service.price.toFixed(2)}</p>
               </div>
             )}
             
             {client?.phone && (
               <div className="grid grid-cols-2">
                 <p className="font-medium text-slate-700 dark:text-slate-300">Telefone:</p>
-                <p className="text-slate-900 dark:text-white">{client.phone}</p>
+                <p className="text-slate-900 dark:text-white text-right">{client.phone}</p>
               </div>
             )}
           </div>
@@ -201,7 +201,7 @@ export default function AppointmentActionsDialog({
               </AlertDialog>
             )}
             
-            {!isBlocked && client?.phone && !isCompleted && (
+            {!isBlocked && client?.phone && !isCompleted && !isCanceled && (
               <Button
                 variant="outline"
                 onClick={handleSendWhatsApp}
