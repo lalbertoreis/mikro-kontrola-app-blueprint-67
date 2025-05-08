@@ -12,7 +12,7 @@ import {
 interface AppointmentChipProps {
   appointment: AppointmentWithDetails;
   colorClass: string;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
 }
 
 const AppointmentChip: React.FC<AppointmentChipProps> = ({ appointment, colorClass, onClick }) => {

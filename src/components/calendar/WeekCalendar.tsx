@@ -1,3 +1,4 @@
+
 import React from "react";
 import { format, addDays, startOfWeek, getDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -57,6 +58,14 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
     return employeeIndex !== -1 ? colors[employeeIndex % colors.length] : colors[0];
   };
 
+  // Handler for empty time slot clicks
+  const handleTimeSlotClick = (day: Date, hour: number, event: React.MouseEvent) => {
+    // Only trigger for direct clicks on the cell, not when clicking on appointment cards
+    if (event.currentTarget === event.target && onSelectTimeSlot) {
+      onSelectTimeSlot(day, hour);
+    }
+  };
+
   return (
     <div className="border rounded-lg bg-white overflow-hidden">
       {/* Header with days of the week */}
@@ -93,7 +102,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                 className={`min-h-[80px] p-1 relative ${
                   dayIndex < 6 ? 'border-r' : ''
                 } ${isSameDay(day, new Date()) ? 'bg-accent/20' : ''}`}
-                onClick={() => onSelectTimeSlot && onSelectTimeSlot(day, hour)}
+                onClick={(e) => handleTimeSlotClick(day, hour, e)}
               >
                 {appointmentsInSlot.map((appointment) => (
                   <AppointmentCard

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { 
   format, 
@@ -66,6 +67,14 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
     return employeeIndex !== -1 ? colors[employeeIndex % colors.length] : colors[0];
   };
 
+  // Handler for calendar day cell clicks
+  const handleDayCellClick = (day: Date, event: React.MouseEvent) => {
+    // Only trigger for direct clicks on the cell, not when clicking on appointment chips
+    if (event.currentTarget === event.target && onSelectDate) {
+      onSelectDate(day);
+    }
+  };
+
   return (
     <div className="border rounded-lg bg-white overflow-hidden">
       {/* Header with weekday names */}
@@ -94,7 +103,7 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
               className={`min-h-[100px] p-1 border-b border-r last:border-r-0 ${
                 isCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'
               } ${isCurrentDay ? 'bg-accent/20' : ''}`}
-              onClick={() => onSelectDate && onSelectDate(day)}
+              onClick={(e) => handleDayCellClick(day, e)}
             >
               <div className="text-xs font-medium p-1">
                 {format(day, "d")}
@@ -106,7 +115,10 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
                     key={appointment.id}
                     appointment={appointment}
                     colorClass={getEmployeeColor(appointment.employeeId)}
-                    onClick={() => onSelectAppointment(appointment)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent day cell click
+                      onSelectAppointment(appointment);
+                    }}
                   />
                 ))}
                 

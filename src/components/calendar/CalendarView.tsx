@@ -83,6 +83,11 @@ export default function CalendarView() {
     }
   }));
 
+  // Handler for selecting a time slot (to open new appointment)
+  const handleSelectTimeSlot = () => {
+    handleOpenNewAppointment();
+  };
+
   return (
     <Card className="glass-panel">
       <CardContent className="p-0">
@@ -126,7 +131,7 @@ export default function CalendarView() {
                 employees={employees}
                 selectedEmployee={selectedEmployee}
                 onSelectAppointment={handleSelectAppointment}
-                onSelectTimeSlot={handleOpenNewAppointment}
+                onSelectTimeSlot={handleSelectTimeSlot}
               />
             ) : (
               <MonthCalendar

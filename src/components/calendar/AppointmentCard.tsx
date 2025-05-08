@@ -51,6 +51,12 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
 
   const isCanceled = appointment.status === 'canceled';
 
+  // Handle card click with stopPropagation
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent time slot click event from triggering
+    onClick();
+  };
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -60,7 +66,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
             cardColorClass,
             isCanceled && "opacity-60"
           )}
-          onClick={onClick}
+          onClick={handleCardClick}
         >
           <div className="font-medium line-clamp-2">
             {isBlocked ? "BLOQUEADO" : serviceName}
