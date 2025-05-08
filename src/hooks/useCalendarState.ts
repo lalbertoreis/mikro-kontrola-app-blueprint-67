@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { AppointmentWithDetails, CalendarViewOptions } from "@/types/calendar";
 import { addMonths, subMonths, addWeeks, subWeeks, startOfToday } from "date-fns";
 
@@ -17,16 +16,20 @@ export function useCalendarState() {
   const [editMode, setEditMode] = useState(false);
   const [dialogKey, setDialogKey] = useState(0); // Para forçar recriação do diálogo
 
-  const handleSelectAppointment = (appointment: AppointmentWithDetails) => {
+  const handleSelectAppointment = useCallback((appointment: AppointmentWithDetails) => {
     setSelectedAppointment(appointment);
     setActionsDialogOpen(true);
-  };
+    setAppointmentDialogOpen(false);
+  }, []);
 
-  const handleEditAppointment = () => {
-    setEditMode(true);
-    setActionsDialogOpen(false);
-    setAppointmentDialogOpen(true);
-  };
+  const handleEditAppointment = useCallback(() => {
+    if (selectedAppointment) {
+      setEditMode(true);
+      setAppointmentDialogOpen(true);
+      setActionsDialogOpen(false);
+      setDialogKey(prevKey => prevKey + 1);
+    }
+  }, [selectedAppointment]);
 
   const navigatePrevious = () => {
     if (view === 'week') {

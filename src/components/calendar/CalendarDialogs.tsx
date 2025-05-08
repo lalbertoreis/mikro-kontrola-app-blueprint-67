@@ -36,15 +36,17 @@ const CalendarDialogs: React.FC<CalendarDialogsProps> = ({
 }) => {
   return (
     <>
-      {/* Appointment Dialog */}
-      <AppointmentDialog 
-        key={`appointment-dialog-${dialogKey}`}
-        isOpen={appointmentDialogOpen}
-        onClose={onAppointmentDialogClose}
-        selectedDate={currentDate}
-        selectedEmployeeId={selectedEmployeeId}
-        appointmentId={editMode ? selectedAppointment?.id : undefined}
-      />
+      {/* Appointment Dialog - Only show when appointmentDialogOpen is true */}
+      {appointmentDialogOpen && (
+        <AppointmentDialog 
+          key={`appointment-dialog-${dialogKey}`}
+          isOpen={appointmentDialogOpen}
+          onClose={onAppointmentDialogClose}
+          selectedDate={currentDate}
+          selectedEmployeeId={selectedEmployeeId}
+          appointmentId={editMode ? selectedAppointment?.id : undefined}
+        />
+      )}
 
       {/* Block Time Dialog */}
       <BlockTimeDialog 
