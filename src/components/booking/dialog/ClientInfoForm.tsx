@@ -6,14 +6,13 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { DialogStepProps } from "./types";
 import { ChevronLeft } from "lucide-react";
 
 interface ClientInfoFormProps {
   onPrevStep: () => void;
   onSubmit: () => void;
   themeColor?: string;
-  prefilledData?: Record<string, any> | null; // Add prefilledData prop
+  prefilledData?: Record<string, any> | null; 
 }
 
 const formSchema = z.object({
@@ -25,7 +24,7 @@ const formSchema = z.object({
 const ClientInfoForm: React.FC<ClientInfoFormProps> = ({ 
   onPrevStep, 
   onSubmit, 
-  themeColor = "#9b87f5", // Default color
+  themeColor = "#9b87f5", 
   prefilledData
 }) => {
   const form = useForm<z.infer<typeof formSchema>>({
