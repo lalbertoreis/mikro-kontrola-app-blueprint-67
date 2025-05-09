@@ -146,10 +146,17 @@ export default function AppointmentDialog({
   };
 
   const onSubmit = (data: z.infer<typeof appointmentSchema>) => {
-    // Ensure all required fields are included
+    // Create appointment data with all required fields
     const appointmentData = {
-      ...data,
-      id: appointmentId,
+      employee: data.employee,
+      service: data.service,
+      client: data.client,
+      date: data.date,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      notes: data.notes,
+      // Only add id when editing an existing appointment
+      ...(appointmentId ? { id: appointmentId } : {})
     };
     
     createAppointment(appointmentData);
