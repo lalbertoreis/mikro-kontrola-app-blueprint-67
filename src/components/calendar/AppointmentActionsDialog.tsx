@@ -158,8 +158,8 @@ export default function AppointmentActionsDialog({
           </div>
           
           <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-            {/* Primary buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
+            {/* Primary buttons - fixed layout on all screen sizes */}
+            <div className="grid grid-cols-3 gap-2 w-full">
               <DialogClose asChild>
                 <Button variant="outline" size="sm" className="w-full border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
                   Fechar
