@@ -157,10 +157,11 @@ export default function AppointmentActionsDialog({
             </div>
           </div>
           
-          <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-800">
-            <div className="w-full grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3">
+            {/* Primeira linha de botões */}
+            <div className="grid grid-cols-3 gap-2 w-full">
               <DialogClose asChild>
-                <Button variant="outline" size="sm" className="w-full border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <Button variant="outline" size="sm" className="w-full border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
                   Fechar
                 </Button>
               </DialogClose>
@@ -169,22 +170,37 @@ export default function AppointmentActionsDialog({
                 variant="outline" 
                 size="sm"
                 onClick={onEdit}
-                className="w-full flex items-center justify-center gap-1 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="w-full flex items-center justify-center gap-1 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs"
               >
-                <Edit className="h-3.5 w-3.5" />
+                <Edit className="h-3 w-3" />
                 Editar
               </Button>
               
-              {!isBlocked && !isCompleted && !isCanceled && (
+              {!isBlocked && client?.phone && !isCompleted && !isCanceled && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSendWhatsApp}
+                  className="w-full flex items-center justify-center gap-1 border-green-600 text-green-600 dark:border-green-500 dark:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40 text-xs"
+                >
+                  <MessageSquare className="h-3 w-3" />
+                  Confirmar
+                </Button>
+              )}
+            </div>
+            
+            {/* Segunda linha de botões */}
+            {!isBlocked && !isCompleted && !isCanceled && (
+              <div className="w-full">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="w-full flex items-center justify-center gap-1 border-red-600 text-red-600 hover:bg-red-50"
+                      className="w-full flex items-center justify-center gap-1 border-red-600 text-red-600 hover:bg-red-50 text-xs"
                       disabled={isCanceling}
                     >
-                      <Ban className="h-3.5 w-3.5" />
+                      <Ban className="h-3 w-3" />
                       Cancelar
                     </Button>
                   </AlertDialogTrigger>
@@ -206,21 +222,10 @@ export default function AppointmentActionsDialog({
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              )}
-              
-              {!isBlocked && client?.phone && !isCompleted && !isCanceled && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSendWhatsApp}
-                  className="w-full flex items-center justify-center gap-1 border-green-600 text-green-600 dark:border-green-500 dark:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40"
-                >
-                  <MessageSquare className="h-3.5 w-3.5" />
-                  Confirmar
-                </Button>
-              )}
-            </div>
+              </div>
+            )}
             
+            {/* Botão de pagamento */}
             {!isBlocked && service?.price && !isCompleted && !isCanceled && (
               <Button 
                 onClick={() => {
@@ -228,7 +233,7 @@ export default function AppointmentActionsDialog({
                   onOpenChange(false);
                 }}
                 size="sm"
-                className="mt-2 w-full flex items-center justify-center gap-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                className="mt-1 w-full flex items-center justify-center gap-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
                 <CreditCard className="h-3.5 w-3.5" />
                 Registrar Pagamento

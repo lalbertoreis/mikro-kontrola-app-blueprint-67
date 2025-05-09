@@ -27,7 +27,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
       <h3 className="font-semibold text-lg" style={{ color: themeColor }}>
         Resumo do agendamento
       </h3>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div>
           <p className="text-sm text-gray-500">Serviço</p>
           <p className="font-medium">{service.name}</p>
