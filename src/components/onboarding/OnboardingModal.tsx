@@ -250,8 +250,8 @@ export const OnboardingModal = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Global styles for the onboarding highlights */}
-      <style jsx global>{`
+      {/* Add the global styles using style element without jsx or global props */}
+      <style dangerouslySetInnerHTML={{ __html: `
         .onboarding-highlight {
           color: var(--kontrola-600, #6c63ff);
           filter: drop-shadow(0 0 8px rgba(108, 99, 255, 0.5));
@@ -263,7 +263,8 @@ export const OnboardingModal = () => {
           50% { transform: scale(1.2); opacity: 0.8; }
           100% { transform: scale(1); opacity: 1; }
         }
-      `}</style>
+      ` }} />
     </>
   );
 };
+
