@@ -158,8 +158,8 @@ export default function AppointmentActionsDialog({
           </div>
           
           <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-            {/* Primeira linha de botões */}
-            <div className="grid grid-cols-3 gap-2 w-full">
+            {/* Primary buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
               <DialogClose asChild>
                 <Button variant="outline" size="sm" className="w-full border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
                   Fechar
@@ -189,7 +189,7 @@ export default function AppointmentActionsDialog({
               )}
             </div>
             
-            {/* Segunda linha de botões */}
+            {/* Cancel button */}
             {!isBlocked && !isCompleted && !isCanceled && (
               <div className="w-full">
                 <AlertDialog>
@@ -225,7 +225,7 @@ export default function AppointmentActionsDialog({
               </div>
             )}
             
-            {/* Botão de pagamento */}
+            {/* Payment button - kept as full width in a separate row */}
             {!isBlocked && service?.price && !isCompleted && !isCanceled && (
               <Button 
                 onClick={() => {
@@ -233,7 +233,7 @@ export default function AppointmentActionsDialog({
                   onOpenChange(false);
                 }}
                 size="sm"
-                className="mt-1 w-full flex items-center justify-center gap-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                className="w-full flex items-center justify-center gap-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
                 <CreditCard className="h-3.5 w-3.5" />
                 Registrar Pagamento
