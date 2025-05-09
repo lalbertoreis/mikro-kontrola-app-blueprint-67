@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/calendar";
 import { checkOverlappingAppointments } from './utils';

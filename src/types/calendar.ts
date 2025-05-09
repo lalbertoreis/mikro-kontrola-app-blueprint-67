@@ -49,6 +49,5 @@ export interface AppointmentFormData {
   startTime: string;
   endTime: string;
   notes?: string;
-  id?: string; // Adding optional id field for editing existing appointments
+  id?: string; // Optional id field for editing existing appointments
 }
-

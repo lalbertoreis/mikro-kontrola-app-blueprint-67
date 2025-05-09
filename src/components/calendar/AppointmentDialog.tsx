@@ -146,10 +146,13 @@ export default function AppointmentDialog({
   };
 
   const onSubmit = (data: z.infer<typeof appointmentSchema>) => {
-    createAppointment({
+    // Ensure all required fields are included
+    const appointmentData = {
       ...data,
-      id: appointmentId, // Pass the ID when editing
-    });
+      id: appointmentId,
+    };
+    
+    createAppointment(appointmentData);
     onClose();
     form.reset();
   };
