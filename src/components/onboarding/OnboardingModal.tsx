@@ -84,19 +84,22 @@ export const OnboardingModal = () => {
     if (currentStep < steps.length - 1) {
       const nextStepData = steps[currentStep + 1];
       
-      if (nextStepData.requiresClick) {
-        // For steps requiring click, just highlight the target element but don't advance
+      if (nextStepData.requiresClick && nextStepData.targetSelector) {
+        // For steps requiring click, highlight the target element but don't advance yet
         highlightTargetElement(nextStepData.targetSelector);
       } else {
         // For steps not requiring click, advance to next step
-        setCurrentStep(currentStep + 1);
+        setCurrentStep(prevStep => prevStep + 1);
       }
+    } else {
+      // If we're on the last step, dismiss the modal
+      handleDismiss();
     }
   };
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(prevStep => prevStep - 1);
     }
   };
 
