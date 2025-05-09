@@ -166,16 +166,16 @@ export default function AppointmentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="w-full max-w-lg mx-auto p-4 sm:p-6 bg-white dark:bg-slate-900 overflow-hidden">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-lg font-semibold">
             {appointmentId ? "Editar Agendamento" : "Novo Agendamento"}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField
                 control={form.control}
                 name="employee"
@@ -188,7 +188,7 @@ export default function AppointmentDialog({
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione um profissional" />
                         </SelectTrigger>
                       </FormControl>
@@ -220,7 +220,7 @@ export default function AppointmentDialog({
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione um serviço" />
                         </SelectTrigger>
                       </FormControl>
@@ -250,7 +250,7 @@ export default function AppointmentDialog({
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione um cliente" />
                         </SelectTrigger>
                       </FormControl>
@@ -274,7 +274,7 @@ export default function AppointmentDialog({
                   <FormItem>
                     <FormLabel>Data</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input type="date" {...field} className="w-full" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -288,7 +288,7 @@ export default function AppointmentDialog({
                   <FormItem>
                     <FormLabel>Horário de Início</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
+                      <Input type="time" {...field} className="w-full" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -302,7 +302,7 @@ export default function AppointmentDialog({
                   <FormItem>
                     <FormLabel>Horário de Término</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
+                      <Input type="time" {...field} className="w-full" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -317,18 +317,18 @@ export default function AppointmentDialog({
                 <FormItem>
                   <FormLabel>Observações</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea {...field} className="w-full resize-none" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+            <DialogFooter className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <Button type="button" variant="outline" onClick={onClose} size="sm">
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isCreating}>
+              <Button type="submit" disabled={isCreating} size="sm">
                 {appointmentId 
                   ? isCreating ? "Salvando..." : "Salvar" 
                   : isCreating ? "Agendando..." : "Agendar"}

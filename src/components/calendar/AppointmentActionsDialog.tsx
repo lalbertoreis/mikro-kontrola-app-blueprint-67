@@ -88,129 +88,138 @@ export default function AppointmentActionsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800 shadow-lg backdrop-blur-sm">
-          <DialogHeader>
+        <DialogContent className="w-full max-w-md mx-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-lg backdrop-blur-sm overflow-hidden flex flex-col">
+          <DialogHeader className="pb-2">
             <DialogTitle className="text-xl text-center bg-gradient-to-r from-blue-600 to-purple-500 text-transparent bg-clip-text font-bold">
               {appointment.title}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4 overflow-y-auto">
-            <div className="grid grid-cols-2">
-              <p className="font-medium text-slate-700 dark:text-slate-300">Cliente:</p>
-              <p className="text-slate-900 dark:text-white text-right">{appointment.client?.name}</p>
-            </div>
-            
-            <div className="grid grid-cols-2">
-              <p className="font-medium text-slate-700 dark:text-slate-300">Profissional:</p>
-              <p className="text-slate-900 dark:text-white text-right">{appointment.employee?.name}</p>
-            </div>
-            
-            <div className="grid grid-cols-2">
-              <p className="font-medium text-slate-700 dark:text-slate-300">Data:</p>
-              <p className="text-slate-900 dark:text-white text-right">{new Date(appointment.start).toLocaleDateString()}</p>
-            </div>
-            
-            <div className="grid grid-cols-2">
-              <p className="font-medium text-slate-700 dark:text-slate-300">Horário:</p>
-              <p className="text-slate-900 dark:text-white text-right">
-                {new Date(appointment.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                {new Date(appointment.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2">
-              <p className="font-medium text-slate-700 dark:text-slate-300">Status:</p>
-              <p className={`font-semibold text-right ${
-                isCompleted ? "text-green-600" : 
-                isCanceled ? "text-red-600" : 
-                "text-blue-600"
-              }`}>
-                {isCompleted ? "Concluído" : 
-                 isCanceled ? "Cancelado" : 
-                 isBlocked ? "Bloqueado" : 
-                 "Agendado"}
-              </p>
-            </div>
-            
-            {appointment.notes && (
-              <div className="grid grid-cols-2">
-                <p className="font-medium text-slate-700 dark:text-slate-300">Observações:</p>
-                <p className="text-slate-900 dark:text-white text-right">{appointment.notes}</p>
+          <div className="flex-1 py-2">
+            <div className="grid gap-3">
+              <div className="grid grid-cols-[1fr_auto]">
+                <p className="font-medium text-slate-700 dark:text-slate-300">Cliente:</p>
+                <p className="text-slate-900 dark:text-white text-right">{appointment.client?.name}</p>
               </div>
-            )}
-            
-            {!isBlocked && service?.price && (
-              <div className="grid grid-cols-2">
-                <p className="font-medium text-slate-700 dark:text-slate-300">Valor:</p>
-                <p className="font-semibold text-green-600 dark:text-green-400 text-right">R$ {service.price.toFixed(2)}</p>
+              
+              <div className="grid grid-cols-[1fr_auto]">
+                <p className="font-medium text-slate-700 dark:text-slate-300">Profissional:</p>
+                <p className="text-slate-900 dark:text-white text-right">{appointment.employee?.name}</p>
               </div>
-            )}
-            
-            {client?.phone && (
-              <div className="grid grid-cols-2">
-                <p className="font-medium text-slate-700 dark:text-slate-300">Telefone:</p>
-                <p className="text-slate-900 dark:text-white text-right">{client.phone}</p>
+              
+              <div className="grid grid-cols-[1fr_auto]">
+                <p className="font-medium text-slate-700 dark:text-slate-300">Data:</p>
+                <p className="text-slate-900 dark:text-white text-right">{new Date(appointment.start).toLocaleDateString()}</p>
               </div>
-            )}
+              
+              <div className="grid grid-cols-[1fr_auto]">
+                <p className="font-medium text-slate-700 dark:text-slate-300">Horário:</p>
+                <p className="text-slate-900 dark:text-white text-right">
+                  {new Date(appointment.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                  {new Date(appointment.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-[1fr_auto]">
+                <p className="font-medium text-slate-700 dark:text-slate-300">Status:</p>
+                <p className={`font-semibold text-right ${
+                  isCompleted ? "text-green-600" : 
+                  isCanceled ? "text-red-600" : 
+                  "text-blue-600"
+                }`}>
+                  {isCompleted ? "Concluído" : 
+                   isCanceled ? "Cancelado" : 
+                   isBlocked ? "Bloqueado" : 
+                   "Agendado"}
+                </p>
+              </div>
+              
+              {appointment.notes && (
+                <div className="grid grid-cols-[1fr_auto]">
+                  <p className="font-medium text-slate-700 dark:text-slate-300">Observações:</p>
+                  <p className="text-slate-900 dark:text-white text-right">{appointment.notes}</p>
+                </div>
+              )}
+              
+              {!isBlocked && service?.price && (
+                <div className="grid grid-cols-[1fr_auto]">
+                  <p className="font-medium text-slate-700 dark:text-slate-300">Valor:</p>
+                  <p className="font-semibold text-green-600 dark:text-green-400 text-right">R$ {service.price.toFixed(2)}</p>
+                </div>
+              )}
+              
+              {client?.phone && (
+                <div className="grid grid-cols-[1fr_auto]">
+                  <p className="font-medium text-slate-700 dark:text-slate-300">Telefone:</p>
+                  <p className="text-slate-900 dark:text-white text-right">{client.phone}</p>
+                </div>
+              )}
+            </div>
           </div>
           
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <DialogClose asChild>
-              <Button variant="outline" className="border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">Fechar</Button>
-            </DialogClose>
-            
-            <Button 
-              variant="outline" 
-              onClick={onEdit}
-              className="flex items-center gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              <Edit className="h-4 w-4" />
-              Editar
-            </Button>
-            
-            {!isBlocked && !isCompleted && !isCanceled && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="flex items-center gap-2 border-red-600 text-red-600 hover:bg-red-50"
-                    disabled={isCanceling}
-                  >
-                    <Ban className="h-4 w-4" />
-                    Cancelar
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmar cancelamento</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Não, manter</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleCancelAppointment}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      Sim, cancelar agendamento
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            
-            {!isBlocked && client?.phone && !isCompleted && !isCanceled && (
-              <Button
-                variant="outline"
-                onClick={handleSendWhatsApp}
-                className="flex items-center gap-2 border-green-600 text-green-600 dark:border-green-500 dark:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40"
+          <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="w-full grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <DialogClose asChild>
+                <Button variant="outline" size="sm" className="w-full border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
+                  Fechar
+                </Button>
+              </DialogClose>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onEdit}
+                className="w-full flex items-center justify-center gap-1 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <MessageSquare className="h-4 w-4" />
-                {isCanceled ? "Perguntar sobre remarcação" : "Confirmar via WhatsApp"}
+                <Edit className="h-3.5 w-3.5" />
+                Editar
               </Button>
-            )}
+              
+              {!isBlocked && !isCompleted && !isCanceled && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full flex items-center justify-center gap-1 border-red-600 text-red-600 hover:bg-red-50"
+                      disabled={isCanceling}
+                    >
+                      <Ban className="h-3.5 w-3.5" />
+                      Cancelar
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar cancelamento</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Não, manter</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleCancelAppointment}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Sim, cancelar agendamento
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              
+              {!isBlocked && client?.phone && !isCompleted && !isCanceled && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSendWhatsApp}
+                  className="w-full flex items-center justify-center gap-1 border-green-600 text-green-600 dark:border-green-500 dark:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  Confirmar
+                </Button>
+              )}
+            </div>
             
             {!isBlocked && service?.price && !isCompleted && !isCanceled && (
               <Button 
@@ -218,9 +227,10 @@ export default function AppointmentActionsDialog({
                   setShowPaymentDialog(true);
                   onOpenChange(false);
                 }}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                size="sm"
+                className="mt-2 w-full flex items-center justify-center gap-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
-                <CreditCard className="h-4 w-4" />
+                <CreditCard className="h-3.5 w-3.5" />
                 Registrar Pagamento
               </Button>
             )}
