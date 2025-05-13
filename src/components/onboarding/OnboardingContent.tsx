@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from 'react-router-dom';
 import { ChevronRight, CheckCircle2 } from 'lucide-react';
 import { OnboardingStep } from './steps/OnboardingSteps';
+import { DialogFooter } from "@/components/ui/dialog";
 
 interface OnboardingContentProps {
   currentStep: OnboardingStep;
@@ -72,23 +73,27 @@ const OnboardingContent: React.FC<OnboardingContentProps> = ({
         )}
       </div>
       
-      <div className="flex justify-between">
-        {!isFirstStep && (
-          <Button variant="outline" onClick={onPrev}>
-            Voltar
-          </Button>
-        )}
-        <div className="flex-grow"></div>
-        {isLastStep ? (
-          <Button onClick={onDismiss} className="flex items-center">
-            <CheckCircle2 className="mr-2 h-4 w-4" /> Concluir
-          </Button>
-        ) : (
-          <Button onClick={onNext} className="flex items-center">
-            Próximo <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        )}
-      </div>
+      <DialogFooter>
+        <div className="flex justify-between w-full">
+          {!isFirstStep ? (
+            <Button variant="outline" onClick={onPrev}>
+              Voltar
+            </Button>
+          ) : (
+            <div></div> // Empty div for spacing when there's no "back" button
+          )}
+          
+          {isLastStep ? (
+            <Button onClick={onDismiss} className="flex items-center">
+              <CheckCircle2 className="mr-2 h-4 w-4" /> Concluir
+            </Button>
+          ) : (
+            <Button onClick={onNext} className="flex items-center">
+              Próximo <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </DialogFooter>
     </>
   );
 };
