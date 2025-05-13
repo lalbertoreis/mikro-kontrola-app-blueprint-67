@@ -3,20 +3,25 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { highlightTargetElement } from './TargetElementHighlighter';
 import { onboardingSteps, LOCAL_STORAGE_KEY } from './steps/OnboardingSteps';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useOnboarding = () => {
   const [open, setOpen] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
+  const { user } = useAuth(); // Get user from auth context
 
   useEffect(() => {
-    // Check if the user has already dismissed the onboarding
-    const dismissed = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!dismissed) {
-      setOpen(true);
+    // Only check and show onboarding when user is authenticated
+    if (user) {
+      // Check if the user has already dismissed the onboarding
+      const dismissed = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (!dismissed) {
+        setOpen(true);
+      }
     }
-  }, []);
+  }, [user]); // Depend on user to recheck when auth state changes
 
   const handleDismiss = () => {
     if (dontShowAgain) {
@@ -57,6 +62,9 @@ export const useOnboarding = () => {
 
   // On mount and when step changes, check if we need to highlight an element
   useEffect(() => {
+    // Only proceed with highlighting if the modal is open
+    if (!open) return;
+    
     const currentStepData = onboardingSteps[currentStep];
     if (currentStepData && currentStepData.requiresClick && currentStepData.targetSelector) {
       // Short delay to ensure the DOM is ready
@@ -81,7 +89,7 @@ export const useOnboarding = () => {
         existingHighlight.remove();
       }
     };
-  }, [currentStep, navigate]);
+  }, [currentStep, navigate, open]); // Added open dependency
 
   return {
     open,

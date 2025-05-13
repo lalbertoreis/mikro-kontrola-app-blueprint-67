@@ -11,8 +11,10 @@ import {
 import OnboardingContent from './OnboardingContent';
 import { useOnboarding } from './useOnboarding';
 import { onboardingStyles } from './TargetElementHighlighter';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const OnboardingModal = () => {
+  const { loading } = useAuth();
   const {
     open,
     setOpen,
@@ -25,6 +27,9 @@ export const OnboardingModal = () => {
     prevStep,
     handleDismiss
   } = useOnboarding();
+
+  // Don't render anything if still loading auth state
+  if (loading) return null;
 
   return (
     <>
@@ -47,8 +52,6 @@ export const OnboardingModal = () => {
             onPrev={prevStep}
             onDismiss={handleDismiss}
           />
-          
-          <DialogFooter />
         </DialogContent>
       </Dialog>
       
