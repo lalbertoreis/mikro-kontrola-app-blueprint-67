@@ -37,9 +37,13 @@ export const HolidayDialog: React.FC<HolidayDialogProps> = ({
   const [formDirty, setFormDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
+  const [userInitiatedClose, setUserInitiatedClose] = useState(false);
   
   useEffect(() => {
-    if (open) setFormDirty(false);
+    if (open) {
+      setFormDirty(false);
+      setUserInitiatedClose(false);
+    }
   }, [open]);
 
   const handleFormChange = () => {
@@ -47,6 +51,7 @@ export const HolidayDialog: React.FC<HolidayDialogProps> = ({
   };
 
   const handleCloseAttempt = () => {
+    setUserInitiatedClose(true);
     if (formDirty) {
       setShowUnsavedDialog(true);
       setPendingClose(true);
@@ -74,10 +79,17 @@ export const HolidayDialog: React.FC<HolidayDialogProps> = ({
       <Dialog 
         open={open} 
         onOpenChange={(state) => {
-          if (!state && formDirty) {
+          if (!state && formDirty && userInitiatedClose) {
+            // Only show the dialog if the user initiated the close
+            // and there are unsaved changes
             setShowUnsavedDialog(true);
             setPendingClose(true);
+          } else if (!state) {
+            // Just close the dialog if there are no changes or
+            // it's being programmatically closed
+            onOpenChange(state);
           } else {
+            // Opening the dialog
             onOpenChange(state);
           }
         }}

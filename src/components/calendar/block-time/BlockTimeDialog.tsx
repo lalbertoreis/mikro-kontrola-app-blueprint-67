@@ -1,20 +1,19 @@
 
 import React from "react";
-import { useAppointments } from "@/hooks/useAppointments";
-import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BlockTimeForm, BlockTimeFormValues } from "./BlockTimeForm";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import BlockTimeForm from "./BlockTimeForm";
 
 interface BlockTimeDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedDate?: Date;
+  selectedDate: Date;
   selectedEmployeeId?: string;
 }
 
@@ -24,52 +23,26 @@ const BlockTimeDialog: React.FC<BlockTimeDialogProps> = ({
   selectedDate,
   selectedEmployeeId,
 }) => {
-  const { blockTimeSlot, isBlocking } = useAppointments();
-  
-  // Handle form submission with improved date handling
-  const handleSubmit = async (values: BlockTimeFormValues) => {
-    try {
-      // Format date properly to avoid timezone issues
-      const formattedDate = format(values.date, "yyyy-MM-dd");
-      
-      await blockTimeSlot({
-        employeeId: values.employee,
-        date: formattedDate,
-        startTime: values.startTime,
-        endTime: values.endTime,
-        reason: values.reason,
-      });
-      
-      // Close the dialog
-      onClose();
-    } catch (error) {
-      console.error("Error blocking time slot:", error);
-    }
-  };
-  
-  const defaultValues = {
-    date: selectedDate || new Date(),
-    employee: selectedEmployeeId || "",
-    startTime: "",
-    endTime: "",
-    reason: "",
-  };
-  
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Bloquear Horário</DialogTitle>
-          <DialogDescription>
-            Preencha os dados para bloquear um horário na agenda
-          </DialogDescription>
+        <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogTitle className="text-lg">Bloquear Horário</DialogTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 rounded-full"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DialogHeader>
-        
-        <BlockTimeForm 
-          onSubmit={handleSubmit} 
+
+        <BlockTimeForm
+          selectedDate={selectedDate}
+          selectedEmployeeId={selectedEmployeeId}
           onCancel={onClose}
-          isBlocking={isBlocking}
-          defaultValues={defaultValues}
+          onSuccess={onClose}
         />
       </DialogContent>
     </Dialog>

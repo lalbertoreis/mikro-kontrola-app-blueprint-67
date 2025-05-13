@@ -33,8 +33,10 @@ export function useEmployees() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: EmployeeFormData }) => 
       updateEmployee(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidate both the list and the specific employee query
       queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["employee", variables.id] });
       toast.success("Funcionário atualizado com sucesso!");
     },
     onError: (error) => {
@@ -73,5 +75,7 @@ export function useEmployeeById(id?: string) {
     queryKey: ["employee", id],
     queryFn: () => (id ? fetchEmployeeById(id) : null),
     enabled: !!id,
+    staleTime: 0, // Always fetch the latest data
+    refetchOnWindowFocus: true, // Refetch when the window regains focus
   });
 }

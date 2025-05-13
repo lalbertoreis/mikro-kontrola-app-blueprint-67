@@ -46,7 +46,8 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
   employeeId,
 }) => {
   const { createEmployee, updateEmployee, isCreating, isUpdating } = useEmployees();
-  const { data: employee, isLoading: isEmployeeLoading } = useEmployeeById(employeeId);
+  const { data: employee, isLoading: isEmployeeLoading, refetch } = useEmployeeById(employeeId);
+  
   const isEditing = Boolean(employeeId);
   const [activeTab, setActiveTab] = useState("info");
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -60,26 +61,34 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
     },
   });
 
-  // Reset form and data when dialog opens/closes or employeeId changes
+  // Reset form and fetch latest data when dialog opens
   useEffect(() => {
-    if (open) {
-      if (employee && isEditing) {
-        form.reset({
-          name: employee.name,
-          role: employee.role,
-        });
-        setShifts(employee.shifts);
-        setSelectedServices(employee.services);
-      } else if (!isEditing) {
-        form.reset({
-          name: "",
-          role: "",
-        });
-        setShifts([]);
-        setSelectedServices([]);
-      }
+    if (open && employeeId) {
+      // Force a refetch when dialog opens
+      refetch().then(() => {
+        console.log("Employee data fetched:", employee);
+      });
     }
-  }, [employee, form, isEditing, open, employeeId]);
+  }, [open, employeeId, refetch]);
+
+  // Update form when employee data changes
+  useEffect(() => {
+    if (employee && isEditing) {
+      form.reset({
+        name: employee.name,
+        role: employee.role,
+      });
+      setShifts(employee.shifts);
+      setSelectedServices(employee.services);
+    } else if (!isEditing) {
+      form.reset({
+        name: "",
+        role: "",
+      });
+      setShifts([]);
+      setSelectedServices([]);
+    }
+  }, [employee, form, isEditing]);
 
   const onSubmit = async (data: z.infer<typeof employeeSchema>) => {
     // Montar dados completos do funcionário
