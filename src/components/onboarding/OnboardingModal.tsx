@@ -82,11 +82,12 @@ export const OnboardingModal = () => {
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
-      const nextStepData = steps[currentStep + 1];
+      const nextStepIdx = currentStep + 1;
+      const nextStepData = steps[nextStepIdx];
       
       if (nextStepData.requiresClick && nextStepData.targetSelector) {
-        // For steps requiring click, highlight the target element but don't advance yet
-        highlightTargetElement(nextStepData.targetSelector);
+        // For steps requiring click, highlight the element and set up click handler
+        highlightTargetElement(nextStepData.targetSelector, nextStepIdx);
       } else {
         // For steps not requiring click, advance to next step
         setCurrentStep(prevStep => prevStep + 1);
@@ -104,7 +105,7 @@ export const OnboardingModal = () => {
   };
 
   // Function to highlight a target element with a pulsing arrow
-  const highlightTargetElement = (selector) => {
+  const highlightTargetElement = (selector, targetStepIndex) => {
     if (!selector) return;
     
     // Remove any existing highlights
@@ -116,6 +117,8 @@ export const OnboardingModal = () => {
     // Find the target element
     const targetElement = document.querySelector(selector);
     if (targetElement) {
+      console.log(`Found target element for step ${targetStepIndex}:`, targetElement);
+      
       // Create highlight element
       const highlight = document.createElement('div');
       highlight.className = 'onboarding-highlight fixed z-50 animate-pulse';
@@ -133,20 +136,20 @@ export const OnboardingModal = () => {
       document.body.appendChild(highlight);
       
       // Add click listener to the target element
-      const currentStepIndex = currentStep;
       const handleTargetClick = () => {
+        console.log(`Target element clicked for step ${targetStepIndex}`);
         // Remove highlight
         highlight.remove();
         
         // Navigate to the route if specified
-        const step = steps[currentStepIndex + 1];
+        const step = steps[targetStepIndex];
         if (step && step.route) {
           navigate(step.route);
         }
         
         // Advance to next step after a small delay to allow navigation
         setTimeout(() => {
-          setCurrentStep(currentStepIndex + 1);
+          setCurrentStep(targetStepIndex);
         }, 500);
         
         // Remove this event listener
@@ -154,16 +157,18 @@ export const OnboardingModal = () => {
       };
       
       targetElement.addEventListener('click', handleTargetClick);
+    } else {
+      console.log(`Target element for step ${targetStepIndex} not found with selector: ${selector}`);
     }
   };
 
   // On mount and when step changes, check if we need to highlight an element
   useEffect(() => {
     const currentStepData = steps[currentStep];
-    if (currentStepData && currentStepData.targetSelector) {
+    if (currentStepData && currentStepData.requiresClick && currentStepData.targetSelector) {
       // Short delay to ensure the DOM is ready
       const timer = setTimeout(() => {
-        highlightTargetElement(currentStepData.targetSelector);
+        highlightTargetElement(currentStepData.targetSelector, currentStep);
       }, 300);
       
       return () => clearTimeout(timer);
@@ -270,4 +275,3 @@ export const OnboardingModal = () => {
     </>
   );
 };
-
