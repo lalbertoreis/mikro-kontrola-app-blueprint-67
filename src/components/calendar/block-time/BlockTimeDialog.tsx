@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import BlockTimeForm from "./BlockTimeForm";
+import { BlockTimeForm } from "./BlockTimeForm";
 
 interface BlockTimeDialogProps {
   isOpen: boolean;
