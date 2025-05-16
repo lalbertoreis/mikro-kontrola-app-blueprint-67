@@ -74,6 +74,11 @@ export const HolidayDialog: React.FC<HolidayDialogProps> = ({
     setPendingClose(false);
   };
   
+  const handleFormSuccess = () => {
+    setFormDirty(false); // Reset the form dirty state after successful submission
+    onOpenChange(false); // Close the dialog after successful save
+  };
+  
   return (
     <>
       <Dialog 
@@ -112,6 +117,7 @@ export const HolidayDialog: React.FC<HolidayDialogProps> = ({
             defaultValues={holiday} 
             onCancel={handleCloseAttempt}
             onFormChange={handleFormChange}
+            onSuccess={handleFormSuccess} // Add this prop to handle successful form submission
           />
         </DialogContent>
       </Dialog>
