@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -5,7 +6,7 @@ import { z } from "zod";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { useHolidays } from "@/hooks/useHolidays";
-import { Holiday } from "@/types/holiday";
+import { Holiday, HolidayFormData } from "@/types/holiday";
 
 import {
   Form,
@@ -97,15 +98,34 @@ export const SimplifiedHolidayForm: React.FC<SimplifiedHolidayFormProps> = ({
   const handleSubmit = async (data: HolidayFormValues) => {
     try {
       if (isEditing && defaultValues?.id) {
+        // Ensure we're passing the proper HolidayFormData structure with required fields
+        const holidayData: HolidayFormData = {
+          name: data.name,
+          date: data.date,
+          type: data.type,
+          isActive: data.isActive,
+          blockingType: data.blockingType,
+          customStartTime: data.customStartTime,
+          customEndTime: data.customEndTime,
+        };
+        
         await updateHoliday({ 
           id: defaultValues.id, 
-          data: {
-            ...data,
-            date: data.date, // This is automatically converted to the correct format in the service
-          }
+          data: holidayData
         });
       } else {
-        await createHoliday(data);
+        // Ensure we're passing the proper HolidayFormData structure with required fields
+        const holidayData: HolidayFormData = {
+          name: data.name,
+          date: data.date,
+          type: data.type,
+          isActive: data.isActive,
+          blockingType: data.blockingType,
+          customStartTime: data.customStartTime,
+          customEndTime: data.customEndTime,
+        };
+        
+        await createHoliday(holidayData);
       }
       
       // Call onSuccess after successful form submission
