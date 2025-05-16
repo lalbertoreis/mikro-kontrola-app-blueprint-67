@@ -19,6 +19,7 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { DatePickerField } from "./DatePickerField";
 import { EmployeeSelectField } from "./EmployeeSelectField";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 const blockTimeSchema = z.object({
   employee: z.string().min(1, { message: "Funcionário é obrigatório" }),
@@ -60,9 +61,12 @@ export const BlockTimeForm: React.FC<BlockTimeFormProps> = ({
 
   const handleSubmit = async (values: BlockTimeFormValues) => {
     try {
+      // Format the date as a string (YYYY-MM-DD) before passing to blockTimeSlot
+      const formattedDate = format(values.date, "yyyy-MM-dd");
+      
       await blockTimeSlot({
         employeeId: values.employee,
-        date: values.date,
+        date: formattedDate, // Send the formatted date string
         startTime: values.startTime,
         endTime: values.endTime,
         reason: values.reason,
