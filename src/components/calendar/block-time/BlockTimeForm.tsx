@@ -1,12 +1,8 @@
 
 import React from "react";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEmployees } from "@/hooks/useEmployees";
 import { useAppointments } from "@/hooks/useAppointments";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,25 +13,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
 import { DialogFooter } from "@/components/ui/dialog";
 import { DatePickerField } from "./DatePickerField";
 import { EmployeeSelectField } from "./EmployeeSelectField";
+import { toast } from "sonner";
 
 const blockTimeSchema = z.object({
   employee: z.string().min(1, { message: "Funcionário é obrigatório" }),
@@ -47,33 +30,54 @@ const blockTimeSchema = z.object({
 
 export type BlockTimeFormValues = z.infer<typeof blockTimeSchema>;
 
-interface BlockTimeFormProps {
-  onSubmit: (values: BlockTimeFormValues) => Promise<void>;
+export interface BlockTimeFormProps {
   onCancel: () => void;
-  isBlocking: boolean;
-  defaultValues: {
-    date: Date;
-    employee: string;
-    startTime: string;
-    endTime: string;
-    reason: string;
-  };
+  onSuccess: () => void;
+  selectedDate: Date;
+  selectedEmployeeId?: string;
 }
 
 export const BlockTimeForm: React.FC<BlockTimeFormProps> = ({
-  onSubmit,
   onCancel,
-  isBlocking,
-  defaultValues,
+  onSuccess,
+  selectedDate,
+  selectedEmployeeId,
 }) => {
+  const { blockTimeSlot, isBlocking } = useAppointments();
+  
+  const defaultValues = {
+    date: selectedDate,
+    employee: selectedEmployeeId || "",
+    startTime: "",
+    endTime: "",
+    reason: "",
+  };
+
   const form = useForm<BlockTimeFormValues>({
     resolver: zodResolver(blockTimeSchema),
     defaultValues,
   });
 
+  const handleSubmit = async (values: BlockTimeFormValues) => {
+    try {
+      await blockTimeSlot({
+        employeeId: values.employee,
+        date: values.date,
+        startTime: values.startTime,
+        endTime: values.endTime,
+        reason: values.reason,
+      });
+      toast.success("Horário bloqueado com sucesso!");
+      onSuccess();
+    } catch (error) {
+      console.error("Erro ao bloquear horário:", error);
+      toast.error("Erro ao bloquear horário. Tente novamente.");
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         {/* Date and Employee fields */}
         <DatePickerField control={form.control} />
         <EmployeeSelectField control={form.control} />

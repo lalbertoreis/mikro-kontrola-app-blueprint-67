@@ -1,10 +1,9 @@
-
 import React, { useEffect, useState } from "react";
 import { Loader2, Calendar, Users, CreditCard, BellRing, TrendingUp, Activity, Scissors, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isToday, isTomorrow, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -179,10 +178,8 @@ const DashboardOverview = () => {
         setUpcomingAppointments(formattedAppointments);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        toast({
-          title: "Erro ao carregar dados",
-          description: "Não foi possível carregar os dados do dashboard.",
-          variant: "destructive"
+        toast.error("Erro ao carregar dados", {
+          description: "Não foi possível carregar os dados do dashboard."
         });
       } finally {
         setLoading(false);
