@@ -65,21 +65,28 @@ export async function fetchHolidayById(id: string): Promise<Holiday | null> {
 
 export async function createHoliday(holidayData: HolidayFormData): Promise<Holiday> {
   try {
-    const { date, name, type, description, isActive, blockingType, customStartTime, customEndTime } = holidayData;
+    const { date, name, type, description, isActive, blockingType } = holidayData;
+    
+    // Preparando o objeto para inserção
+    const insertData: any = {
+      date: date.toISOString().split('T')[0], // Formata como YYYY-MM-DD
+      name,
+      type,
+      description,
+      is_active: isActive,
+      blocking_type: blockingType || 'full_day',
+      auto_generated: false
+    };
+    
+    // Adicionando campos customStartTime e customEndTime apenas se blockingType for 'custom'
+    if (blockingType === 'custom') {
+      insertData.custom_start_time = holidayData.customStartTime;
+      insertData.custom_end_time = holidayData.customEndTime;
+    }
     
     const { data, error } = await supabase
       .from('holidays')
-      .insert({
-        date: date.toISOString().split('T')[0], // Formata como YYYY-MM-DD
-        name,
-        type,
-        description,
-        is_active: isActive,
-        blocking_type: blockingType || 'full_day',
-        custom_start_time: customStartTime,
-        custom_end_time: customEndTime,
-        auto_generated: false
-      })
+      .insert(insertData)
       .select()
       .single();
     
@@ -107,21 +114,31 @@ export async function createHoliday(holidayData: HolidayFormData): Promise<Holid
 
 export async function updateHoliday(id: string, holidayData: HolidayFormData): Promise<Holiday> {
   try {
-    const { date, name, type, description, isActive, blockingType, customStartTime, customEndTime } = holidayData;
+    const { date, name, type, description, isActive, blockingType } = holidayData;
+    
+    // Preparando o objeto para atualização
+    const updateData: any = {
+      date: date.toISOString().split('T')[0], // Formata como YYYY-MM-DD
+      name,
+      type,
+      description,
+      is_active: isActive,
+      blocking_type: blockingType || 'full_day',
+      updated_at: new Date().toISOString()
+    };
+    
+    // Se não for bloquio personalizado, limpa os campos de horário
+    if (blockingType === 'custom') {
+      updateData.custom_start_time = holidayData.customStartTime;
+      updateData.custom_end_time = holidayData.customEndTime;
+    } else {
+      updateData.custom_start_time = null;
+      updateData.custom_end_time = null;
+    }
     
     const { data, error } = await supabase
       .from('holidays')
-      .update({
-        date: date.toISOString().split('T')[0], // Formata como YYYY-MM-DD
-        name,
-        type,
-        description,
-        is_active: isActive,
-        blocking_type: blockingType || 'full_day',
-        custom_start_time: customStartTime,
-        custom_end_time: customEndTime,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

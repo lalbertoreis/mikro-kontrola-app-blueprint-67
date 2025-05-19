@@ -97,34 +97,27 @@ export const SimplifiedHolidayForm: React.FC<SimplifiedHolidayFormProps> = ({
 
   const handleSubmit = async (data: HolidayFormValues) => {
     try {
+      // Preparando os dados básicos do feriado
+      const holidayData: HolidayFormData = {
+        name: data.name,
+        date: data.date,
+        type: data.type,
+        isActive: data.isActive,
+        blockingType: data.blockingType,
+      };
+
+      // Adicionando campos customStartTime e customEndTime apenas se blockingType for 'custom'
+      if (data.blockingType === 'custom') {
+        holidayData.customStartTime = data.customStartTime || undefined;
+        holidayData.customEndTime = data.customEndTime || undefined;
+      }
+
       if (isEditing && defaultValues?.id) {
-        // Ensure we're passing the proper HolidayFormData structure with required fields
-        const holidayData: HolidayFormData = {
-          name: data.name,
-          date: data.date,
-          type: data.type,
-          isActive: data.isActive,
-          blockingType: data.blockingType,
-          customStartTime: data.customStartTime,
-          customEndTime: data.customEndTime,
-        };
-        
         await updateHoliday({ 
           id: defaultValues.id, 
           data: holidayData
         });
       } else {
-        // Ensure we're passing the proper HolidayFormData structure with required fields
-        const holidayData: HolidayFormData = {
-          name: data.name,
-          date: data.date,
-          type: data.type,
-          isActive: data.isActive,
-          blockingType: data.blockingType,
-          customStartTime: data.customStartTime,
-          customEndTime: data.customEndTime,
-        };
-        
         await createHoliday(holidayData);
       }
       
