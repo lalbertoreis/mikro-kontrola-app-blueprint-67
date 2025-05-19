@@ -4,6 +4,7 @@ import { Client, ClientFormData } from "@/types/client";
 
 export async function fetchClients(): Promise<Client[]> {
   try {
+    console.log("Fetching clients for logged in user only");
     // Get all clients with their last appointment date
     const { data, error } = await supabase
       .from('clients')
@@ -13,7 +14,12 @@ export async function fetchClients(): Promise<Client[]> {
       `)
       .order('name');
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching clients:", error);
+      throw error;
+    }
+    
+    console.log(`Fetched ${data?.length || 0} clients`);
     
     return data.map(item => {
       // Get the most recent appointment date if any
@@ -83,6 +89,12 @@ export async function createClient(clientData: ClientFormData): Promise<Client> 
   try {
     const { name, email, phone, cep, address, notes } = clientData;
     
+    // Garantir que o user_id é definido para o usuário atual
+    const user = await supabase.auth.getUser();
+    if (!user.data.user) {
+      throw new Error('User not authenticated');
+    }
+    
     const { data, error } = await supabase
       .from('clients')
       .insert({
@@ -92,7 +104,7 @@ export async function createClient(clientData: ClientFormData): Promise<Client> 
         cep,
         address,
         notes,
-        user_id: (await supabase.auth.getUser()).data.user?.id
+        user_id: user.data.user.id
       })
       .select()
       .single();

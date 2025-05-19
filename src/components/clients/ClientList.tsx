@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
 import { toast } from "sonner";
 import { AlertDialog } from "@/components/ui/alert-dialog";
@@ -7,6 +7,7 @@ import ClientDialog from "./ClientDialog";
 import ClientSearchBar from "./ClientSearchBar";
 import ClientTable from "./ClientTable";
 import ClientDeleteDialog from "./ClientDeleteDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const ClientList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -14,6 +15,24 @@ const ClientList: React.FC = () => {
   const [clientToDelete, setClientToDelete] = useState<{ id: string; name: string } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | undefined>(undefined);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+
+  // Log informações sobre o usuário atual
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id || null;
+      setCurrentUser(userId);
+      console.log("Current user ID:", userId);
+    };
+    
+    checkAuth();
+  }, []);
+  
+  // Log da lista de clientes quando ela mudar
+  useEffect(() => {
+    console.log(`Displaying ${clients?.length || 0} clients`);
+  }, [clients]);
 
   const handleDelete = async () => {
     if (clientToDelete) {

@@ -9,13 +9,27 @@ import {
   deleteClient 
 } from "@/services/clientService";
 import type { Client, ClientFormData } from "@/types/client";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 export function useClients() {
   const queryClient = useQueryClient();
-
+  const [userId, setUserId] = useState<string | null>(null);
+  
+  // Obter o ID do usuário atual
+  useEffect(() => {
+    async function getUserId() {
+      const { data } = await supabase.auth.getUser();
+      setUserId(data.user?.id || null);
+    }
+    getUserId();
+  }, []);
+  
+  // Verifique se o usuário está autenticado antes de buscar clientes
   const { data: clients = [], isLoading, error } = useQuery({
-    queryKey: ["clients"],
+    queryKey: ["clients", userId],
     queryFn: fetchClients,
+    enabled: !!userId, // Só busca se o usuário estiver autenticado
   });
 
   const createMutation = useMutation({
