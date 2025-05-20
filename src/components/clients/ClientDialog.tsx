@@ -5,12 +5,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import ClientForm from "./ClientForm";
 import { Client } from "@/types/client";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -112,14 +109,6 @@ const ClientDialog: React.FC<ClientDialogProps> = ({
             <DialogTitle>
               {isEditing ? "Editar Cliente" : "Novo Cliente"}
             </DialogTitle>
-            <DialogClose asChild onClick={(e) => {
-              e.preventDefault();
-              handleCloseAttempt();
-            }}>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
           </DialogHeader>
           <ClientForm 
             client={client} 

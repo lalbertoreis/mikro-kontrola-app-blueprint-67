@@ -5,12 +5,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import ServicePackageForm from "./ServicePackageForm";
 import { ServicePackage } from "@/types/service";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,14 +95,6 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
             <DialogTitle>
               {isEditing ? "Editar Pacote" : "Novo Pacote"}
             </DialogTitle>
-            <DialogClose asChild onClick={(e) => {
-              e.preventDefault();
-              handleCloseAttempt();
-            }}>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
           </DialogHeader>
           <ServicePackageForm 
             servicePackage={servicePackage} 

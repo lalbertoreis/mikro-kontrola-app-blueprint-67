@@ -5,12 +5,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import ServiceForm from "./ServiceForm";
 import { Service } from "@/types/service";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +19,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useServiceById } from "@/hooks/useServices";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ServiceDialogProps {
   open: boolean;
@@ -104,14 +100,6 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
             <DialogTitle>
               {isEditing ? "Editar Serviço" : "Novo Serviço"}
             </DialogTitle>
-            <DialogClose asChild onClick={(e) => {
-              e.preventDefault();
-              handleCloseAttempt();
-            }}>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
           </DialogHeader>
           {isLoading ? (
             <div className="p-6 text-center">

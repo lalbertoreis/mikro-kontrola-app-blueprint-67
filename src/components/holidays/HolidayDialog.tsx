@@ -6,8 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +17,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Holiday } from "@/types/holiday";
-import { useHolidays } from "@/hooks/useHolidays";
 import { SimplifiedHolidayForm } from "./SimplifiedHolidayForm";
 
 interface HolidayDialogProps {
@@ -104,20 +101,12 @@ export const HolidayDialog: React.FC<HolidayDialogProps> = ({
             <DialogTitle className="text-lg">
               {isEditing ? "Editar feriado" : "Novo feriado"}
             </DialogTitle>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 rounded-full"
-              onClick={handleCloseAttempt}
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </DialogHeader>
           <SimplifiedHolidayForm 
             defaultValues={holiday} 
             onCancel={handleCloseAttempt}
             onFormChange={handleFormChange}
-            onSuccess={handleFormSuccess} // Add this prop to handle successful form submission
+            onSuccess={handleFormSuccess}
           />
         </DialogContent>
       </Dialog>
