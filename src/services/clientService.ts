@@ -5,6 +5,16 @@ import { Client, ClientFormData } from "@/types/client";
 export async function fetchClients(): Promise<Client[]> {
   try {
     console.log("Fetching clients for logged in user only");
+    
+    // Verify if user is authenticated
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      console.log("No authenticated user, returning empty clients list");
+      return [];
+    }
+    
+    console.log("Authenticated user ID:", userData.user.id);
+    
     // Get all clients with their last appointment date
     const { data, error } = await supabase
       .from('clients')

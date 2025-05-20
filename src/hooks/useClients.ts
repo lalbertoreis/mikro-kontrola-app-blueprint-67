@@ -23,7 +23,21 @@ export function useClients() {
       setUserId(data.user?.id || null);
     }
     getUserId();
-  }, []);
+
+    // Configurar listener para mudanças de autenticação
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const newUserId = session?.user?.id || null;
+      if (newUserId !== userId) {
+        setUserId(newUserId);
+        // Invalidar cache quando o usuário mudar
+        queryClient.invalidateQueries({ queryKey: ["clients"] });
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [queryClient, userId]);
   
   // Verifique se o usuário está autenticado antes de buscar clientes
   const { data: clients = [], isLoading, error } = useQuery({
