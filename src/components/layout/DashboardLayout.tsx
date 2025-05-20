@@ -110,10 +110,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   }, [mobileMenuOpen]);
 
   return (
-    <div className="flex h-full min-h-screen max-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Menu lateral fixo no desktop, oculto no mobile */}
       <aside 
-        className={`fixed md:relative z-30 w-64 min-w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col max-h-screen h-full transition-transform duration-300 ${
+        className={`fixed md:sticky top-0 z-30 flex flex-col h-full w-64 min-w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 ${
           isMobile && !mobileMenuOpen ? '-translate-x-full' : 'translate-x-0'
         }`}
       >
@@ -135,8 +135,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           )}
         </div>
 
-        {/* Menu de navegação */}
-        <nav className="flex-1 overflow-y-auto py-4">
+        {/* Menu de navegação - com scrollbar própria */}
+        <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin">
           {menuCategories.map((category) => (
             <div key={category.label} className="px-3 mb-6">
               <div className="flex items-center mb-2 px-3 text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -191,7 +191,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       </aside>
 
       {/* Área principal de conteúdo */}
-      <div className="flex flex-col flex-1 max-h-screen overflow-hidden w-full">
+      <div className="flex flex-col flex-1 h-screen overflow-hidden w-full">
         {/* Header */}
         <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 sticky top-0 z-20">
           {isMobile && (
@@ -216,7 +216,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </div>
         </header>
 
-        {/* Conteúdo principal */}
+        {/* Conteúdo principal - com sua própria scrollbar */}
         <main className="flex-1 overflow-auto p-4 md:p-6 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto w-full">
             {children}
