@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import NotificationIndicator from "@/components/notifications/NotificationIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -109,6 +110,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [mobileMenuOpen]);
 
+  // Prevenindo a propagação do evento de roda do mouse no menu
+  const handleMenuWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Menu lateral fixo no desktop, oculto no mobile */}
@@ -135,37 +141,39 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           )}
         </div>
 
-        {/* Menu de navegação - com scrollbar própria */}
-        <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin">
-          {menuCategories.map((category) => (
-            <div key={category.label} className="px-3 mb-6">
-              <div className="flex items-center mb-2 px-3 text-sm font-medium text-gray-500 dark:text-gray-400">
-                <category.icon className="h-4 w-4 mr-2" />
-                <span>{category.label}</span>
+        {/* Menu de navegação - usando ScrollArea do shadcn/ui */}
+        <ScrollArea className="flex-1">
+          <nav className="py-4">
+            {menuCategories.map((category) => (
+              <div key={category.label} className="px-3 mb-6">
+                <div className="flex items-center mb-2 px-3 text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <category.icon className="h-4 w-4 mr-2" />
+                  <span>{category.label}</span>
+                </div>
+                <ul className="space-y-1">
+                  {category.items.map((item) => {
+                    const isActive = location.pathname === item.to;
+                    return (
+                      <li key={item.name}>
+                        <Link
+                          to={item.to}
+                          className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                            isActive 
+                              ? "bg-kontrola-50 text-kontrola-700 font-medium dark:bg-gray-700 dark:text-kontrola-300" 
+                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          }`}
+                        >
+                          <item.icon className="h-4 w-4 mr-3" />
+                          <span>{item.name}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
-              <ul className="space-y-1">
-                {category.items.map((item) => {
-                  const isActive = location.pathname === item.to;
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        to={item.to}
-                        className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                          isActive 
-                            ? "bg-kontrola-50 text-kontrola-700 font-medium dark:bg-gray-700 dark:text-kontrola-300" 
-                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }`}
-                      >
-                        <item.icon className="h-4 w-4 mr-3" />
-                        <span>{item.name}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </nav>
+            ))}
+          </nav>
+        </ScrollArea>
 
         {/* Footer com opções de tema e logout */}
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-3">
