@@ -1,18 +1,9 @@
 
-import React, { useState } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Plus, Edit, Trash2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Search, Loader2, Edit, Trash2 } from "lucide-react";
-import { useServices } from "@/hooks/useServices";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,195 +13,150 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import ServiceDialog from "./ServiceDialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useServices } from "@/hooks/useServices";
+import { Service } from "@/types/service";
+import { Input } from "@/components/ui/input";
 
-const ServiceList: React.FC = () => {
+const ServiceList = () => {
+  const { services = [], isLoading, deleteService, isDeleting } = useServices();
+  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const { services, isLoading, error, deleteService, isDeleting } = useServices();
-  const [serviceToDelete, setServiceToDelete] = useState<{ id: string; name: string } | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
-  // Filter services based on search term
-  const filteredServices = services.filter(service => 
-    service.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (service.description && service.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filter services by search term and exclude system services (price = 0)
+  useEffect(() => {
+    const userServices = services.filter(service => service.price > 0);
+    
+    if (searchTerm) {
+      setFilteredServices(
+        userServices.filter(service =>
+          service.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    } else {
+      setFilteredServices(userServices);
+    }
+  }, [services, searchTerm]);
 
-  // Format price as currency
-  const formatPrice = (price: number) => {
-    return price.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    });
+  const handleDeleteClick = (service: Service) => {
+    setServiceToDelete(service);
+    setDeleteDialogOpen(true);
   };
 
-  // Format duration as hours and minutes
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) {
-      return `${minutes} min`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    if (remainingMinutes === 0) {
-      return `${hours}h`;
-    }
-    return `${hours}h ${remainingMinutes}min`;
-  };
-
-  const handleDelete = async () => {
+  const handleConfirmDelete = () => {
     if (serviceToDelete) {
-      try {
-        await deleteService(serviceToDelete.id);
-        toast.success(`Serviço "${serviceToDelete.name}" excluído com sucesso.`);
-      } catch (error) {
-        toast.error("Erro ao excluir serviço.");
-      } finally {
-        setServiceToDelete(null);
-      }
+      deleteService(serviceToDelete.id);
+      setDeleteDialogOpen(false);
     }
   };
 
-  const handleAddNew = () => {
-    setSelectedServiceId(undefined);
-    setDialogOpen(true);
+  const handleCancelDelete = () => {
+    setServiceToDelete(null);
+    setDeleteDialogOpen(false);
   };
-
-  const handleEdit = (id: string) => {
-    setSelectedServiceId(id);
-    setDialogOpen(true);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-8 text-red-500">
-        Erro ao carregar serviços. Por favor, tente novamente.
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-4 w-full">
-      <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar serviços..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <Card>
+      <CardContent className="p-6">
+        <div className="mb-6 flex justify-between items-center">
+          <div className="w-80">
+            <Input
+              placeholder="Buscar serviços..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <Button asChild>
+            <Link to="/dashboard/services/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Serviço
+            </Link>
+          </Button>
         </div>
-        <Button onClick={handleAddNew} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Serviço
-        </Button>
-      </div>
 
-      <div className="border rounded-md overflow-x-auto w-full">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="whitespace-nowrap">Nome</TableHead>
-              <TableHead className="whitespace-nowrap">Status</TableHead>
-              <TableHead className="whitespace-nowrap">Preço</TableHead>
-              <TableHead className="whitespace-nowrap">Duração</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredServices.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center p-4">Carregando serviços...</div>
+        ) : filteredServices.length > 0 ? (
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  {searchTerm ? "Nenhum serviço encontrado com esses critérios." : "Nenhum serviço cadastrado ainda."}
-                </TableCell>
+                <TableHead>Nome</TableHead>
+                <TableHead>Duração</TableHead>
+                <TableHead>Preço</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
-            ) : (
-              filteredServices.map((service) => (
+            </TableHeader>
+            <TableBody>
+              {filteredServices.map((service) => (
                 <TableRow key={service.id}>
                   <TableCell className="font-medium">{service.name}</TableCell>
+                  <TableCell>{service.duration} min</TableCell>
                   <TableCell>
-                    <Badge variant={service.isActive ? "success" : "secondary"}>
-                      {service.isActive ? "Ativo" : "Inativo"}
-                    </Badge>
+                    {new Intl.NumberFormat('pt-BR', { 
+                      style: 'currency', 
+                      currency: 'BRL' 
+                    }).format(service.price)}
                   </TableCell>
-                  <TableCell>{formatPrice(service.price)}</TableCell>
-                  <TableCell>{formatDuration(service.duration)}</TableCell>
+                  <TableCell>
+                    {service.isActive ? (
+                      <Badge>Ativo</Badge>
+                    ) : (
+                      <Badge variant="outline">Inativo</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex space-x-2 justify-end">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(service.id)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Editar</TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setServiceToDelete({ id: service.id, name: service.name })}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir o serviço "{serviceToDelete?.name}"? Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => setServiceToDelete(null)}>
-                                  Cancelar
-                                </AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={handleDelete}
-                                  className="bg-red-600 hover:bg-red-700"
-                                  disabled={isDeleting}
-                                >
-                                  {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </TooltipTrigger>
-                        <TooltipContent>Excluir</TooltipContent>
-                      </Tooltip>
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        asChild
+                      >
+                        <Link to={`/dashboard/services/${service.id}`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleDeleteClick(service)}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="text-center p-4 text-muted-foreground">
+            {searchTerm ? "Nenhum serviço encontrado." : "Nenhum serviço cadastrado."}
+          </div>
+        )}
+      </CardContent>
 
-      <ServiceDialog 
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        serviceId={selectedServiceId}
-      />
-    </div>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmação de exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o serviço "{serviceToDelete?.name}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
   );
 };
 

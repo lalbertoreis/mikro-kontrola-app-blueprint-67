@@ -1,9 +1,10 @@
 
 import React from "react";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Control } from "react-hook-form";
+import { CalendarIcon } from "lucide-react";
+import { format, startOfDay } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
 import { BlockTimeFormValues } from "./BlockTimeForm";
 import {
   FormControl,
@@ -18,14 +19,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
 
 interface DatePickerFieldProps {
   control: Control<BlockTimeFormValues>;
 }
 
 export const DatePickerField: React.FC<DatePickerFieldProps> = ({ control }) => {
+  // Get today's date with time set to start of day for comparison
+  const today = startOfDay(new Date());
+
   return (
     <FormField
       control={control}
@@ -44,9 +46,7 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({ control }) => 
                   )}
                 >
                   {field.value ? (
-                    format(field.value, "PPP", {
-                      locale: ptBR,
-                    })
+                    format(field.value, "dd/MM/yyyy")
                   ) : (
                     <span>Selecione uma data</span>
                   )}
@@ -59,8 +59,12 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({ control }) => 
                 mode="single"
                 selected={field.value}
                 onSelect={field.onChange}
-                className={cn("p-3 pointer-events-auto")}
-                locale={ptBR}
+                disabled={(date) => {
+                  // Disable dates before today
+                  return date < today;
+                }}
+                initialFocus
+                className="p-3 pointer-events-auto"
               />
             </PopoverContent>
           </Popover>

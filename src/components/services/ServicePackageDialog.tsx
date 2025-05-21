@@ -91,7 +91,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
         }}
       >
         <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader className="flex items-center justify-between">
+          <DialogHeader>
             <DialogTitle>
               {isEditing ? "Editar Pacote" : "Novo Pacote"}
             </DialogTitle>

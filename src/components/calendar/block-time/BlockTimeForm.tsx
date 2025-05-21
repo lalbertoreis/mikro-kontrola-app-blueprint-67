@@ -19,11 +19,15 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { DatePickerField } from "./DatePickerField";
 import { EmployeeSelectField } from "./EmployeeSelectField";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 
 const blockTimeSchema = z.object({
   employee: z.string().min(1, { message: "Funcionário é obrigatório" }),
-  date: z.date({ required_error: "Data é obrigatória" }),
+  date: z.date({ required_error: "Data é obrigatória" })
+    .refine(date => {
+      const today = startOfDay(new Date());
+      return !isBefore(date, today);
+    }, { message: "Não é possível bloquear datas passadas" }),
   startTime: z.string().min(1, { message: "Hora de início é obrigatória" }),
   endTime: z.string().min(1, { message: "Hora de término é obrigatória" }),
   reason: z.string().min(1, { message: "Motivo é obrigatório" }),
@@ -46,8 +50,12 @@ export const BlockTimeForm: React.FC<BlockTimeFormProps> = ({
 }) => {
   const { blockTimeSlot, isBlocking } = useAppointments();
   
+  // Ensure selectedDate is not in the past
+  const today = startOfDay(new Date());
+  const validSelectedDate = isBefore(selectedDate, today) ? today : selectedDate;
+  
   const defaultValues = {
-    date: selectedDate,
+    date: validSelectedDate,
     employee: selectedEmployeeId || "",
     startTime: "",
     endTime: "",
