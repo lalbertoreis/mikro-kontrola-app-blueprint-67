@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import ServicePackageForm from "./ServicePackageForm";
+import ServicePackageForm from "./packages/ServicePackageForm";
 import { ServicePackage } from "@/types/service";
 import {
   AlertDialog,
