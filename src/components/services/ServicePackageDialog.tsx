@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import ServicePackageForm from "./packages/ServicePackageForm";
+import ServicePackageForm from "./ServicePackageForm";
 import { ServicePackage } from "@/types/service";
 import {
   AlertDialog,
@@ -90,7 +90,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {isEditing ? "Editar Pacote" : "Novo Pacote"}
