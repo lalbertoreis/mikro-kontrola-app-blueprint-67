@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import {
   Dialog,
@@ -120,19 +120,9 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden p-0">
         <DialogHeader className="px-6 pt-6 pb-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">
-              {isEditing ? "Editar Funcionário" : "Novo Funcionário"}
-            </DialogTitle>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 rounded-full"
-              onClick={handleClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-semibold">
+            {isEditing ? "Editar Funcionário" : "Novo Funcionário"}
+          </DialogTitle>
         </DialogHeader>
 
         {isEmployeeLoading && isEditing ? (
