@@ -7,7 +7,7 @@ interface SelectedServicesListProps {
   selectedServices: string[];
   services: Service[];
   totalPrice: number;
-  discountedPrice: number;
+  discountedPrice: number | string;
 }
 
 const SelectedServicesList = ({ 
@@ -16,6 +16,11 @@ const SelectedServicesList = ({
   totalPrice,
   discountedPrice 
 }: SelectedServicesListProps) => {
+  // Ensure discountedPrice is a number before using toFixed()
+  const formattedDiscountedPrice = typeof discountedPrice === 'number' 
+    ? discountedPrice.toFixed(2)
+    : String(discountedPrice);
+
   return (
     <div>
       <h3 className="text-lg font-medium mb-2">Serviços Selecionados</h3>
@@ -37,7 +42,7 @@ const SelectedServicesList = ({
             Valor total: R$ {totalPrice.toFixed(2)}
           </div>
           <div className="text-sm font-medium text-primary">
-            Valor com desconto: R$ {discountedPrice.toFixed(2)}
+            Valor com desconto: R$ {formattedDiscountedPrice}
           </div>
         </div>
       )}
