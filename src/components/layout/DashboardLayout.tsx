@@ -110,11 +110,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [mobileMenuOpen]);
 
-  // Prevenindo a propagação do evento de roda do mouse no menu
-  const handleMenuWheel = (e: React.WheelEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Menu lateral fixo no desktop, oculto no mobile */}
@@ -142,7 +137,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </div>
 
         {/* Menu de navegação - usando ScrollArea do shadcn/ui */}
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 overflow-hidden">
           <nav className="py-4">
             {menuCategories.map((category) => (
               <div key={category.label} className="px-3 mb-6">

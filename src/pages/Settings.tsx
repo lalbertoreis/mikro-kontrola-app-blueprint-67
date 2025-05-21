@@ -10,7 +10,7 @@ const Settings = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-full">
         <SettingsHeader />
         <SettingsContent 
           isLoading={isLoading} 
