@@ -6,8 +6,6 @@ import ServicePackageList from "@/components/services/ServicePackageList";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ServiceDialog from "@/components/services/ServiceDialog";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import ServicePackageDialog from "@/components/services/ServicePackageDialog";
 
 const Services = () => {
@@ -19,24 +17,12 @@ const Services = () => {
     <DashboardLayout>
       <TooltipProvider>
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div>
             <h1 className="text-2xl font-bold tracking-tight">Serviços</h1>
-            {activeTab === "services" ? (
-              <Button onClick={() => setServiceDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Serviço
-              </Button>
-            ) : (
-              <Button onClick={() => setPackageDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Pacote
-              </Button>
-            )}
+            <p className="text-muted-foreground">
+              Gerencie os serviços e pacotes oferecidos pelo seu negócio.
+            </p>
           </div>
-          
-          <p className="text-muted-foreground">
-            Gerencie os serviços e pacotes oferecidos pelo seu negócio.
-          </p>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList>
