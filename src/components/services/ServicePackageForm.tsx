@@ -59,6 +59,11 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
   );
   const [editMode, setEditMode] = useState<"discount" | "price">("discount");
 
+  // Filter out system services
+  const filteredServicesList = services.filter(service => 
+    !service.name.includes("(Sistema)")
+  );
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: servicePackage
@@ -94,7 +99,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
   }, [selectedServices, onFormChange]);
 
   // Filtrar serviços com base no termo de pesquisa
-  const filteredServices = services.filter((service) =>
+  const filteredServices = filteredServicesList.filter((service) =>
     service.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -182,8 +187,8 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Service selection panel */}
-      <div className="md:col-span-1 bg-muted/30 p-4 rounded-lg">
-        <h3 className="text-lg font-medium mb-4">Selecionar Serviços</h3>
+      <div className="md:col-span-1 bg-muted/30 p-2 sm:p-4 rounded-lg">
+        <h3 className="text-lg font-medium mb-2 sm:mb-4">Selecionar Serviços</h3>
         <div className="relative mb-3">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -193,7 +198,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <ScrollArea className="h-[300px] pr-3">
+        <ScrollArea className="h-[260px] pr-3">
           <div className="space-y-1.5">
             {filteredServices.map((service) => {
               const isSelected = selectedServices.includes(service.id);
@@ -202,14 +207,14 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                   key={service.id}
                   onClick={() => toggleService(service.id)}
                   className={cn(
-                    "flex items-center justify-between px-3 py-2.5 rounded-md cursor-pointer transition-colors",
+                    "flex items-center justify-between px-3 py-2 rounded-md cursor-pointer transition-colors",
                     isSelected
                       ? "bg-primary/10 text-primary border border-primary/30"
                       : "hover:bg-muted border border-transparent"
                   )}
                 >
                   <div>
-                    <div className="font-medium">{service.name}</div>
+                    <div className="font-medium text-sm sm:text-base">{service.name}</div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
                       <span>R$ {service.price.toFixed(2)}</span>
                       <span className="inline-block h-1 w-1 rounded-full bg-muted-foreground"></span>
@@ -236,11 +241,11 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="text-lg font-medium mb-4">Informações do Pacote</h3>
+              <Card className="shadow-sm">
+                <CardContent className="pt-4 px-4 pb-4">
+                  <h3 className="text-lg font-medium mb-3">Informações do Pacote</h3>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <FormField
                       control={form.control}
                       name="name"
@@ -264,7 +269,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                           <FormControl>
                             <Textarea
                               placeholder="Descrição do pacote..."
-                              className="resize-none h-20"
+                              className="resize-none h-16"
                               {...field}
                               value={field.value || ""}
                             />
@@ -277,9 +282,9 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
+              <Card className="shadow-sm">
+                <CardContent className="pt-4 px-4 pb-4">
+                  <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-medium">Precificação</h3>
                     <Button 
                       type="button" 
@@ -293,7 +298,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
                       <div className="text-sm text-muted-foreground">Valor Original</div>
                       <div className="font-medium">R$ {safeToFixed(totalPrice)}</div>
@@ -312,7 +317,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                     </div>
                   </div>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {editMode === "discount" ? (
                       <FormField
                         control={form.control}
@@ -362,7 +367,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base">Exibir na Agenda Online</FormLabel>
-                            <FormDescription>
+                            <FormDescription className="text-xs">
                               Tornar este pacote disponível para agendamento online
                             </FormDescription>
                           </div>

@@ -34,6 +34,11 @@ const ClientList: React.FC = () => {
     console.log(`Displaying ${clients?.length || 0} clients`);
   }, [clients]);
 
+  // Filter clients to exclude system clients
+  const filteredClients = clients.filter(client => 
+    !client.name.includes("(Sistema)")
+  );
+
   const handleDelete = async () => {
     if (clientToDelete) {
       try {
@@ -74,7 +79,7 @@ const ClientList: React.FC = () => {
       />
 
       <ClientTable 
-        clients={clients} 
+        clients={filteredClients} 
         isLoading={isLoading}
         searchTerm={searchTerm}
         onEditClient={handleEdit}
