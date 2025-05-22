@@ -17,11 +17,13 @@ const Services = () => {
     <DashboardLayout>
       <TooltipProvider>
         <div className="space-y-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Serviços</h1>
-            <p className="text-muted-foreground">
-              Gerencie os serviços e pacotes oferecidos pelo seu negócio.
-            </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Serviços</h1>
+              <p className="text-muted-foreground">
+                Gerencie os serviços e pacotes oferecidos pelo seu negócio.
+              </p>
+            </div>
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

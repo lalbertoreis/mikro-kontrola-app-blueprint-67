@@ -90,7 +90,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>
               {isEditing ? "Editar Pacote" : "Novo Pacote"}
