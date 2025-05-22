@@ -21,7 +21,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-const ServicePackageList = () => {
+interface ServicePackageListProps {
+  onNewPackage?: () => void;
+}
+
+const ServicePackageList: React.FC<ServicePackageListProps> = ({ onNewPackage }) => {
   const [open, setOpen] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState<string | undefined>(undefined);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -31,8 +35,12 @@ const ServicePackageList = () => {
   const { services } = useServices();
 
   const handleNewPackage = () => {
-    setSelectedPackageId(undefined);
-    setOpen(true);
+    if (onNewPackage) {
+      onNewPackage();
+    } else {
+      setSelectedPackageId(undefined);
+      setOpen(true);
+    }
   };
 
   const handleEditPackage = (id: string) => {

@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Service, ServicePackage, ServicePackageFormData } from "@/types/service";
-import { Search, Check, CircleHelp } from "lucide-react";
+import { Search, Check, CircleHelp, ArrowRightLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
@@ -121,7 +121,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
     } else {
       // Se o usuário estiver editando o preço final, calcular o desconto
       const discountPercent = ((totalPrice - watchPrice) / totalPrice) * 100;
-      form.setValue("discount", Number(discountPercent.toFixed(2)));
+      form.setValue("discount", Number(Math.max(0, Math.min(100, discountPercent)).toFixed(2)));
     }
   }, [watchDiscount, watchPrice, totalPrice, editMode, selectedServices.length, form]);
 
@@ -221,36 +221,6 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                   </div>
                 </ScrollArea>
               </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-2">Serviços Selecionados</h3>
-                {selectedServices.length === 0 ? (
-                  <div className="text-muted-foreground p-2 text-center border rounded-md">
-                    Nenhum serviço selecionado
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {selectedServices.map((serviceId) => {
-                      const service = services.find((s) => s.id === serviceId);
-                      return (
-                        <Badge key={serviceId} variant="secondary" className="mr-1 py-1.5">
-                          {service?.name} (R$ {service?.price.toFixed(2)})
-                        </Badge>
-                      );
-                    })}
-                    <div className="text-sm font-medium pt-2">
-                      Valor total: R$ {totalPrice.toFixed(2)}
-                    </div>
-                    <div className="text-sm font-medium text-primary">
-                      Valor com desconto: R$ {
-                        typeof form.watch("price") === 'number' 
-                          ? form.watch("price").toFixed(2) 
-                          : '0.00'
-                      }
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
           
@@ -289,126 +259,128 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                     </FormItem>
                   )}
                 />
+
+                {/* Resumo do pacote */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                  <h4 className="font-medium">Resumo do Pacote</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Serviços:</span> {selectedServices.length}
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Valor Total:</span> R$ {totalPrice.toFixed(2)}
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Desconto:</span> {typeof form.watch("discount") === 'number' ? form.watch("discount").toFixed(2) : '0.00'}%
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Valor Final:</span> R$ {typeof form.watch("price") === 'number' ? form.watch("price").toFixed(2) : '0.00'}
+                    </div>
+                  </div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {editMode === "discount" ? (
-                    <FormField
-                      control={form.control}
-                      name="discount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <span>Desconto (%)</span>
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-6 p-1" 
-                              onClick={toggleEditMode}
-                            >
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <CircleHelp className="h-4 w-4 text-muted-foreground" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Clique para editar o preço final em vez do desconto</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </Button>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.01"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ) : (
-                    <FormField
-                      control={form.control}
-                      name="price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <span>Preço Final (R$)</span>
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-6 p-1" 
-                              onClick={toggleEditMode}
-                            >
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <CircleHelp className="h-4 w-4 text-muted-foreground" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Clique para editar o desconto em vez do preço final</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </Button>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              max={totalPrice}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Modo de Edição:</label>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={toggleEditMode}
+                        className="flex items-center gap-2"
+                      >
+                        {editMode === "discount" ? "Desconto %" : "Preço Final R$"}
+                        <ArrowRightLeft className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    {editMode === "discount" ? (
+                      <FormField
+                        control={form.control}
+                        name="discount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Desconto (%)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Preço Final (R$)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max={totalPrice}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
                   
-                  {editMode === "discount" ? (
-                    <FormField
-                      control={form.control}
-                      name="price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Preço Final Calculado (R$)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              disabled
-                              {...field}
-                              value={typeof field.value === 'number' ? field.value.toFixed(2) : '0.00'}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ) : (
-                    <FormField
-                      control={form.control}
-                      name="discount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Desconto Calculado (%)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              disabled
-                              {...field}
-                              value={typeof field.value === 'number' ? field.value.toFixed(2) : '0.00'}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium mb-2">Valores Calculados:</div>
+                    {editMode === "discount" ? (
+                      <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Preço Final Calculado (R$)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                disabled
+                                {...field}
+                                value={typeof field.value === 'number' ? field.value.toFixed(2) : '0.00'}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name="discount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Desconto Calculado (%)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                disabled
+                                {...field}
+                                value={typeof field.value === 'number' ? field.value.toFixed(2) : '0.00'}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
                 </div>
                 
                 <FormField
