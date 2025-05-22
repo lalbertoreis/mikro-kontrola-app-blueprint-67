@@ -242,7 +242,11 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                       Valor total: R$ {totalPrice.toFixed(2)}
                     </div>
                     <div className="text-sm font-medium text-primary">
-                      Valor com desconto: R$ {form.watch("price").toFixed(2)}
+                      Valor com desconto: R$ {
+                        typeof form.watch("price") === 'number' 
+                          ? form.watch("price").toFixed(2) 
+                          : '0.00'
+                      }
                     </div>
                   </div>
                 )}
@@ -378,7 +382,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                               step="0.01"
                               disabled
                               {...field}
-                              value={field.value.toFixed(2)}
+                              value={typeof field.value === 'number' ? field.value.toFixed(2) : '0.00'}
                             />
                           </FormControl>
                           <FormMessage />
@@ -397,7 +401,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                               type="number"
                               disabled
                               {...field}
-                              value={field.value.toFixed(2)}
+                              value={typeof field.value === 'number' ? field.value.toFixed(2) : '0.00'}
                             />
                           </FormControl>
                           <FormMessage />
