@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import EmployeeDialog from "@/components/employees/EmployeeDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Employees = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -26,28 +27,30 @@ const Employees = () => {
   return (
     <DashboardLayout>
       <TooltipProvider>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Funcionários</h1>
-              <p className="text-muted-foreground">
-                Gerencie sua equipe e informações de colaboradores.
-              </p>
+        <Card className="bg-white">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Funcionários</h1>
+                <p className="text-muted-foreground">
+                  Gerencie sua equipe e informações de colaboradores.
+                </p>
+              </div>
+              <Button onClick={handleAddEmployee} className="bg-primary hover:bg-primary/90">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Funcionário
+              </Button>
             </div>
-            <Button onClick={handleAddEmployee} className="bg-primary hover:bg-primary/90">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Funcionário
-            </Button>
-          </div>
-          
-          <EmployeeList onEdit={handleEditEmployee} />
+            
+            <EmployeeList onEdit={handleEditEmployee} />
 
-          <EmployeeDialog
-            open={dialogOpen}
-            onOpenChange={setDialogOpen}
-            employeeId={selectedEmployeeId}
-          />
-        </div>
+            <EmployeeDialog
+              open={dialogOpen}
+              onOpenChange={setDialogOpen}
+              employeeId={selectedEmployeeId}
+            />
+          </CardContent>
+        </Card>
       </TooltipProvider>
     </DashboardLayout>
   );

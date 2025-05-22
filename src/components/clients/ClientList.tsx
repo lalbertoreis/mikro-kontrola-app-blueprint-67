@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
 import { toast } from "sonner";
@@ -34,9 +33,9 @@ const ClientList: React.FC = () => {
     console.log(`Displaying ${clients?.length || 0} clients`);
   }, [clients]);
 
-  // Filter clients to exclude system clients
+  // Filter clients to exclude system clients - updated to be more comprehensive
   const filteredClients = clients.filter(client => 
-    !client.name.includes("(Sistema)")
+    !client.name.includes("(Sistema)") && !client.name.includes("Bloqueio de Horário")
   );
 
   const handleDelete = async () => {

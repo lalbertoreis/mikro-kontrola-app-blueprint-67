@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -63,6 +62,9 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
     }
   };
 
+  // Filter out services with price = 0
+  const filteredServices = services.filter(service => service.price > 0);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-12">
@@ -95,8 +97,8 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {services.length > 0 ? (
-                services.map((service) => (
+              {filteredServices.length > 0 ? (
+                filteredServices.map((service) => (
                   <TableRow key={service.id}>
                     <TableCell className="font-medium">
                       <div>
