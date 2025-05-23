@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Loader2, Mail, Key, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2, Mail, Key, CheckCircle, AlertCircle, Shield } from "lucide-react";
 
 import {
   Form,
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { useEmployeeInvites } from "@/hooks/useEmployeeInvites";
 
 const inviteSchema = z.object({
@@ -32,6 +33,7 @@ interface EmployeeAccessTabProps {
 const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => {
   const { createInvite, isCreating, getInviteByEmployeeId } = useEmployeeInvites();
   const [inviteCreated, setInviteCreated] = useState(false);
+  const [accessEnabled, setAccessEnabled] = useState(false);
   
   const form = useForm<z.infer<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
@@ -46,6 +48,11 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
   const onSubmit = async (data: z.infer<typeof inviteSchema>) => {
     if (!employeeId) {
       toast.error("É necessário salvar o funcionário primeiro");
+      return;
+    }
+
+    if (!accessEnabled) {
+      toast.error("Habilite o acesso ao painel primeiro");
       return;
     }
 
@@ -93,7 +100,7 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
     );
   }
 
-  if (existingInvite) {
+  if (existingInvite && accessEnabled) {
     return (
       <Card>
         <CardHeader>
@@ -106,6 +113,17 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium text-green-900">Acesso ao Painel</span>
+            </div>
+            <Switch 
+              checked={accessEnabled} 
+              onCheckedChange={setAccessEnabled}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Email</label>
@@ -145,88 +163,116 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
           Configure o acesso do funcionário ao painel administrativo
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Email do Funcionário
-                  </FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="funcionario@exemplo.com" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <CardContent className="space-y-6">
+        {/* Switch para habilitar/desabilitar acesso */}
+        <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <span className="text-sm font-medium">Habilitar Acesso ao Painel</span>
+              <p className="text-xs text-muted-foreground">
+                Permite que o funcionário acesse o sistema
+              </p>
+            </div>
+          </div>
+          <Switch 
+            checked={accessEnabled} 
+            onCheckedChange={setAccessEnabled}
+          />
+        </div>
 
-            <FormField
-              control={form.control}
-              name="temporaryPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <Key className="h-4 w-4" />
-                    Senha Provisória
-                  </FormLabel>
-                  <div className="flex gap-2">
+        {accessEnabled && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Email do Funcionário
+                    </FormLabel>
                     <FormControl>
                       <Input 
-                        type="text" 
-                        placeholder="Digite uma senha provisória" 
+                        type="email" 
+                        placeholder="funcionario@exemplo.com" 
                         {...field} 
                       />
                     </FormControl>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={generatePassword}
-                      size="sm"
-                    >
-                      Gerar
-                    </Button>
-                  </div>
-                  <FormMessage />
-                  <p className="text-xs text-muted-foreground">
-                    O funcionário deverá alterar esta senha no primeiro acesso
-                  </p>
-                </FormItem>
-              )}
-            />
-
-            <div className="bg-amber-50 p-4 rounded-lg">
-              <h4 className="text-sm font-medium text-amber-900 mb-2">O funcionário terá acesso a:</h4>
-              <ul className="text-sm text-amber-800 space-y-1">
-                <li>• Agenda (apenas visualização)</li>
-                <li>• Seus próprios agendamentos</li>
-                <li>• Não poderá criar ou editar agendamentos</li>
-                <li>• Não terá acesso a outras áreas do sistema</li>
-              </ul>
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button 
-                type="submit" 
-                disabled={isCreating}
-                className="bg-primary hover:bg-primary/90"
-              >
-                {isCreating && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <FormMessage />
+                  </FormItem>
                 )}
-                Enviar Convite
-              </Button>
-            </div>
-          </form>
-        </Form>
+              />
+
+              <FormField
+                control={form.control}
+                name="temporaryPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Key className="h-4 w-4" />
+                      Senha Provisória
+                    </FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input 
+                          type="text" 
+                          placeholder="Digite uma senha provisória" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={generatePassword}
+                        size="sm"
+                      >
+                        Gerar
+                      </Button>
+                    </div>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">
+                      O funcionário deverá alterar esta senha no primeiro acesso
+                    </p>
+                  </FormItem>
+                )}
+              />
+
+              <div className="bg-amber-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-amber-900 mb-2">O funcionário terá acesso a:</h4>
+                <ul className="text-sm text-amber-800 space-y-1">
+                  <li>• Agenda (apenas visualização)</li>
+                  <li>• Seus próprios agendamentos</li>
+                  <li>• Não poderá criar ou editar agendamentos</li>
+                  <li>• Não terá acesso a outras áreas do sistema</li>
+                </ul>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  type="submit" 
+                  disabled={isCreating}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {isCreating && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Enviar Convite
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
+
+        {!accessEnabled && (
+          <div className="bg-gray-50 p-4 rounded-lg text-center">
+            <Shield className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600">
+              Habilite o acesso ao painel para configurar as credenciais do funcionário
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
