@@ -14,7 +14,7 @@ const Dashboard = () => {
         <DashboardOverview />
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
+          <Card data-menu="clients">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -33,7 +33,7 @@ const Dashboard = () => {
             </CardFooter>
           </Card>
           
-          <Card>
+          <Card data-menu="services">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
@@ -52,7 +52,7 @@ const Dashboard = () => {
             </CardFooter>
           </Card>
 
-          <Card>
+          <Card data-menu="holidays">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CalendarRange className="h-5 w-5" />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -148,10 +147,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <ul className="space-y-1">
                   {category.items.map((item) => {
                     const isActive = location.pathname === item.to;
+                    const menuId = item.to.split('/').pop();
                     return (
                       <li key={item.name}>
                         <Link
                           to={item.to}
+                          data-menu={menuId}
                           className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                             isActive 
                               ? "bg-kontrola-50 text-kontrola-700 font-medium dark:bg-gray-700 dark:text-kontrola-300" 
