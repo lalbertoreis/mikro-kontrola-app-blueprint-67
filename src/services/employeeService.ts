@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Employee, EmployeeFormData, Shift } from "@/types/employee";
 
@@ -32,8 +31,8 @@ export async function fetchEmployees(): Promise<Employee[]> {
         dayOfWeek: shift.day_of_week,
         startTime: shift.start_time,
         endTime: shift.end_time,
-        lunchBreakStart: undefined, // Adjust if your schema includes this
-        lunchBreakEnd: undefined, // Adjust if your schema includes this
+        lunchBreakStart: undefined,
+        lunchBreakEnd: undefined,
       }));
 
       const services = servicesData.map(service => service.service_id);
@@ -42,6 +41,8 @@ export async function fetchEmployees(): Promise<Employee[]> {
         id: employee.id,
         name: employee.name,
         role: employee.role,
+        email: employee.email,
+        phone: employee.phone,
         shifts,
         services,
         createdAt: employee.created_at,
@@ -87,8 +88,8 @@ export async function fetchEmployeeById(id: string): Promise<Employee | null> {
       dayOfWeek: shift.day_of_week,
       startTime: shift.start_time,
       endTime: shift.end_time,
-      lunchBreakStart: undefined, // Adjust if your schema includes this
-      lunchBreakEnd: undefined, // Adjust if your schema includes this
+      lunchBreakStart: undefined,
+      lunchBreakEnd: undefined,
     }));
 
     const services = servicesData.map(service => service.service_id);
@@ -97,6 +98,8 @@ export async function fetchEmployeeById(id: string): Promise<Employee | null> {
       id: employee.id,
       name: employee.name,
       role: employee.role,
+      email: employee.email,
+      phone: employee.phone,
       shifts,
       services,
       createdAt: employee.created_at,
@@ -165,6 +168,8 @@ export async function createEmployee(employeeData: EmployeeFormData): Promise<Em
       id: employee.id,
       name: employee.name,
       role: employee.role,
+      email: employee.email,
+      phone: employee.phone,
       shifts,
       services,
       createdAt: employee.created_at,
@@ -250,6 +255,8 @@ export async function updateEmployee(id: string, employeeData: EmployeeFormData)
       id: employee.id,
       name: employee.name,
       role: employee.role,
+      email: employee.email,
+      phone: employee.phone,
       shifts,
       services,
       createdAt: employee.created_at,

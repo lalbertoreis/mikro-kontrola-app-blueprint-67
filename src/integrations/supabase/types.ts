@@ -129,6 +129,102 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_invites: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          created_by: string
+          email: string
+          employee_id: string
+          id: string
+          is_active: boolean
+          temporary_password: string
+          user_id: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          created_by: string
+          email: string
+          employee_id: string
+          id?: string
+          is_active?: boolean
+          temporary_password: string
+          user_id?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string
+          employee_id?: string
+          id?: string
+          is_active?: boolean
+          temporary_password?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_invites_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_invites_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees_shifts_view"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      employee_permissions: {
+        Row: {
+          business_owner_id: string
+          can_manage_appointments: boolean
+          can_view_calendar: boolean
+          created_at: string
+          employee_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          business_owner_id: string
+          can_manage_appointments?: boolean
+          can_view_calendar?: boolean
+          created_at?: string
+          employee_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          business_owner_id?: string
+          can_manage_appointments?: boolean
+          can_view_calendar?: boolean
+          created_at?: string
+          employee_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_permissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_permissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_shifts_view"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
       employee_services: {
         Row: {
           created_at: string | null
@@ -184,6 +280,7 @@ export type Database = {
       }
       employees: {
         Row: {
+          auth_user_id: string | null
           created_at: string | null
           email: string | null
           id: string
@@ -194,6 +291,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auth_user_id?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -204,6 +302,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auth_user_id?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -784,6 +883,10 @@ export type Database = {
           price: number | null
           updated_at: string | null
         }[]
+      }
+      is_employee_of_business: {
+        Args: { business_user_id: string }
+        Returns: boolean
       }
       set_slug_for_session: {
         Args: { slug: string }

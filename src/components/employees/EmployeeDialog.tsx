@@ -26,6 +26,7 @@ import { EmployeeFormData, Shift } from "@/types/employee";
 import { useEmployees, useEmployeeById } from "@/hooks/useEmployees";
 import ShiftSelector from "./ShiftSelector";
 import ServiceSelector from "./ServiceSelector";
+import EmployeeAccessTab from "./EmployeeAccessTab";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Definir esquema de validação para o funcionário
@@ -133,10 +134,11 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
           <ScrollArea className="max-h-[calc(90vh-10rem)]">
             <div className="p-6">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6 rounded-lg bg-slate-100">
+                <TabsList className="grid w-full grid-cols-4 mb-6 rounded-lg bg-slate-100">
                   <TabsTrigger value="info" className="rounded-md">Informações</TabsTrigger>
                   <TabsTrigger value="shifts" className="rounded-md">Turnos</TabsTrigger>
                   <TabsTrigger value="services" className="rounded-md">Serviços</TabsTrigger>
+                  <TabsTrigger value="access" className="rounded-md">Acesso</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="info">
@@ -240,6 +242,10 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
                       </Button>
                     </div>
                   </div>
+                </TabsContent>
+
+                <TabsContent value="access">
+                  <EmployeeAccessTab employeeId={employeeId} />
                 </TabsContent>
               </Tabs>
             </div>

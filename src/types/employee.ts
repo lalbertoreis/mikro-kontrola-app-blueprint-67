@@ -3,6 +3,8 @@ export interface Employee {
   id: string;
   name: string;
   role: string;
+  email?: string;
+  phone?: string;
   shifts: Shift[];
   services: string[];
   createdAt: string;
