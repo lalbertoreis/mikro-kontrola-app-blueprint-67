@@ -11,8 +11,8 @@ import {
   TableCell 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { HolidaySheet } from "./HolidaySheet";
-import { Loader2, DownloadCloud, CalendarPlus, Pencil, Trash } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, DownloadCloud, Pencil } from "lucide-react";
 import { Holiday } from "@/types/holiday";
 
 interface HolidayListProps {
@@ -46,6 +46,26 @@ const HolidayList: React.FC<HolidayListProps> = ({
     return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   };
 
+  const getTypeLabel = (type: string) => {
+    const typeLabels = {
+      national: "Nacional",
+      state: "Estadual", 
+      municipal: "Municipal",
+      custom: "Personalizado"
+    };
+    return typeLabels[type as keyof typeof typeLabels] || type;
+  };
+
+  const getTypeVariant = (type: string) => {
+    const variants = {
+      national: "default",
+      state: "secondary",
+      municipal: "outline", 
+      custom: "destructive"
+    };
+    return variants[type as keyof typeof variants] || "default";
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end gap-4">
@@ -72,7 +92,9 @@ const HolidayList: React.FC<HolidayListProps> = ({
                   <TableCell className="font-medium">{holiday.name}</TableCell>
                   <TableCell>{formatDate(holiday.date)}</TableCell>
                   <TableCell>
-                    <HolidaySheet holiday={holiday} />
+                    <Badge variant={getTypeVariant(holiday.type) as any}>
+                      {getTypeLabel(holiday.type)}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
