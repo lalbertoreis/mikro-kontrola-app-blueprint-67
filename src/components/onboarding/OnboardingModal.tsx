@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, SkipForward, RotateCcw, ArrowRight, Sparkles } from 'lucide-react';
+import { X, SkipForward, RotateCcw, ArrowRight, Sparkles, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useOnboarding } from './useOnboarding';
@@ -96,11 +96,11 @@ export const OnboardingModal: React.FC = () => {
           <div className="p-6">
             {/* Step Indicator */}
             <div className="flex items-center justify-center space-x-2 mb-6">
-              {steps.map((_, index) => (
-                <div key={index} className="flex items-center">
+              {steps.map((step, index) => (
+                <div key={step.id} className="flex items-center">
                   <motion.div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      index < currentStepIndex 
+                      step.completed 
                         ? 'bg-green-500 text-white' 
                         : index === currentStepIndex
                         ? 'bg-primary text-white'
@@ -111,12 +111,16 @@ export const OnboardingModal: React.FC = () => {
                     }}
                     transition={{ duration: 0.3 }}
                   >
-                    {index < currentStepIndex ? '✓' : index + 1}
+                    {step.completed ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      index + 1
+                    )}
                   </motion.div>
                   {index < steps.length - 1 && (
                     <div 
                       className={`w-8 h-0.5 mx-1 ${
-                        index < currentStepIndex ? 'bg-green-500' : 'bg-gray-200'
+                        step.completed ? 'bg-green-500' : 'bg-gray-200'
                       }`}
                     />
                   )}
@@ -153,7 +157,7 @@ export const OnboardingModal: React.FC = () => {
                   className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  LET'S GO!
+                  VAMOS LÁ!
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               )}
