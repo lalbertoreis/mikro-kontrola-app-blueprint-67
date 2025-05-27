@@ -1,101 +1,53 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from 'react-router-dom';
-import { ChevronRight, CheckCircle2 } from 'lucide-react';
-import { OnboardingStep } from './steps/OnboardingSteps';
-import { DialogFooter } from "@/components/ui/dialog";
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Sparkles } from 'lucide-react';
+import { OnboardingStep } from './types';
 
 interface OnboardingContentProps {
-  currentStep: OnboardingStep;
-  currentStepIndex: number;
-  totalSteps: number;
-  dontShowAgain: boolean;
-  setDontShowAgain: (value: boolean) => void;
-  onNext: () => void;
-  onPrev: () => void;
-  onDismiss: () => void;
+  step: OnboardingStep;
+  onAction: () => void;
+  isLastStep: boolean;
 }
 
-const OnboardingContent: React.FC<OnboardingContentProps> = ({
-  currentStep,
-  currentStepIndex,
-  totalSteps,
-  dontShowAgain,
-  setDontShowAgain,
-  onNext,
-  onPrev,
-  onDismiss
+export const OnboardingContent: React.FC<OnboardingContentProps> = ({
+  step,
+  onAction,
+  isLastStep
 }) => {
-  const isFirstStep = currentStepIndex === 0;
-  const isLastStep = currentStepIndex === totalSteps - 1;
-
   return (
-    <>
-      <div className="py-4">
-        <div className="mb-6 text-center">
-          <p className="text-muted-foreground">{currentStep.content}</p>
-          
-          {/* Only show buttons for navigation when not requiring clicks */}
-          {!currentStep.requiresClick && currentStep.route && (
-            <Button variant="outline" asChild className="mt-4">
-              <Link to={currentStep.route}>
-                Ir para esta seção
-              </Link>
-            </Button>
-          )}
-        </div>
-        
-        {/* Progress dots */}
-        <div className="flex justify-center space-x-2 mb-6">
-          {Array.from({ length: totalSteps }).map((_, index) => (
-            <div 
-              key={index}
-              className={`h-2 w-2 rounded-full ${
-                index === currentStepIndex ? "bg-primary" : "bg-muted"
-              }`}
-            />
-          ))}
-        </div>
-        
-        {isLastStep && (
-          <div className="flex items-center space-x-2 mt-8">
-            <Checkbox 
-              id="dontShow" 
-              checked={dontShowAgain} 
-              onCheckedChange={(checked) => setDontShowAgain(checked === true)}
-            />
-            <label htmlFor="dontShow" className="text-sm font-medium leading-none cursor-pointer">
-              Não mostrar novamente
-            </label>
-          </div>
-        )}
-      </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+      className="text-center"
+    >
+      <h2 className="text-2xl font-bold text-gray-900 mb-3">
+        {step.title}
+      </h2>
       
-      <DialogFooter>
-        <div className="flex justify-between w-full">
-          {!isFirstStep ? (
-            <Button variant="outline" onClick={onPrev}>
-              Voltar
-            </Button>
-          ) : (
-            <div></div> // Empty div for spacing when there's no "back" button
-          )}
-          
-          {isLastStep ? (
-            <Button onClick={onDismiss} className="flex items-center">
-              <CheckCircle2 className="mr-2 h-4 w-4" /> Concluir
-            </Button>
-          ) : (
-            <Button onClick={onNext} className="flex items-center">
-              Próximo <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </DialogFooter>
-    </>
+      <p className="text-lg text-gray-600 mb-4">
+        {step.description}
+      </p>
+      
+      <div className="bg-gray-50 rounded-lg p-4 mb-6">
+        <p className="text-gray-700">
+          {step.content}
+        </p>
+      </div>
+
+      {step.route && !isLastStep && (
+        <Button 
+          onClick={onAction}
+          className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
+        >
+          <Sparkles className="w-4 h-4 mr-2" />
+          LET'S GO!
+          <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
+      )}
+    </motion.div>
   );
 };
-
-export default OnboardingContent;
