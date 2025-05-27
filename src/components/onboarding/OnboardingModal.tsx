@@ -151,6 +151,7 @@ export const OnboardingModal: React.FC = () => {
                 </p>
               </div>
 
+              {/* Action button for steps with routes */}
               {currentStep.route && !isLastStep && (
                 <Button 
                   onClick={nextStep}
@@ -175,12 +176,14 @@ export const OnboardingModal: React.FC = () => {
                 </Button>
               ) : <div />}
 
+              {/* Show "Próximo" for steps without routes and not last step */}
               {!currentStep.route && !isLastStep && (
                 <Button onClick={nextStep} className="bg-primary text-white">
                   Próximo
                 </Button>
               )}
 
+              {/* Show "Finalizar" for last step */}
               {isLastStep && (
                 <Button onClick={closeTutorial} className="bg-green-600 text-white">
                   Finalizar
