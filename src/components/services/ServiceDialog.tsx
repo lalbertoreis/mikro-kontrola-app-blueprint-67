@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -18,7 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useServiceById } from "@/hooks/useServices";
 
 interface ServiceDialogProps {
   open: boolean;
@@ -33,23 +31,11 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
   serviceId,
   service: externalService,
 }) => {
-  const { data: fetchedService, isLoading } = useServiceById(serviceId);
-  const service = externalService || fetchedService;
-  const isEditing = Boolean(service?.id);
+  const service = externalService;
+  const isEditing = Boolean(serviceId || service?.id);
   const [formDirty, setFormDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
-  
-  // Log for debugging
-  useEffect(() => {
-    if (serviceId) {
-      console.log("ServiceDialog: Attempting to load service with ID:", serviceId);
-    }
-    
-    if (fetchedService) {
-      console.log("ServiceDialog: Service loaded:", fetchedService);
-    }
-  }, [serviceId, fetchedService]);
   
   useEffect(() => {
     if (open) setFormDirty(false);
@@ -101,17 +87,12 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
               {isEditing ? "Editar Serviço" : "Novo Serviço"}
             </DialogTitle>
           </DialogHeader>
-          {isLoading ? (
-            <div className="p-6 text-center">
-              <p>Carregando informações do serviço...</p>
-            </div>
-          ) : (
-            <ServiceForm 
-              service={service} 
-              onFormChange={handleFormChange}
-              onClose={handleCloseAttempt}
-            />
-          )}
+          <ServiceForm 
+            service={service}
+            serviceId={serviceId}
+            onFormChange={handleFormChange}
+            onClose={handleCloseAttempt}
+          />
         </DialogContent>
       </Dialog>
 

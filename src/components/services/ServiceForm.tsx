@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -19,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { Service, ServiceFormData } from "@/types/service";
-import { useServices } from "@/hooks/useServices";
+import { useServices, useServiceById } from "@/hooks/useServices";
 
 // Validação com zod
 const formSchema = z.object({
@@ -40,31 +39,37 @@ const formSchema = z.object({
 
 interface ServiceFormProps {
   service?: Service | null;
+  serviceId?: string;
   onFormChange?: () => void;
   onClose?: () => void;
 }
 
 const ServiceForm: React.FC<ServiceFormProps> = ({
   service,
+  serviceId,
   onFormChange,
   onClose
 }) => {
   const navigate = useNavigate();
   const { createService, updateService, isCreating, isUpdating } = useServices();
-  const isEditing = Boolean(service?.id);
+  const { data: fetchedService, isLoading } = useServiceById(serviceId && !service ? serviceId : undefined);
+  
+  // Use either the passed service or the fetched one
+  const currentService = service || fetchedService;
+  const isEditing = Boolean(currentService?.id);
   const isDialogMode = Boolean(onClose);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: service
+    defaultValues: currentService
       ? {
-          name: service.name,
-          description: service.description || "",
-          price: service.price,
-          duration: service.duration,
-          multipleAttendees: service.multipleAttendees,
-          maxAttendees: service.maxAttendees,
-          isActive: service.isActive,
+          name: currentService.name,
+          description: currentService.description || "",
+          price: currentService.price,
+          duration: currentService.duration,
+          multipleAttendees: currentService.multipleAttendees,
+          maxAttendees: currentService.maxAttendees,
+          isActive: currentService.isActive,
         }
       : {
           name: "",
@@ -76,6 +81,21 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
           isActive: true,
         },
   });
+
+  // Reset form when service changes
+  useEffect(() => {
+    if (currentService) {
+      form.reset({
+        name: currentService.name,
+        description: currentService.description || "",
+        price: currentService.price,
+        duration: currentService.duration,
+        multipleAttendees: currentService.multipleAttendees,
+        maxAttendees: currentService.maxAttendees,
+        isActive: currentService.isActive,
+      });
+    }
+  }, [currentService, form]);
 
   // Setup form change watcher
   useEffect(() => {
@@ -100,8 +120,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
         isActive: values.isActive,
       };
 
-      if (isEditing && service?.id) {
-        await updateService({ id: service.id, data: serviceData });
+      if (isEditing && currentService?.id) {
+        await updateService({ id: currentService.id, data: serviceData });
         toast.success("Serviço atualizado com sucesso!");
       } else {
         await createService(serviceData);
@@ -122,6 +142,14 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
       );
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 text-center">
+        <p>Carregando informações do serviço...</p>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
