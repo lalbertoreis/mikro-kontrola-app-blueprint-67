@@ -188,12 +188,32 @@ export const useOnboarding = () => {
     setState(prev => ({ ...prev, dontShowAgain: value }));
   };
 
+  // Helper function to get current step for current page
+  const getCurrentStepForPage = () => {
+    const currentPath = location.pathname;
+    
+    // Check if we're in onboarding mode (not dontShowAgain and has incomplete steps)
+    if (state.dontShowAgain) return null;
+    
+    const incompleteSteps = state.steps.filter(step => !step.completed);
+    if (incompleteSteps.length === 0) return null;
+    
+    // Find step that matches current route
+    return state.steps.find(step => step.route === currentPath && !step.completed);
+  };
+
+  // Check if onboarding is active (has incomplete steps and user hasn't opted out)
+  const isOnboardingActive = !state.dontShowAgain && 
+    state.steps.some(step => !step.completed && step.id !== 'welcome' && step.id !== 'complete');
+
   return {
     isOpen: state.isOpen,
     currentStep: state.steps[state.currentStepIndex],
     currentStepIndex: state.currentStepIndex,
     steps: state.steps,
     dontShowAgain: state.dontShowAgain,
+    isOnboardingActive,
+    getCurrentStepForPage,
     setDontShowAgain,
     nextStep,
     goToStep,
