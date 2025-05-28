@@ -42,12 +42,14 @@ interface ServiceFormProps {
   service?: Service | null;
   onFormChange?: () => void;
   onClose?: () => void;
+  onSuccess?: () => void;
 }
 
 const ServiceForm: React.FC<ServiceFormProps> = ({
   service,
   onFormChange,
-  onClose
+  onClose,
+  onSuccess
 }) => {
   const navigate = useNavigate();
   const { createService, updateService, isCreating, isUpdating } = useServices();
@@ -108,8 +110,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
         toast.success("Serviço cadastrado com sucesso!");
       }
       
-      if (isDialogMode && onClose) {
-        onClose();
+      if (isDialogMode && onSuccess) {
+        onSuccess();
       } else {
         navigate("/dashboard/services");
       }

@@ -59,6 +59,11 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
     setFormDirty(true);
   };
 
+  const handleFormSuccess = () => {
+    setFormDirty(false);
+    onOpenChange(false);
+  };
+
   const handleCloseAttempt = () => {
     if (formDirty) {
       setShowUnsavedDialog(true);
@@ -110,6 +115,7 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
               service={service} 
               onFormChange={handleFormChange}
               onClose={handleCloseAttempt}
+              onSuccess={handleFormSuccess}
             />
           )}
         </DialogContent>
