@@ -198,8 +198,16 @@ export const useOnboarding = () => {
     const incompleteSteps = state.steps.filter(step => !step.completed);
     if (incompleteSteps.length === 0) return null;
     
-    // Find step that matches current route
-    return state.steps.find(step => step.route === currentPath && !step.completed);
+    // Find step that matches current route and is not completed
+    const matchingStep = state.steps.find(step => step.route === currentPath && !step.completed);
+    
+    // Also check if this is the current step in the sequence
+    const currentStep = state.steps[state.currentStepIndex];
+    if (matchingStep && currentStep && matchingStep.id === currentStep.id) {
+      return matchingStep;
+    }
+    
+    return null;
   };
 
   // Check if onboarding is active (has incomplete steps and user hasn't opted out)
