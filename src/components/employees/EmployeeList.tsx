@@ -17,15 +17,16 @@ import { Loader2, Pencil, Trash, UserPlus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface EmployeeListProps {
-  onEdit?: (id: string) => void;
+  onNewEmployee?: () => void;
+  onEditEmployee?: (id: string) => void;
 }
 
-const EmployeeList: React.FC<EmployeeListProps> = ({ onEdit }) => {
+const EmployeeList: React.FC<EmployeeListProps> = ({ onNewEmployee, onEditEmployee }) => {
   const { employees, isLoading, deleteEmployee, isDeleting } = useEmployees();
 
   const handleEditEmployee = (id: string) => {
-    if (onEdit) {
-      onEdit(id);
+    if (onEditEmployee) {
+      onEditEmployee(id);
     }
   };
 
@@ -97,6 +98,15 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ onEdit }) => {
 
   return (
     <>
+      {onNewEmployee && (
+        <div className="flex justify-end mb-4">
+          <Button onClick={onNewEmployee} className="flex items-center space-x-2">
+            <UserPlus className="w-4 h-4" />
+            <span>Novo Funcionário</span>
+          </Button>
+        </div>
+      )}
+      
       <Card>
         <CardContent className="p-0">
           <div className="rounded-md border">
