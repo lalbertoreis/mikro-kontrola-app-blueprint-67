@@ -44,5 +44,3 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     completed: false
   }
 ];
-
-export const STORAGE_KEY = 'kontrola-onboarding-state';

@@ -4,8 +4,19 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useServices } from '@/hooks/useServices';
 import { useEmployees } from '@/hooks/useEmployees';
-import { OnboardingState, OnboardingStep } from './types';
-import { ONBOARDING_STEPS, STORAGE_KEY } from './data';
+import { OnboardingState } from './types';
+import { ONBOARDING_STEPS } from './data';
+import { 
+  saveOnboardingState, 
+  loadOnboardingState 
+} from './utils/onboardingStorage';
+import { 
+  checkStepCompletion, 
+  findNextIncompleteStep, 
+  findFirstIncompleteStep 
+} from './utils/stepCompletionChecker';
+import { createOnboardingActions } from './utils/onboardingActions';
+import { createPageStepHelper } from './utils/pageStepHelper';
 
 export const useOnboarding = () => {
   const navigate = useNavigate();
@@ -23,45 +34,21 @@ export const useOnboarding = () => {
   });
 
   // Check if steps are completed based on actual data
-  const checkStepCompletion = () => {
+  const handleStepCompletion = () => {
     if (!user) return;
 
-    const updatedSteps = [...state.steps];
-    let hasChanges = false;
-    let shouldAdvance = false;
-
-    // Check services step
-    const servicesStep = updatedSteps.find(step => step.id === 'services');
-    if (servicesStep && !servicesStep.completed && services.length > 0) {
-      servicesStep.completed = true;
-      hasChanges = true;
-      
-      // If we're currently on the services step, advance to next
-      if (state.currentStepIndex === updatedSteps.findIndex(step => step.id === 'services')) {
-        shouldAdvance = true;
-      }
-    }
-
-    // Check employees step
-    const employeesStep = updatedSteps.find(step => step.id === 'employees');
-    if (employeesStep && !employeesStep.completed && employees.length > 0) {
-      employeesStep.completed = true;
-      hasChanges = true;
-      
-      // If we're currently on the employees step, advance to next
-      if (state.currentStepIndex === updatedSteps.findIndex(step => step.id === 'employees')) {
-        shouldAdvance = true;
-      }
-    }
+    const { hasChanges, shouldAdvance, updatedSteps } = checkStepCompletion({
+      state,
+      services,
+      employees
+    });
 
     if (hasChanges) {
       const newState = { ...state, steps: updatedSteps };
       
       if (shouldAdvance) {
         // Find next incomplete step
-        const nextIncompleteIndex = updatedSteps.findIndex((step, index) => 
-          index > state.currentStepIndex && !step.completed
-        );
+        const nextIncompleteIndex = findNextIncompleteStep(updatedSteps, state.currentStepIndex);
         
         if (nextIncompleteIndex !== -1) {
           newState.currentStepIndex = nextIncompleteIndex;
@@ -73,7 +60,7 @@ export const useOnboarding = () => {
         }
       }
       
-      saveState(newState);
+      saveOnboardingState(newState);
       setState(newState);
     }
   };
@@ -82,7 +69,7 @@ export const useOnboarding = () => {
   useEffect(() => {
     if (!user || loading) return;
 
-    const savedState = localStorage.getItem(STORAGE_KEY);
+    const savedState = loadOnboardingState();
     let initialState = {
       isOpen: true,
       currentStepIndex: 0,
@@ -92,24 +79,19 @@ export const useOnboarding = () => {
     };
 
     if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        if (parsed.dontShowAgain) {
-          return; // Don't show onboarding if user chose not to see it again
-        }
-        initialState = {
-          ...initialState,
-          currentStepIndex: parsed.currentStepIndex || 0,
-          steps: parsed.steps || ONBOARDING_STEPS,
-          dontShowAgain: parsed.dontShowAgain || false
-        };
-      } catch (error) {
-        console.error('Error parsing onboarding state:', error);
+      if (savedState.dontShowAgain) {
+        return; // Don't show onboarding if user chose not to see it again
       }
+      initialState = {
+        ...initialState,
+        currentStepIndex: savedState.currentStepIndex || 0,
+        steps: savedState.steps || ONBOARDING_STEPS,
+        dontShowAgain: savedState.dontShowAgain || false
+      };
     }
 
     // Find first incomplete step to resume from
-    const firstIncompleteIndex = initialState.steps.findIndex(step => !step.completed);
+    const firstIncompleteIndex = findFirstIncompleteStep(initialState.steps);
     if (firstIncompleteIndex !== -1 && firstIncompleteIndex !== initialState.steps.length - 1) {
       initialState.currentStepIndex = firstIncompleteIndex;
     }
@@ -120,99 +102,15 @@ export const useOnboarding = () => {
   // Check completion whenever services or employees change
   useEffect(() => {
     if (user && !loading && state.isOpen) {
-      checkStepCompletion();
+      handleStepCompletion();
     }
   }, [services, employees, user, loading]);
 
-  // Save state to localStorage
-  const saveState = (newState: Partial<OnboardingState>) => {
-    const updatedState = { ...state, ...newState };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      currentStepIndex: updatedState.currentStepIndex,
-      steps: updatedState.steps,
-      dontShowAgain: updatedState.dontShowAgain
-    }));
-  };
+  // Create action handlers
+  const actions = createOnboardingActions({ state, setState, navigate });
 
-  const nextStep = () => {
-    const currentStep = state.steps[state.currentStepIndex];
-    
-    if (currentStep.route) {
-      // Navigate to the step's route
-      navigate(currentStep.route);
-      
-      // Close modal temporarily while user completes the task
-      setState(prev => ({ ...prev, isOpen: false }));
-      
-      // The step completion will be detected by the useEffect above
-      // and will automatically advance and reopen the modal
-    } else {
-      // Just move to next step for steps without routes
-      const nextIndex = state.currentStepIndex + 1;
-      if (nextIndex < state.steps.length) {
-        const newState = { ...state, currentStepIndex: nextIndex };
-        saveState(newState);
-        setState(newState);
-      }
-    }
-  };
-
-  const goToStep = (stepIndex: number) => {
-    if (stepIndex >= 0 && stepIndex < state.steps.length) {
-      const newState = { ...state, currentStepIndex: stepIndex };
-      saveState(newState);
-      setState(newState);
-    }
-  };
-
-  const skipTutorial = () => {
-    const newState = {
-      ...state,
-      isOpen: false,
-      currentStepIndex: state.steps.length - 1,
-      dontShowAgain: true
-    };
-    saveState(newState);
-    setState(newState);
-  };
-
-  const closeTutorial = () => {
-    if (state.dontShowAgain) {
-      const newState = { ...state, dontShowAgain: true };
-      saveState(newState);
-    }
-    setState(prev => ({ ...prev, isOpen: false }));
-  };
-
-  const setDontShowAgain = (value: boolean) => {
-    setState(prev => ({ ...prev, dontShowAgain: value }));
-  };
-
-  // Helper function to get current step for current page
-  const getCurrentStepForPage = () => {
-    const currentPath = location.pathname;
-    
-    // Check if we're in onboarding mode (not dontShowAgain and has incomplete steps)
-    if (state.dontShowAgain) return null;
-    
-    const incompleteSteps = state.steps.filter(step => !step.completed);
-    if (incompleteSteps.length === 0) return null;
-    
-    // Find step that matches current route and is not completed
-    const matchingStep = state.steps.find(step => step.route === currentPath && !step.completed);
-    
-    // Also check if this is the current step in the sequence
-    const currentStep = state.steps[state.currentStepIndex];
-    if (matchingStep && currentStep && matchingStep.id === currentStep.id) {
-      return matchingStep;
-    }
-    
-    return null;
-  };
-
-  // Check if onboarding is active (has incomplete steps and user hasn't opted out)
-  const isOnboardingActive = !state.dontShowAgain && 
-    state.steps.some(step => !step.completed && step.id !== 'welcome' && step.id !== 'complete');
+  // Create page step helper
+  const pageHelper = createPageStepHelper(state, location.pathname);
 
   return {
     isOpen: state.isOpen,
@@ -220,12 +118,12 @@ export const useOnboarding = () => {
     currentStepIndex: state.currentStepIndex,
     steps: state.steps,
     dontShowAgain: state.dontShowAgain,
-    isOnboardingActive,
-    getCurrentStepForPage,
-    setDontShowAgain,
-    nextStep,
-    goToStep,
-    skipTutorial,
-    closeTutorial
+    isOnboardingActive: pageHelper.isOnboardingActive,
+    getCurrentStepForPage: pageHelper.getCurrentStepForPage,
+    setDontShowAgain: actions.setDontShowAgain,
+    nextStep: actions.nextStep,
+    goToStep: actions.goToStep,
+    skipTutorial: actions.skipTutorial,
+    closeTutorial: actions.closeTutorial
   };
 };
