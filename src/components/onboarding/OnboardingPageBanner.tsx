@@ -7,11 +7,17 @@ import { Sparkles, ArrowRight, Plus } from 'lucide-react';
 import { useOnboarding } from './useOnboarding';
 
 export const OnboardingPageBanner: React.FC = () => {
-  const { currentStep, nextStep, isOnboardingActive, getCurrentStepForPage } = useOnboarding();
+  const { nextStep, isOnboardingActive, getCurrentStepForPage } = useOnboarding();
   
   const stepForCurrentPage = getCurrentStepForPage();
   
-  // Only show if we're in onboarding mode and on a step page
+  console.log('OnboardingPageBanner debug:', {
+    isOnboardingActive,
+    stepForCurrentPage,
+    stepCompleted: stepForCurrentPage?.completed
+  });
+  
+  // Only show if we're in onboarding mode, have a step for this page, and step is NOT completed
   if (!isOnboardingActive || !stepForCurrentPage || stepForCurrentPage.completed) {
     return null;
   }
@@ -19,9 +25,11 @@ export const OnboardingPageBanner: React.FC = () => {
   const handleCadastrar = () => {
     // The step completion will be detected automatically by useOnboarding
     // when the user creates the item, which will advance to next step
+    console.log('Banner button clicked - waiting for step completion detection');
   };
 
   const handleAvancar = () => {
+    console.log('Advancing to next step manually');
     nextStep();
   };
 
