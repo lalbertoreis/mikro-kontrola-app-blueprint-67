@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { AppointmentWithDetails } from "@/types/calendar";
 import { Employee } from "@/types/employee";
 import AppointmentCard from "./AppointmentCard";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface WeekCalendarProps {
   date: Date;
@@ -67,57 +68,59 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
   };
 
   return (
-    <div className="border rounded-lg bg-white overflow-hidden">
-      {/* Header with days of the week */}
-      <div className="grid grid-cols-8 border-b">
-        <div className="p-2 font-medium text-sm text-center border-r"></div>
-        {weekDates.map((day, index) => (
-          <div 
-            key={index} 
-            className={`p-2 font-medium text-sm text-center ${
-              index < 6 ? 'border-r' : ''
-            } ${isSameDay(day, new Date()) ? 'bg-accent' : ''}`}
-          >
-            <div>{format(day, "EEE", { locale: ptBR })}</div>
-            <div>{format(day, "dd/MM")}</div>
+    <TooltipProvider>
+      <div className="border rounded-lg bg-white overflow-hidden">
+        {/* Header with days of the week */}
+        <div className="grid grid-cols-8 border-b">
+          <div className="p-2 font-medium text-sm text-center border-r"></div>
+          {weekDates.map((day, index) => (
+            <div 
+              key={index} 
+              className={`p-2 font-medium text-sm text-center ${
+                index < 6 ? 'border-r' : ''
+              } ${isSameDay(day, new Date()) ? 'bg-accent' : ''}`}
+            >
+              <div>{format(day, "EEE", { locale: ptBR })}</div>
+              <div>{format(day, "dd/MM")}</div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Time slots */}
+        {HOURS.map((hour) => (
+          <div key={hour} className="grid grid-cols-8 border-b last:border-b-0">
+            {/* Hour column */}
+            <div className="p-2 text-xs font-medium text-center border-r">
+              {`${hour}:00`}
+            </div>
+            
+            {/* Days columns */}
+            {weekDates.map((day, dayIndex) => {
+              const appointmentsInSlot = getAppointmentsForTimeSlot(day, hour);
+              
+              return (
+                <div 
+                  key={dayIndex} 
+                  className={`min-h-[80px] p-1 relative ${
+                    dayIndex < 6 ? 'border-r' : ''
+                  } ${isSameDay(day, new Date()) ? 'bg-accent/20' : ''}`}
+                  onClick={(e) => handleTimeSlotClick(day, hour, e)}
+                >
+                  {appointmentsInSlot.map((appointment) => (
+                    <AppointmentCard
+                      key={appointment.id}
+                      appointment={appointment}
+                      colorClass={getEmployeeColor(appointment.employeeId)}
+                      onClick={() => onSelectAppointment(appointment)}
+                    />
+                  ))}
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
-      
-      {/* Time slots */}
-      {HOURS.map((hour) => (
-        <div key={hour} className="grid grid-cols-8 border-b last:border-b-0">
-          {/* Hour column */}
-          <div className="p-2 text-xs font-medium text-center border-r">
-            {`${hour}:00`}
-          </div>
-          
-          {/* Days columns */}
-          {weekDates.map((day, dayIndex) => {
-            const appointmentsInSlot = getAppointmentsForTimeSlot(day, hour);
-            
-            return (
-              <div 
-                key={dayIndex} 
-                className={`min-h-[80px] p-1 relative ${
-                  dayIndex < 6 ? 'border-r' : ''
-                } ${isSameDay(day, new Date()) ? 'bg-accent/20' : ''}`}
-                onClick={(e) => handleTimeSlotClick(day, hour, e)}
-              >
-                {appointmentsInSlot.map((appointment) => (
-                  <AppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
-                    colorClass={getEmployeeColor(appointment.employeeId)}
-                    onClick={() => onSelectAppointment(appointment)}
-                  />
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </div>
+    </TooltipProvider>
   );
 };
 

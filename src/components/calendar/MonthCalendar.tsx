@@ -15,6 +15,7 @@ import { ptBR } from "date-fns/locale";
 import { AppointmentWithDetails } from "@/types/calendar";
 import { Employee } from "@/types/employee";
 import AppointmentChip from "./AppointmentChip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface MonthCalendarProps {
   date: Date;
@@ -76,63 +77,65 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
   };
 
   return (
-    <div className="border rounded-lg bg-white overflow-hidden">
-      {/* Header with weekday names */}
-      <div className="grid grid-cols-7">
-        {WEEKDAY_NAMES.map((day) => (
-          <div 
-            key={day} 
-            className="p-2 font-medium text-xs text-center border-b border-r last:border-r-0"
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-      
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7">
-        {calendarDays.map((day, i) => {
-          const isCurrentMonth = isSameMonth(day, date);
-          const isCurrentDay = isToday(day);
-          const dayAppointments = getAppointmentsForDay(day);
-          const maxToShow = 3;
-          
-          return (
+    <TooltipProvider>
+      <div className="border rounded-lg bg-white overflow-hidden">
+        {/* Header with weekday names */}
+        <div className="grid grid-cols-7">
+          {WEEKDAY_NAMES.map((day) => (
             <div 
-              key={i}
-              className={`min-h-[100px] p-1 border-b border-r last:border-r-0 ${
-                isCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'
-              } ${isCurrentDay ? 'bg-accent/20' : ''}`}
-              onClick={(e) => handleDayCellClick(day, e)}
+              key={day} 
+              className="p-2 font-medium text-xs text-center border-b border-r last:border-r-0"
             >
-              <div className="text-xs font-medium p-1">
-                {format(day, "d")}
-              </div>
-              
-              <div className="space-y-1 mt-1">
-                {dayAppointments.slice(0, maxToShow).map(appointment => (
-                  <AppointmentChip
-                    key={appointment.id}
-                    appointment={appointment}
-                    colorClass={getEmployeeColor(appointment.employeeId)}
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent day cell click
-                      onSelectAppointment(appointment);
-                    }}
-                  />
-                ))}
-                
-                {dayAppointments.length > maxToShow && (
-                  <div className="text-xs text-center text-muted-foreground">
-                    +{dayAppointments.length - maxToShow} mais
-                  </div>
-                )}
-              </div>
+              {day}
             </div>
-          );
-        })}
+          ))}
+        </div>
+        
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7">
+          {calendarDays.map((day, i) => {
+            const isCurrentMonth = isSameMonth(day, date);
+            const isCurrentDay = isToday(day);
+            const dayAppointments = getAppointmentsForDay(day);
+            const maxToShow = 3;
+            
+            return (
+              <div 
+                key={i}
+                className={`min-h-[100px] p-1 border-b border-r last:border-r-0 ${
+                  isCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'
+                } ${isCurrentDay ? 'bg-accent/20' : ''}`}
+                onClick={(e) => handleDayCellClick(day, e)}
+              >
+                <div className="text-xs font-medium p-1">
+                  {format(day, "d")}
+                </div>
+                
+                <div className="space-y-1 mt-1">
+                  {dayAppointments.slice(0, maxToShow).map(appointment => (
+                    <AppointmentChip
+                      key={appointment.id}
+                      appointment={appointment}
+                      colorClass={getEmployeeColor(appointment.employeeId)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent day cell click
+                        onSelectAppointment(appointment);
+                      }}
+                    />
+                  ))}
+                  
+                  {dayAppointments.length > maxToShow && (
+                    <div className="text-xs text-center text-muted-foreground">
+                      +{dayAppointments.length - maxToShow} mais
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 
