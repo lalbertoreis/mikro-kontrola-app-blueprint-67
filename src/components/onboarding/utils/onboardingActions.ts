@@ -23,7 +23,9 @@ export const createOnboardingActions = ({
       navigate(currentStep.route);
       
       // Close modal temporarily while user completes the task
-      setState(prev => ({ ...prev, isOpen: false }));
+      const newState = { ...state, isOpen: false };
+      saveOnboardingState(newState);
+      setState(newState);
       
       // The step completion will be detected by the useEffect
       // and will automatically advance and reopen the modal
@@ -62,7 +64,9 @@ export const createOnboardingActions = ({
       const newState = { ...state, dontShowAgain: true };
       saveOnboardingState(newState);
     }
-    setState(prev => ({ ...prev, isOpen: false }));
+    const newState = { ...state, isOpen: false };
+    saveOnboardingState(newState);
+    setState(newState);
   };
 
   const setDontShowAgain = (value: boolean) => {

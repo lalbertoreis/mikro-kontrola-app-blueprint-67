@@ -11,6 +11,7 @@ interface StepCompletionResult {
   hasChanges: boolean;
   shouldAdvance: boolean;
   updatedSteps: any[];
+  newCurrentStepIndex?: number;
 }
 
 export const checkStepCompletion = ({
@@ -28,6 +29,7 @@ export const checkStepCompletion = ({
   const updatedSteps = [...state.steps];
   let hasChanges = false;
   let shouldAdvance = false;
+  let newCurrentStepIndex = state.currentStepIndex;
 
   // Check services step
   const servicesStep = updatedSteps.find(step => step.id === 'services');
@@ -38,10 +40,14 @@ export const checkStepCompletion = ({
     servicesStep.completed = true;
     hasChanges = true;
     
-    // If we're currently on the services step, advance to next
+    // If we're currently on the services step, advance to employees step
     if (state.currentStepIndex === servicesStepIndex) {
-      console.log('Currently on services step, should advance');
-      shouldAdvance = true;
+      console.log('Currently on services step, advancing to employees step');
+      const employeesStepIndex = updatedSteps.findIndex(step => step.id === 'employees');
+      if (employeesStepIndex !== -1) {
+        newCurrentStepIndex = employeesStepIndex;
+        shouldAdvance = true;
+      }
     }
   }
 
@@ -54,15 +60,19 @@ export const checkStepCompletion = ({
     employeesStep.completed = true;
     hasChanges = true;
     
-    // If we're currently on the employees step, advance to next
+    // If we're currently on the employees step, advance to calendar step
     if (state.currentStepIndex === employeesStepIndex) {
-      console.log('Currently on employees step, should advance');
-      shouldAdvance = true;
+      console.log('Currently on employees step, advancing to calendar step');
+      const calendarStepIndex = updatedSteps.findIndex(step => step.id === 'calendar');
+      if (calendarStepIndex !== -1) {
+        newCurrentStepIndex = calendarStepIndex;
+        shouldAdvance = true;
+      }
     }
   }
 
-  console.log('checkStepCompletion result:', { hasChanges, shouldAdvance });
-  return { hasChanges, shouldAdvance, updatedSteps };
+  console.log('checkStepCompletion result:', { hasChanges, shouldAdvance, newCurrentStepIndex });
+  return { hasChanges, shouldAdvance, updatedSteps, newCurrentStepIndex };
 };
 
 export const findNextIncompleteStep = (steps: any[], currentIndex: number) => {

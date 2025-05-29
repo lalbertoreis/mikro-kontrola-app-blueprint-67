@@ -12,7 +12,6 @@ import {
 } from './utils/onboardingStorage';
 import { 
   checkStepCompletion, 
-  findNextIncompleteStep, 
   findFirstIncompleteStep 
 } from './utils/stepCompletionChecker';
 import { createOnboardingActions } from './utils/onboardingActions';
@@ -49,29 +48,22 @@ export const useOnboarding = () => {
       return;
     }
 
-    const { hasChanges, shouldAdvance, updatedSteps } = checkStepCompletion({
+    const { hasChanges, shouldAdvance, updatedSteps, newCurrentStepIndex } = checkStepCompletion({
       state,
       services,
       employees
     });
 
     if (hasChanges) {
-      const newState = { ...state, steps: updatedSteps };
+      const newState = { 
+        ...state, 
+        steps: updatedSteps,
+        currentStepIndex: newCurrentStepIndex || state.currentStepIndex
+      };
       
       if (shouldAdvance) {
-        // Find next incomplete step
-        const nextIncompleteIndex = findNextIncompleteStep(updatedSteps, state.currentStepIndex);
-        
-        if (nextIncompleteIndex !== -1) {
-          console.log('Advancing to step index:', nextIncompleteIndex);
-          newState.currentStepIndex = nextIncompleteIndex;
-          newState.isOpen = true; // Reopen modal to show next step
-        } else {
-          // All steps completed
-          console.log('All steps completed, going to final step');
-          newState.currentStepIndex = updatedSteps.length - 1;
-          newState.isOpen = true;
-        }
+        console.log('Advancing to step index:', newCurrentStepIndex);
+        newState.isOpen = true; // Reopen modal to show next step
       }
       
       saveOnboardingState(newState);
@@ -86,20 +78,20 @@ export const useOnboarding = () => {
     console.log('Loading onboarding state for user:', user.id);
     const savedState = loadOnboardingState();
     
-    // Always start with fresh steps to check completion
-    let initialState = {
-      isOpen: false, // Start closed, will open if needed
-      currentStepIndex: 0,
-      steps: [...ONBOARDING_STEPS], // Fresh copy
-      canSkip: true,
-      dontShowAgain: false
-    };
-
     if (savedState && savedState.dontShowAgain) {
       console.log('User chose not to see onboarding again');
       setState(prev => ({ ...prev, dontShowAgain: true, isOpen: false }));
       return;
     }
+
+    // Start with fresh steps and check completion based on current data
+    let initialState = {
+      isOpen: false,
+      currentStepIndex: savedState?.currentStepIndex || 0,
+      steps: [...ONBOARDING_STEPS],
+      canSkip: true,
+      dontShowAgain: false
+    };
 
     // Check which steps should be marked as completed based on current data
     if (services.length > 0) {
@@ -112,22 +104,29 @@ export const useOnboarding = () => {
       if (employeesStep) employeesStep.completed = true;
     }
 
-    // Find first incomplete step to start from
-    const firstIncompleteIndex = findFirstIncompleteStep(initialState.steps);
+    // If we have a saved currentStepIndex, use it, otherwise find first incomplete
+    if (savedState?.currentStepIndex !== undefined) {
+      initialState.currentStepIndex = savedState.currentStepIndex;
+    } else {
+      const firstIncompleteIndex = findFirstIncompleteStep(initialState.steps);
+      if (firstIncompleteIndex !== -1) {
+        initialState.currentStepIndex = firstIncompleteIndex;
+      }
+    }
+
+    // Only open if we have incomplete steps and we're not on the final step
+    const hasIncompleteSteps = initialState.steps.some(step => !step.completed && step.id !== 'complete');
+    const isOnFinalStep = initialState.currentStepIndex === initialState.steps.length - 1;
     
-    if (firstIncompleteIndex !== -1 && firstIncompleteIndex !== initialState.steps.length - 1) {
-      // There are incomplete steps, start onboarding from first incomplete
-      initialState.currentStepIndex = firstIncompleteIndex;
+    if (hasIncompleteSteps && !isOnFinalStep) {
       initialState.isOpen = true;
-      console.log('Starting onboarding from step:', firstIncompleteIndex, initialState.steps[firstIncompleteIndex].id);
-    } else if (firstIncompleteIndex === initialState.steps.length - 1) {
-      // Only final step remains
-      initialState.currentStepIndex = firstIncompleteIndex;
+      console.log('Opening onboarding at step:', initialState.currentStepIndex, initialState.steps[initialState.currentStepIndex]?.id);
+    } else if (isOnFinalStep && initialState.steps.slice(0, -1).every(step => step.completed)) {
+      // All main steps completed, show final step
       initialState.isOpen = true;
       console.log('All main steps completed, showing final step');
     } else {
-      // All steps completed
-      console.log('All onboarding steps completed');
+      console.log('All onboarding steps completed or no incomplete steps');
       initialState.isOpen = false;
     }
 
