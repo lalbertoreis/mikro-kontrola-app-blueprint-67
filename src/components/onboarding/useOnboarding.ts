@@ -85,45 +85,64 @@ export const useOnboarding = () => {
 
     console.log('Loading onboarding state for user:', user.id);
     const savedState = loadOnboardingState();
+    
+    // Always start with fresh steps to check completion
     let initialState = {
-      isOpen: true,
+      isOpen: false, // Start closed, will open if needed
       currentStepIndex: 0,
-      steps: ONBOARDING_STEPS,
+      steps: [...ONBOARDING_STEPS], // Fresh copy
       canSkip: true,
       dontShowAgain: false
     };
 
-    if (savedState) {
-      if (savedState.dontShowAgain) {
-        console.log('User chose not to see onboarding again');
-        setState(prev => ({ ...prev, dontShowAgain: true, isOpen: false }));
-        return;
-      }
-      initialState = {
-        ...initialState,
-        currentStepIndex: savedState.currentStepIndex || 0,
-        steps: savedState.steps || ONBOARDING_STEPS,
-        dontShowAgain: savedState.dontShowAgain || false
-      };
+    if (savedState && savedState.dontShowAgain) {
+      console.log('User chose not to see onboarding again');
+      setState(prev => ({ ...prev, dontShowAgain: true, isOpen: false }));
+      return;
     }
 
-    // Find first incomplete step to resume from
+    // Check which steps should be marked as completed based on current data
+    if (services.length > 0) {
+      const servicesStep = initialState.steps.find(step => step.id === 'services');
+      if (servicesStep) servicesStep.completed = true;
+    }
+    
+    if (employees.length > 0) {
+      const employeesStep = initialState.steps.find(step => step.id === 'employees');
+      if (employeesStep) employeesStep.completed = true;
+    }
+
+    // Find first incomplete step to start from
     const firstIncompleteIndex = findFirstIncompleteStep(initialState.steps);
+    
     if (firstIncompleteIndex !== -1 && firstIncompleteIndex !== initialState.steps.length - 1) {
+      // There are incomplete steps, start onboarding from first incomplete
       initialState.currentStepIndex = firstIncompleteIndex;
+      initialState.isOpen = true;
+      console.log('Starting onboarding from step:', firstIncompleteIndex, initialState.steps[firstIncompleteIndex].id);
+    } else if (firstIncompleteIndex === initialState.steps.length - 1) {
+      // Only final step remains
+      initialState.currentStepIndex = firstIncompleteIndex;
+      initialState.isOpen = true;
+      console.log('All main steps completed, showing final step');
+    } else {
+      // All steps completed
+      console.log('All onboarding steps completed');
+      initialState.isOpen = false;
     }
 
     console.log('Setting initial onboarding state:', initialState);
     setState(initialState);
-  }, [user, loading]);
+    saveOnboardingState(initialState);
+  }, [user, loading, services.length, employees.length, servicesLoading, employeesLoading]);
 
   // Check completion whenever services or employees change
   useEffect(() => {
-    if (user && !loading && !servicesLoading && !employeesLoading) {
+    if (user && !loading && !servicesLoading && !employeesLoading && state.steps.length > 0) {
       console.log('Checking step completion due to data change');
       handleStepCompletion();
     }
-  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading]);
+  }, [services.length, employees.length]);
 
   // Create action handlers
   const actions = createOnboardingActions({ state, setState, navigate });
@@ -143,6 +162,7 @@ export const useOnboarding = () => {
     nextStep: actions.nextStep,
     goToStep: actions.goToStep,
     skipTutorial: actions.skipTutorial,
-    closeTutorial: actions.closeTutorial
+    closeTutorial: actions.closeTutorial,
+    resetOnboarding: actions.resetOnboarding
   };
 };

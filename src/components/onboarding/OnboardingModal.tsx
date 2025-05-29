@@ -17,7 +17,8 @@ export const OnboardingModal: React.FC = () => {
     nextStep,
     skipTutorial,
     closeTutorial,
-    goToStep
+    goToStep,
+    resetOnboarding
   } = useOnboarding();
 
   if (!isOpen || !currentStep) return null;
@@ -61,8 +62,9 @@ export const OnboardingModal: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => goToStep(0)}
+                onClick={resetOnboarding}
                 className="text-gray-500 hover:text-gray-700"
+                title="Reiniciar tutorial"
               >
                 <RotateCcw className="w-4 h-4" />
               </Button>

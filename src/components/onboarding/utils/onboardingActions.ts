@@ -1,6 +1,7 @@
 
 import { OnboardingState } from '../types';
 import { saveOnboardingState } from './onboardingStorage';
+import { ONBOARDING_STEPS } from '../data';
 
 interface OnboardingActionsParams {
   state: OnboardingState;
@@ -68,11 +69,26 @@ export const createOnboardingActions = ({
     setState(prev => ({ ...prev, dontShowAgain: value }));
   };
 
+  const resetOnboarding = () => {
+    console.log('Resetting onboarding to beginning');
+    const newState = {
+      isOpen: true,
+      currentStepIndex: 0,
+      steps: ONBOARDING_STEPS.map(step => ({ ...step, completed: false })), // Reset all steps
+      canSkip: true,
+      dontShowAgain: false
+    };
+    saveOnboardingState(newState);
+    setState(newState);
+    navigate('/dashboard'); // Navigate to dashboard to start fresh
+  };
+
   return {
     nextStep,
     goToStep,
     skipTutorial,
     closeTutorial,
-    setDontShowAgain
+    setDontShowAgain,
+    resetOnboarding
   };
 };

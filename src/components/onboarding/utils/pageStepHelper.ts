@@ -26,21 +26,15 @@ export const createPageStepHelper = (state: OnboardingState, pathname: string) =
     const matchingStep = state.steps.find(step => step.route === pathname && !step.completed);
     
     if (!matchingStep) {
-      console.log('No matching step found for pathname:', pathname);
+      console.log('No matching incomplete step found for pathname:', pathname);
       return null;
     }
     
-    // Also check if this is the current step in the sequence
-    const currentStep = state.steps[state.currentStepIndex];
-    if (currentStep && matchingStep.id === currentStep.id) {
-      console.log('Returning current step for page:', matchingStep.id);
-      return matchingStep;
-    }
-    
-    console.log('Step found but not current step in sequence');
-    return null;
+    console.log('Found matching incomplete step for page:', matchingStep.id);
+    return matchingStep;
   };
 
+  // Only show onboarding as active if there are actual incomplete steps (excluding welcome and complete)
   const isOnboardingActive = !state.dontShowAgain && 
     state.steps.some(step => !step.completed && step.id !== 'welcome' && step.id !== 'complete');
 
