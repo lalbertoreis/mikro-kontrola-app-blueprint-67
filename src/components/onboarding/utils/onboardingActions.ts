@@ -26,9 +26,6 @@ export const createOnboardingActions = ({
       const newState = { ...state, isOpen: false };
       saveOnboardingState(newState);
       setState(newState);
-      
-      // The step completion will be detected by the useEffect
-      // and will automatically advance and reopen the modal
     } else {
       // Just move to next step for steps without routes
       const nextIndex = state.currentStepIndex + 1;
@@ -77,14 +74,16 @@ export const createOnboardingActions = ({
     console.log('Resetting onboarding to beginning');
     const newState = {
       isOpen: true,
-      currentStepIndex: 0,
-      steps: ONBOARDING_STEPS.map(step => ({ ...step, completed: false })), // Reset all steps
+      currentStepIndex: 0, // Always start at step 0 when resetting
+      steps: ONBOARDING_STEPS.map(step => ({ ...step, completed: false })),
       canSkip: true,
       dontShowAgain: false
     };
+    
+    // Save the reset state immediately
     saveOnboardingState(newState);
     setState(newState);
-    navigate('/dashboard'); // Navigate to dashboard to start fresh
+    navigate('/dashboard');
   };
 
   return {

@@ -31,7 +31,7 @@ export const checkStepCompletion = ({
   let shouldAdvance = false;
   let newCurrentStepIndex = state.currentStepIndex;
 
-  // Check services step
+  // Check services step completion
   const servicesStep = updatedSteps.find(step => step.id === 'services');
   const servicesStepIndex = updatedSteps.findIndex(step => step.id === 'services');
   
@@ -40,18 +40,19 @@ export const checkStepCompletion = ({
     servicesStep.completed = true;
     hasChanges = true;
     
-    // If we're currently on the services step, advance to employees step
+    // If we're currently on the services step, advance to next incomplete step
     if (state.currentStepIndex === servicesStepIndex) {
-      console.log('Currently on services step, advancing to employees step');
-      const employeesStepIndex = updatedSteps.findIndex(step => step.id === 'employees');
-      if (employeesStepIndex !== -1) {
-        newCurrentStepIndex = employeesStepIndex;
+      console.log('Currently on services step, finding next incomplete step');
+      const nextIncompleteIndex = findNextIncompleteStep(updatedSteps, servicesStepIndex);
+      if (nextIncompleteIndex !== -1) {
+        newCurrentStepIndex = nextIncompleteIndex;
         shouldAdvance = true;
+        console.log('Advancing to next incomplete step:', nextIncompleteIndex);
       }
     }
   }
 
-  // Check employees step
+  // Check employees step completion
   const employeesStep = updatedSteps.find(step => step.id === 'employees');
   const employeesStepIndex = updatedSteps.findIndex(step => step.id === 'employees');
   
@@ -60,13 +61,14 @@ export const checkStepCompletion = ({
     employeesStep.completed = true;
     hasChanges = true;
     
-    // If we're currently on the employees step, advance to calendar step
+    // If we're currently on the employees step, advance to next incomplete step
     if (state.currentStepIndex === employeesStepIndex) {
-      console.log('Currently on employees step, advancing to calendar step');
-      const calendarStepIndex = updatedSteps.findIndex(step => step.id === 'calendar');
-      if (calendarStepIndex !== -1) {
-        newCurrentStepIndex = calendarStepIndex;
+      console.log('Currently on employees step, finding next incomplete step');
+      const nextIncompleteIndex = findNextIncompleteStep(updatedSteps, employeesStepIndex);
+      if (nextIncompleteIndex !== -1) {
+        newCurrentStepIndex = nextIncompleteIndex;
         shouldAdvance = true;
+        console.log('Advancing to next incomplete step:', nextIncompleteIndex);
       }
     }
   }
