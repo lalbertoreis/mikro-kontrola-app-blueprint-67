@@ -41,16 +41,19 @@ export const useOnboarding = () => {
     employeesCount: employees.length,
     isLoading: servicesLoading || employeesLoading,
     pathname: location.pathname,
-    isInitialized
+    isInitialized,
+    isOpen: state.isOpen,
+    dontShowAgain: state.dontShowAgain
   });
 
-  // Initialize onboarding state only once
+  // Initialize onboarding state
   useEffect(() => {
     if (!user || loading || isInitialized) return;
 
     console.log('Initializing onboarding state for user:', user.id);
     const savedState = loadOnboardingState();
     
+    // Se o usuário escolheu não mostrar mais, respeitar essa escolha
     if (savedState && savedState.dontShowAgain) {
       console.log('User chose not to see onboarding again');
       setState(prev => ({ ...prev, dontShowAgain: true, isOpen: false }));
@@ -58,7 +61,7 @@ export const useOnboarding = () => {
       return;
     }
 
-    // Create initial state with fresh steps
+    // Criar estado inicial
     let initialState = {
       isOpen: false,
       currentStepIndex: 0,
@@ -67,46 +70,40 @@ export const useOnboarding = () => {
       dontShowAgain: false
     };
 
-    // If we have saved state, use the saved currentStepIndex
+    // Marcar passos como completos baseado nos dados reais
+    if (services.length > 0) {
+      const servicesStep = initialState.steps.find(step => step.id === 'services');
+      if (servicesStep) servicesStep.completed = true;
+    }
+    
+    if (employees.length > 0) {
+      const employeesStep = initialState.steps.find(step => step.id === 'employees');
+      if (employeesStep) employeesStep.completed = true;
+    }
+
+    // Se tem estado salvo, usar o índice salvo, senão encontrar o primeiro incompleto
     if (savedState?.currentStepIndex !== undefined) {
       initialState.currentStepIndex = savedState.currentStepIndex;
       console.log('Using saved currentStepIndex:', savedState.currentStepIndex);
-    }
-
-    // Mark steps as completed based on actual data (only if not manually reset)
-    if (!savedState || savedState.currentStepIndex === undefined || savedState.currentStepIndex > 0) {
-      if (services.length > 0) {
-        const servicesStep = initialState.steps.find(step => step.id === 'services');
-        if (servicesStep) servicesStep.completed = true;
-      }
-      
-      if (employees.length > 0) {
-        const employeesStep = initialState.steps.find(step => step.id === 'employees');
-        if (employeesStep) employeesStep.completed = true;
-      }
-
-      // If no saved step index, find first incomplete
-      if (!savedState?.currentStepIndex && savedState?.currentStepIndex !== 0) {
-        const firstIncompleteIndex = findFirstIncompleteStep(initialState.steps);
-        if (firstIncompleteIndex !== -1) {
-          initialState.currentStepIndex = firstIncompleteIndex;
-        }
-      }
-    }
-
-    // Determine if should open
-    const hasIncompleteSteps = initialState.steps.some(step => !step.completed && step.id !== 'complete');
-    const isOnFinalStep = initialState.currentStepIndex === initialState.steps.length - 1;
-    
-    if (hasIncompleteSteps && !isOnFinalStep) {
-      initialState.isOpen = true;
-      console.log('Opening onboarding at step:', initialState.currentStepIndex, initialState.steps[initialState.currentStepIndex]?.id);
-    } else if (isOnFinalStep && initialState.steps.slice(0, -1).every(step => step.completed)) {
-      initialState.isOpen = true;
-      console.log('All main steps completed, showing final step');
     } else {
-      console.log('All onboarding steps completed or no incomplete steps');
-      initialState.isOpen = false;
+      const firstIncompleteIndex = findFirstIncompleteStep(initialState.steps);
+      if (firstIncompleteIndex !== -1) {
+        initialState.currentStepIndex = firstIncompleteIndex;
+      }
+      console.log('Using first incomplete step index:', initialState.currentStepIndex);
+    }
+
+    // Determinar se deve abrir o onboarding
+    const hasIncompleteSteps = initialState.steps.some(step => !step.completed && step.id !== 'complete');
+    
+    if (hasIncompleteSteps) {
+      initialState.isOpen = true;
+      console.log('Opening onboarding - has incomplete steps');
+    } else {
+      // Se todos os passos estão completos, mostrar o passo final
+      initialState.currentStepIndex = initialState.steps.length - 1;
+      initialState.isOpen = true;
+      console.log('Opening final step - all main steps completed');
     }
 
     console.log('Setting initial onboarding state:', initialState);
@@ -116,7 +113,7 @@ export const useOnboarding = () => {
 
   // Check completion when data changes (only after initialization)
   useEffect(() => {
-    if (!isInitialized || !user || loading || servicesLoading || employeesLoading || state.steps.length === 0) {
+    if (!isInitialized || !user || loading || servicesLoading || employeesLoading) {
       return;
     }
 
@@ -131,18 +128,15 @@ export const useOnboarding = () => {
       const newState = { 
         ...state, 
         steps: updatedSteps,
-        currentStepIndex: newCurrentStepIndex || state.currentStepIndex
+        currentStepIndex: newCurrentStepIndex !== undefined ? newCurrentStepIndex : state.currentStepIndex,
+        isOpen: shouldAdvance ? true : state.isOpen
       };
       
-      if (shouldAdvance) {
-        console.log('Advancing to step index:', newCurrentStepIndex);
-        newState.isOpen = true;
-      }
-      
+      console.log('Updating state due to step completion:', newState);
       saveOnboardingState(newState);
       setState(newState);
     }
-  }, [services.length, employees.length, isInitialized]);
+  }, [services.length, employees.length, isInitialized, user, loading, servicesLoading, employeesLoading]);
 
   // Create action handlers
   const actions = createOnboardingActions({ state, setState, navigate });

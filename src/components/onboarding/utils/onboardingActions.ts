@@ -57,11 +57,13 @@ export const createOnboardingActions = ({
   };
 
   const closeTutorial = () => {
-    if (state.dontShowAgain) {
-      const newState = { ...state, dontShowAgain: true };
-      saveOnboardingState(newState);
-    }
     const newState = { ...state, isOpen: false };
+    
+    // Se marcou para não mostrar novamente, salvar essa preferência
+    if (state.dontShowAgain) {
+      newState.dontShowAgain = true;
+    }
+    
     saveOnboardingState(newState);
     setState(newState);
   };
@@ -74,13 +76,14 @@ export const createOnboardingActions = ({
     console.log('Resetting onboarding to beginning');
     const newState = {
       isOpen: true,
-      currentStepIndex: 0, // Always start at step 0 when resetting
+      currentStepIndex: 0,
       steps: ONBOARDING_STEPS.map(step => ({ ...step, completed: false })),
       canSkip: true,
       dontShowAgain: false
     };
     
-    // Save the reset state immediately
+    // Salvar o estado resetado imediatamente
+    console.log('Saving reset state:', newState);
     saveOnboardingState(newState);
     setState(newState);
     navigate('/dashboard');
