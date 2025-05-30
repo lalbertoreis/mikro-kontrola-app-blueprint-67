@@ -1,10 +1,10 @@
-
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import Navbar from "@/components/layout/Navbar";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 
@@ -81,50 +81,52 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-          <AuthProvider>
-            <Routes>
-              {/* Rotas públicas com Navbar */}
-              <Route path="/" element={<PublicLayout><Index /></PublicLayout>} />
-              <Route path="/features" element={<PublicLayout><Features /></PublicLayout>} />
-              <Route path="/pricing" element={<PublicLayout><Pricing /></PublicLayout>} />
-              
-              {/* Rotas de agenda online */}
-              <Route path="/booking/:slug" element={<PublicBooking />} />
-              <Route path="/booking/404" element={<Business404 />} />
-              
-              {/* Rotas de autenticação sem Navbar */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              
-              {/* Rotas protegidas */}
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/dashboard/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
-              <Route path="/dashboard/clients/new" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
-              <Route path="/dashboard/clients/:id" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
-              <Route path="/dashboard/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
-              <Route path="/dashboard/employees/new" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
-              <Route path="/dashboard/employees/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
-              <Route path="/dashboard/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
-              <Route path="/dashboard/services/new" element={<ProtectedRoute><ServiceForm /></ProtectedRoute>} />
-              <Route path="/dashboard/services/:id" element={<ProtectedRoute><ServiceForm /></ProtectedRoute>} />
-              <Route path="/dashboard/service-packages" element={<ProtectedRoute><ServicePackages /></ProtectedRoute>} />
-              <Route path="/dashboard/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
-              <Route path="/dashboard/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
-              <Route path="/dashboard/payment-methods" element={<ProtectedRoute><PaymentMethods /></ProtectedRoute>} />
-              <Route path="/dashboard/fixed-costs" element={<ProtectedRoute><FixedCosts /></ProtectedRoute>} />
-              <Route path="/dashboard/finance/transaction/new" element={<ProtectedRoute><TransactionForm /></ProtectedRoute>} />
-              <Route path="/dashboard/finance/transaction/:id" element={<ProtectedRoute><TransactionForm /></ProtectedRoute>} />
-              <Route path="/dashboard/holidays" element={<ProtectedRoute><Holidays /></ProtectedRoute>} />
-              <Route path="/dashboard/holidays/new" element={<ProtectedRoute><HolidayForm /></ProtectedRoute>} />
-              <Route path="/dashboard/holidays/:id" element={<ProtectedRoute><HolidayForm /></ProtectedRoute>} />
-              <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              
-              {/* Rota 404 */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </AuthProvider>
+          <TooltipProvider>
+            <AuthProvider>
+              <Routes>
+                {/* Rotas públicas com Navbar */}
+                <Route path="/" element={<PublicLayout><Index /></PublicLayout>} />
+                <Route path="/features" element={<PublicLayout><Features /></PublicLayout>} />
+                <Route path="/pricing" element={<PublicLayout><Pricing /></PublicLayout>} />
+                
+                {/* Rotas de agenda online */}
+                <Route path="/booking/:slug" element={<PublicBooking />} />
+                <Route path="/booking/404" element={<Business404 />} />
+                
+                {/* Rotas de autenticação sem Navbar */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                
+                {/* Rotas protegidas */}
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/dashboard/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+                <Route path="/dashboard/clients/new" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
+                <Route path="/dashboard/clients/:id" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
+                <Route path="/dashboard/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+                <Route path="/dashboard/employees/new" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
+                <Route path="/dashboard/employees/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
+                <Route path="/dashboard/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+                <Route path="/dashboard/services/new" element={<ProtectedRoute><ServiceForm /></ProtectedRoute>} />
+                <Route path="/dashboard/services/:id" element={<ProtectedRoute><ServiceForm /></ProtectedRoute>} />
+                <Route path="/dashboard/service-packages" element={<ProtectedRoute><ServicePackages /></ProtectedRoute>} />
+                <Route path="/dashboard/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+                <Route path="/dashboard/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
+                <Route path="/dashboard/payment-methods" element={<ProtectedRoute><PaymentMethods /></ProtectedRoute>} />
+                <Route path="/dashboard/fixed-costs" element={<ProtectedRoute><FixedCosts /></ProtectedRoute>} />
+                <Route path="/dashboard/finance/transaction/new" element={<ProtectedRoute><TransactionForm /></ProtectedRoute>} />
+                <Route path="/dashboard/finance/transaction/:id" element={<ProtectedRoute><TransactionForm /></ProtectedRoute>} />
+                <Route path="/dashboard/holidays" element={<ProtectedRoute><Holidays /></ProtectedRoute>} />
+                <Route path="/dashboard/holidays/new" element={<ProtectedRoute><HolidayForm /></ProtectedRoute>} />
+                <Route path="/dashboard/holidays/:id" element={<ProtectedRoute><HolidayForm /></ProtectedRoute>} />
+                <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                
+                {/* Rota 404 */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Toaster />
+            </AuthProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
