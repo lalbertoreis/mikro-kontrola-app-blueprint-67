@@ -84,6 +84,8 @@ export const useOnboardingProgress = () => {
           step_id: stepId,
           completed: true,
           completed_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,step_id'
         });
 
       if (error) {
@@ -142,24 +144,46 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Atualizar configurações - CORRIGIDO para usar upsert
+  // Atualizar configurações - CORRIGIDO para evitar conflitos
   const updateSettings = async (newSettings: Partial<OnboardingSettings>) => {
     if (!user) return;
 
     try {
       const updatedSettings = { ...settings, ...newSettings };
 
-      const { error } = await supabase
+      // Primeiro, tentar buscar o registro existente
+      const { data: existingSettings } = await supabase
         .from('user_onboarding_settings')
-        .upsert({
-          user_id: user.id,
-          dont_show_again: updatedSettings.dont_show_again,
-          current_step_index: updatedSettings.current_step_index,
-          is_completed: updatedSettings.is_completed
-        });
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error updating onboarding settings:', error);
+      let result;
+      
+      if (existingSettings) {
+        // Se existe, fazer update
+        result = await supabase
+          .from('user_onboarding_settings')
+          .update({
+            dont_show_again: updatedSettings.dont_show_again,
+            current_step_index: updatedSettings.current_step_index,
+            is_completed: updatedSettings.is_completed
+          })
+          .eq('user_id', user.id);
+      } else {
+        // Se não existe, fazer insert
+        result = await supabase
+          .from('user_onboarding_settings')
+          .insert({
+            user_id: user.id,
+            dont_show_again: updatedSettings.dont_show_again,
+            current_step_index: updatedSettings.current_step_index,
+            is_completed: updatedSettings.is_completed
+          });
+      }
+
+      if (result.error) {
+        console.error('Error updating onboarding settings:', result.error);
         toast.error('Erro ao salvar configurações');
         return;
       }
