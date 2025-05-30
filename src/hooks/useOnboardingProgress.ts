@@ -142,7 +142,7 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Atualizar configurações
+  // Atualizar configurações - CORRIGIDO para usar upsert
   const updateSettings = async (newSettings: Partial<OnboardingSettings>) => {
     if (!user) return;
 
