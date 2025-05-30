@@ -20,7 +20,8 @@ export const useOnboarding = () => {
     isLoading: progressLoading, 
     markStepCompleted, 
     updateSettings, 
-    resetOnboarding 
+    resetOnboarding,
+    detectAndMarkCompletedSteps
   } = useOnboardingProgress();
   
   const [state, setState] = useState<OnboardingState>({
@@ -43,7 +44,8 @@ export const useOnboarding = () => {
     isInitialized,
     isOpen: state.isOpen,
     dontShowAgain: settings.dont_show_again,
-    progressCount: progress.length
+    progressCount: progress.length,
+    settings
   });
 
   // Verificar se um passo está completo baseado no progresso do banco
@@ -51,7 +53,7 @@ export const useOnboarding = () => {
     const stepProgress = progress.find(p => p.step_id === stepId);
     if (stepProgress?.completed) return true;
 
-    // Verificar baseado nos dados reais
+    // Verificar baseado nos dados reais como fallback
     switch (stepId) {
       case 'services':
         return services.length > 0;
@@ -68,6 +70,15 @@ export const useOnboarding = () => {
       !isStepCompleted(step.id) && step.id !== 'complete'
     );
   };
+
+  // Detectar e marcar passos concluídos automaticamente
+  useEffect(() => {
+    if (!user || loading || servicesLoading || employeesLoading || progressLoading) {
+      return;
+    }
+
+    detectAndMarkCompletedSteps(services.length, employees.length);
+  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading]);
 
   // Inicializar estado do onboarding
   useEffect(() => {
@@ -92,68 +103,38 @@ export const useOnboarding = () => {
     const firstIncompleteIndex = findFirstIncompleteStep();
     const hasIncompleteSteps = firstIncompleteIndex !== -1;
 
-    let initialState = {
-      isOpen: hasIncompleteSteps,
-      currentStepIndex: hasIncompleteSteps ? firstIncompleteIndex : Math.max(0, ONBOARDING_STEPS.length - 1),
+    let currentStepIndex = 0;
+
+    if (hasIncompleteSteps) {
+      currentStepIndex = firstIncompleteIndex;
+    } else if (!settings.is_completed) {
+      // Se todos os passos principais estão completos, mostrar o passo final
+      currentStepIndex = ONBOARDING_STEPS.length - 1;
+    } else {
+      // Tutorial já foi completado
+      setState(prev => ({ ...prev, isOpen: false }));
+      setIsInitialized(true);
+      return;
+    }
+
+    const initialState = {
+      isOpen: true,
+      currentStepIndex,
       steps: updatedSteps,
       canSkip: true,
       dontShowAgain: settings.dont_show_again
     };
 
-    // Se todos os passos principais estão completos, mostrar o passo final
-    if (!hasIncompleteSteps && !settings.is_completed) {
-      initialState.currentStepIndex = ONBOARDING_STEPS.length - 1;
-      initialState.isOpen = true;
-      console.log('Showing final step - all main steps completed');
-    }
-
     console.log('Setting initial onboarding state:', initialState);
     setState(initialState);
+    
+    // Atualizar índice do passo atual nas configurações se necessário
+    if (settings.current_step_index !== currentStepIndex) {
+      updateSettings({ current_step_index: currentStepIndex });
+    }
+    
     setIsInitialized(true);
-  }, [user, loading, progressLoading, services.length, employees.length, progress, settings, isInitialized]);
-
-  // Verificar conclusão automática quando dados mudam
-  useEffect(() => {
-    if (!isInitialized || !user || loading || servicesLoading || employeesLoading || progressLoading) {
-      return;
-    }
-
-    let hasChanges = false;
-
-    // Verificar se serviços foram adicionados
-    if (services.length > 0 && !isStepCompleted('services')) {
-      console.log('Services added - marking step as completed');
-      markStepCompleted('services');
-      hasChanges = true;
-    }
-
-    // Verificar se funcionários foram adicionados
-    if (employees.length > 0 && !isStepCompleted('employees')) {
-      console.log('Employees added - marking step as completed');
-      markStepCompleted('employees');
-      hasChanges = true;
-    }
-
-    if (hasChanges) {
-      // Avançar para próximo passo incompleto
-      const nextIncompleteIndex = findFirstIncompleteStep();
-      if (nextIncompleteIndex !== -1) {
-        setState(prev => ({
-          ...prev,
-          currentStepIndex: nextIncompleteIndex,
-          isOpen: true
-        }));
-        updateSettings({ current_step_index: nextIncompleteIndex });
-      } else {
-        // Todos os passos concluídos - mostrar passo final
-        setState(prev => ({
-          ...prev,
-          currentStepIndex: ONBOARDING_STEPS.length - 1,
-          isOpen: true
-        }));
-      }
-    }
-  }, [services.length, employees.length, isInitialized, user, loading, servicesLoading, employeesLoading, progressLoading]);
+  }, [user, loading, progressLoading, progress, settings, isInitialized]);
 
   // Ações do onboarding
   const nextStep = () => {

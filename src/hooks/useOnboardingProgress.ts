@@ -109,9 +109,36 @@ export const useOnboardingProgress = () => {
           }];
         }
       });
+
+      console.log(`Step ${stepId} marked as completed`);
     } catch (error) {
       console.error('Error in markStepCompleted:', error);
       toast.error('Erro ao salvar progresso');
+    }
+  };
+
+  // Detectar e marcar passos automaticamente baseado nos dados
+  const detectAndMarkCompletedSteps = async (servicesCount: number, employeesCount: number) => {
+    if (!user || isLoading) return;
+
+    console.log('Detecting completed steps:', { servicesCount, employeesCount });
+
+    // Verificar se serviços foram adicionados
+    if (servicesCount > 0) {
+      const servicesProgress = progress.find(p => p.step_id === 'services');
+      if (!servicesProgress?.completed) {
+        console.log('Auto-completing services step');
+        await markStepCompleted('services');
+      }
+    }
+
+    // Verificar se funcionários foram adicionados
+    if (employeesCount > 0) {
+      const employeesProgress = progress.find(p => p.step_id === 'employees');
+      if (!employeesProgress?.completed) {
+        console.log('Auto-completing employees step');
+        await markStepCompleted('employees');
+      }
     }
   };
 
@@ -138,6 +165,7 @@ export const useOnboardingProgress = () => {
       }
 
       setSettings(updatedSettings);
+      console.log('Settings updated:', updatedSettings);
     } catch (error) {
       console.error('Error in updateSettings:', error);
       toast.error('Erro ao salvar configurações');
@@ -183,6 +211,7 @@ export const useOnboardingProgress = () => {
     markStepCompleted,
     updateSettings,
     resetOnboarding,
-    loadProgress
+    loadProgress,
+    detectAndMarkCompletedSteps
   };
 };
