@@ -49,20 +49,10 @@ export const useOnboarding = () => {
     progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed }))
   });
 
-  // Verificar se um passo está completo baseado no progresso do banco
+  // Verificar se um passo está completo APENAS baseado no progresso do banco
   const isStepCompleted = (stepId: string) => {
     const stepProgress = progress.find(p => p.step_id === stepId);
-    if (stepProgress?.completed) return true;
-
-    // Verificar baseado nos dados reais como fallback
-    switch (stepId) {
-      case 'services':
-        return services.length > 0;
-      case 'employees':
-        return employees.length > 0;
-      default:
-        return false;
-    }
+    return stepProgress?.completed || false;
   };
 
   // Encontrar o primeiro passo incompleto
@@ -98,7 +88,8 @@ export const useOnboarding = () => {
       employeesCount: employees.length,
       progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed })),
       dontShowAgain: settings.dont_show_again,
-      isCompleted: settings.is_completed
+      isCompleted: settings.is_completed,
+      currentStepIndex: settings.current_step_index
     });
 
     // Se usuário escolheu não mostrar mais
@@ -109,7 +100,7 @@ export const useOnboarding = () => {
       return;
     }
 
-    // Atualizar os passos com status de conclusão baseado nos dados reais + banco
+    // Atualizar os passos com status de conclusão baseado APENAS no banco
     const updatedSteps = ONBOARDING_STEPS.map(step => ({
       ...step,
       completed: isStepCompleted(step.id)
@@ -118,7 +109,7 @@ export const useOnboarding = () => {
     const firstIncompleteIndex = findFirstIncompleteStep();
     const allMainStepsComplete = ONBOARDING_STEPS.slice(0, -1).every(step => isStepCompleted(step.id));
 
-    let currentStepIndex = 0;
+    let currentStepIndex = settings.current_step_index || 0;
     let shouldShowOnboarding = true;
 
     if (allMainStepsComplete && settings.is_completed) {
@@ -129,8 +120,8 @@ export const useOnboarding = () => {
       // Todos os passos principais completos, mostrar passo final
       console.log('All main steps complete, showing final step');
       currentStepIndex = ONBOARDING_STEPS.length - 1;
-    } else {
-      // Há passos incompletos
+    } else if (currentStepIndex === 0 && firstIncompleteIndex > 0) {
+      // Se está no passo 0 mas há passos incompletos à frente, usar o primeiro incompleto
       console.log('Found incomplete steps, starting from:', firstIncompleteIndex);
       currentStepIndex = firstIncompleteIndex;
     }
@@ -145,11 +136,6 @@ export const useOnboarding = () => {
 
     console.log('Setting initial onboarding state:', initialState);
     setState(initialState);
-    
-    // Atualizar índice do passo atual nas configurações se necessário
-    if (settings.current_step_index !== currentStepIndex) {
-      updateSettings({ current_step_index: currentStepIndex });
-    }
     
     setIsInitialized(true);
   }, [user, loading, progressLoading, progress, settings, services.length, employees.length]);
@@ -169,6 +155,7 @@ export const useOnboarding = () => {
       // Apenas mover para próximo passo
       const nextIndex = state.currentStepIndex + 1;
       if (nextIndex < state.steps.length) {
+        console.log('Moving to next step:', nextIndex);
         setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
         updateSettings({ current_step_index: nextIndex });
       }
@@ -177,6 +164,7 @@ export const useOnboarding = () => {
 
   const goToStep = (stepIndex: number) => {
     if (stepIndex >= 0 && stepIndex < state.steps.length) {
+      console.log('Going to step:', stepIndex);
       setState(prev => ({ ...prev, currentStepIndex: stepIndex }));
       updateSettings({ current_step_index: stepIndex });
     }
@@ -212,17 +200,17 @@ export const useOnboarding = () => {
     console.log('Resetting onboarding');
     await resetOnboarding();
     
-    // Resetar estado local IMEDIATAMENTE
+    // Resetar estado local IMEDIATAMENTE - sempre começar do passo 0
     const resetSteps = ONBOARDING_STEPS.map(step => ({ ...step, completed: false }));
     setState({
       isOpen: true,
-      currentStepIndex: 0,
+      currentStepIndex: 0, // Sempre começar do início após reset
       steps: resetSteps,
       canSkip: true,
       dontShowAgain: false
     });
     
-    console.log('Onboarding reset completed - state updated');
+    console.log('Onboarding reset completed - state updated to step 0');
   };
 
   // Helper para páginas
