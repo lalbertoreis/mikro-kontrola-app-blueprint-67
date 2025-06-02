@@ -34,7 +34,7 @@ export const useOnboarding = () => {
 
   const [isInitialized, setIsInitialized] = useState(false);
 
-  console.log('useOnboarding state:', {
+  /*console.log('useOnboarding state:', {
     currentStepIndex: state.currentStepIndex,
     currentStepId: state.steps[state.currentStepIndex]?.id,
     servicesCount: services.length,
@@ -47,7 +47,7 @@ export const useOnboarding = () => {
     progressCount: progress.length,
     settings,
     progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed }))
-  });
+  });*/
 
   // Verificar se um passo está completo APENAS baseado no progresso do banco
   const isStepCompleted = (stepId: string) => {
@@ -61,7 +61,7 @@ export const useOnboarding = () => {
       return;
     }
 
-    console.log('Running auto-detection of completed steps');
+    // console.log('Running auto-detection of completed steps');
     detectAndMarkCompletedSteps(services.length, employees.length);
   }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized]);
 
@@ -69,7 +69,7 @@ export const useOnboarding = () => {
   useEffect(() => {
     if (!user || loading || progressLoading) return;
 
-    console.log('Initializing onboarding state', { 
+    // console.log('Initializing onboarding state', { 
       servicesCount: services.length, 
       employeesCount: employees.length,
       progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed })),
@@ -80,7 +80,7 @@ export const useOnboarding = () => {
 
     // Se usuário escolheu não mostrar mais
     if (settings.dont_show_again) {
-      console.log('User chose not to see onboarding again');
+      // console.log('User chose not to see onboarding again');
       setState(prev => ({ ...prev, dontShowAgain: true, isOpen: false }));
       setIsInitialized(true);
       return;
@@ -102,7 +102,7 @@ export const useOnboarding = () => {
 
     // Só não mostrar se está completamente finalizado
     if (allMainStepsComplete && settings.is_completed) {
-      console.log('Tutorial completely finished');
+      // console.log('Tutorial completely finished');
       shouldShowOnboarding = false;
     }
 
@@ -114,7 +114,7 @@ export const useOnboarding = () => {
       dontShowAgain: settings.dont_show_again
     };
 
-    console.log('Setting initial onboarding state:', initialState);
+    // console.log('Setting initial onboarding state:', initialState);
     setState(initialState);
     
     setIsInitialized(true);
@@ -135,7 +135,7 @@ export const useOnboarding = () => {
       // Apenas mover para próximo passo
       const nextIndex = state.currentStepIndex + 1;
       if (nextIndex < state.steps.length) {
-        console.log('Moving to next step:', nextIndex);
+        // console.log('Moving to next step:', nextIndex);
         setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
         updateSettings({ current_step_index: nextIndex });
       }
@@ -144,7 +144,7 @@ export const useOnboarding = () => {
 
   const goToStep = (stepIndex: number) => {
     if (stepIndex >= 0 && stepIndex < state.steps.length) {
-      console.log('Going to step:', stepIndex);
+      // console.log('Going to step:', stepIndex);
       setState(prev => ({ ...prev, currentStepIndex: stepIndex }));
       updateSettings({ current_step_index: stepIndex });
     }
@@ -177,7 +177,7 @@ export const useOnboarding = () => {
   };
 
   const handleResetOnboarding = async () => {
-    console.log('Resetting onboarding');
+    // console.log('Resetting onboarding');
     await resetOnboarding();
     
     // Resetar estado local IMEDIATAMENTE - sempre começar do passo 0
@@ -190,7 +190,7 @@ export const useOnboarding = () => {
       dontShowAgain: false
     });
     
-    console.log('Onboarding reset completed - state updated to step 0');
+    // console.log('Onboarding reset completed - state updated to step 0');
   };
 
   // Helper para páginas
