@@ -45,7 +45,8 @@ export const useOnboarding = () => {
     isOpen: state.isOpen,
     dontShowAgain: settings.dont_show_again,
     progressCount: progress.length,
-    settings
+    settings,
+    progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed }))
   });
 
   // Verificar se um passo está completo baseado no progresso do banco
@@ -66,25 +67,39 @@ export const useOnboarding = () => {
 
   // Encontrar o primeiro passo incompleto
   const findFirstIncompleteStep = () => {
-    return ONBOARDING_STEPS.findIndex(step => 
+    const incompleteIndex = ONBOARDING_STEPS.findIndex(step => 
       !isStepCompleted(step.id) && step.id !== 'complete'
     );
+    
+    // Se todos os passos principais estão completos, ir para o último (complete)
+    if (incompleteIndex === -1) {
+      return ONBOARDING_STEPS.length - 1;
+    }
+    
+    return incompleteIndex;
   };
 
   // Detectar e marcar passos concluídos automaticamente
   useEffect(() => {
-    if (!user || loading || servicesLoading || employeesLoading || progressLoading) {
+    if (!user || loading || servicesLoading || employeesLoading || progressLoading || !isInitialized) {
       return;
     }
 
+    console.log('Running auto-detection of completed steps');
     detectAndMarkCompletedSteps(services.length, employees.length);
-  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading]);
+  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized]);
 
   // Inicializar estado do onboarding
   useEffect(() => {
-    if (!user || loading || progressLoading || isInitialized) return;
+    if (!user || loading || progressLoading) return;
 
-    console.log('Initializing onboarding state');
+    console.log('Initializing onboarding state', { 
+      servicesCount: services.length, 
+      employeesCount: employees.length,
+      progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed })),
+      dontShowAgain: settings.dont_show_again,
+      isCompleted: settings.is_completed
+    });
 
     // Se usuário escolheu não mostrar mais
     if (settings.dont_show_again) {
@@ -94,31 +109,34 @@ export const useOnboarding = () => {
       return;
     }
 
-    // Atualizar os passos com status de conclusão
+    // Atualizar os passos com status de conclusão baseado nos dados reais + banco
     const updatedSteps = ONBOARDING_STEPS.map(step => ({
       ...step,
       completed: isStepCompleted(step.id)
     }));
 
     const firstIncompleteIndex = findFirstIncompleteStep();
-    const hasIncompleteSteps = firstIncompleteIndex !== -1;
+    const allMainStepsComplete = ONBOARDING_STEPS.slice(0, -1).every(step => isStepCompleted(step.id));
 
     let currentStepIndex = 0;
+    let shouldShowOnboarding = true;
 
-    if (hasIncompleteSteps) {
-      currentStepIndex = firstIncompleteIndex;
-    } else if (!settings.is_completed) {
-      // Se todos os passos principais estão completos, mostrar o passo final
+    if (allMainStepsComplete && settings.is_completed) {
+      // Tutorial completamente finalizado
+      console.log('Tutorial completely finished');
+      shouldShowOnboarding = false;
+    } else if (allMainStepsComplete && !settings.is_completed) {
+      // Todos os passos principais completos, mostrar passo final
+      console.log('All main steps complete, showing final step');
       currentStepIndex = ONBOARDING_STEPS.length - 1;
     } else {
-      // Tutorial já foi completado
-      setState(prev => ({ ...prev, isOpen: false }));
-      setIsInitialized(true);
-      return;
+      // Há passos incompletos
+      console.log('Found incomplete steps, starting from:', firstIncompleteIndex);
+      currentStepIndex = firstIncompleteIndex;
     }
 
     const initialState = {
-      isOpen: true,
+      isOpen: shouldShowOnboarding,
       currentStepIndex,
       steps: updatedSteps,
       canSkip: true,
@@ -134,7 +152,7 @@ export const useOnboarding = () => {
     }
     
     setIsInitialized(true);
-  }, [user, loading, progressLoading, progress, settings, isInitialized]);
+  }, [user, loading, progressLoading, progress, settings, services.length, employees.length]);
 
   // Ações do onboarding
   const nextStep = () => {
@@ -194,6 +212,7 @@ export const useOnboarding = () => {
     console.log('Resetting onboarding');
     await resetOnboarding();
     
+    // Resetar estado local
     setState({
       isOpen: true,
       currentStepIndex: 0,
@@ -202,7 +221,10 @@ export const useOnboarding = () => {
       dontShowAgain: false
     });
     
-    navigate('/dashboard');
+    // Recarregar dados para garantir sincronia
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   // Helper para páginas

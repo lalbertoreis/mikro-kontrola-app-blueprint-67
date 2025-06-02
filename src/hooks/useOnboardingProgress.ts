@@ -125,12 +125,14 @@ export const useOnboardingProgress = () => {
 
     console.log('Detecting completed steps:', { servicesCount, employeesCount });
 
+    const stepsToCheck = [];
+
     // Verificar se serviços foram adicionados
     if (servicesCount > 0) {
       const servicesProgress = progress.find(p => p.step_id === 'services');
       if (!servicesProgress?.completed) {
         console.log('Auto-completing services step');
-        await markStepCompleted('services');
+        stepsToCheck.push('services');
       }
     }
 
@@ -139,8 +141,13 @@ export const useOnboardingProgress = () => {
       const employeesProgress = progress.find(p => p.step_id === 'employees');
       if (!employeesProgress?.completed) {
         console.log('Auto-completing employees step');
-        await markStepCompleted('employees');
+        stepsToCheck.push('employees');
       }
+    }
+
+    // Marcar todos os passos detectados como completos
+    for (const stepId of stepsToCheck) {
+      await markStepCompleted(stepId);
     }
   };
 
@@ -196,25 +203,36 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Resetar onboarding
+  // Resetar onboarding - CORRIGIDO para persistir no banco
   const resetOnboarding = async () => {
     if (!user) return;
 
     try {
+      console.log('Resetting onboarding - clearing progress and settings');
+      
       // Limpar progresso
-      await supabase
+      const { error: progressError } = await supabase
         .from('onboarding_progress')
         .delete()
         .eq('user_id', user.id);
 
-      // Resetar configurações
+      if (progressError) {
+        console.error('Error clearing progress:', progressError);
+        toast.error('Erro ao limpar progresso');
+        return;
+      }
+
+      // Resetar configurações no banco
       await updateSettings({
         dont_show_again: false,
         current_step_index: 0,
         is_completed: false
       });
 
+      // Limpar estado local
       setProgress([]);
+      
+      console.log('Onboarding reset completed');
       toast.success('Tutorial reiniciado');
     } catch (error) {
       console.error('Error resetting onboarding:', error);
