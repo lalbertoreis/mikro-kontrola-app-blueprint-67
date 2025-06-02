@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -151,46 +150,26 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Atualizar configurações - CORRIGIDO para evitar conflitos
+  // Atualizar configurações
   const updateSettings = async (newSettings: Partial<OnboardingSettings>) => {
     if (!user) return;
 
     try {
       const updatedSettings = { ...settings, ...newSettings };
 
-      // Primeiro, tentar buscar o registro existente
-      const { data: existingSettings } = await supabase
+      const { error } = await supabase
         .from('user_onboarding_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .upsert({
+          user_id: user.id,
+          dont_show_again: updatedSettings.dont_show_again,
+          current_step_index: updatedSettings.current_step_index,
+          is_completed: updatedSettings.is_completed
+        }, {
+          onConflict: 'user_id'
+        });
 
-      let result;
-      
-      if (existingSettings) {
-        // Se existe, fazer update
-        result = await supabase
-          .from('user_onboarding_settings')
-          .update({
-            dont_show_again: updatedSettings.dont_show_again,
-            current_step_index: updatedSettings.current_step_index,
-            is_completed: updatedSettings.is_completed
-          })
-          .eq('user_id', user.id);
-      } else {
-        // Se não existe, fazer insert
-        result = await supabase
-          .from('user_onboarding_settings')
-          .insert({
-            user_id: user.id,
-            dont_show_again: updatedSettings.dont_show_again,
-            current_step_index: updatedSettings.current_step_index,
-            is_completed: updatedSettings.is_completed
-          });
-      }
-
-      if (result.error) {
-        console.error('Error updating onboarding settings:', result.error);
+      if (error) {
+        console.error('Error updating onboarding settings:', error);
         toast.error('Erro ao salvar configurações');
         return;
       }
@@ -203,14 +182,14 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Resetar onboarding - CORRIGIDO para persistir no banco
+  // Resetar onboarding - CORRIGIDO para limpar progresso local também
   const resetOnboarding = async () => {
     if (!user) return;
 
     try {
       console.log('Resetting onboarding - clearing progress and settings');
       
-      // Limpar progresso
+      // Limpar progresso no banco
       const { error: progressError } = await supabase
         .from('onboarding_progress')
         .delete()
@@ -223,14 +202,30 @@ export const useOnboardingProgress = () => {
       }
 
       // Resetar configurações no banco
-      await updateSettings({
+      const { error: settingsError } = await supabase
+        .from('user_onboarding_settings')
+        .upsert({
+          user_id: user.id,
+          dont_show_again: false,
+          current_step_index: 0,
+          is_completed: false
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (settingsError) {
+        console.error('Error resetting settings:', settingsError);
+        toast.error('Erro ao resetar configurações');
+        return;
+      }
+
+      // Limpar estado local IMEDIATAMENTE
+      setProgress([]);
+      setSettings({
         dont_show_again: false,
         current_step_index: 0,
         is_completed: false
       });
-
-      // Limpar estado local
-      setProgress([]);
       
       console.log('Onboarding reset completed');
       toast.success('Tutorial reiniciado');

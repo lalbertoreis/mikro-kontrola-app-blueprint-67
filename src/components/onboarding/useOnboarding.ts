@@ -212,19 +212,17 @@ export const useOnboarding = () => {
     console.log('Resetting onboarding');
     await resetOnboarding();
     
-    // Resetar estado local
+    // Resetar estado local IMEDIATAMENTE
+    const resetSteps = ONBOARDING_STEPS.map(step => ({ ...step, completed: false }));
     setState({
       isOpen: true,
       currentStepIndex: 0,
-      steps: ONBOARDING_STEPS.map(step => ({ ...step, completed: false })),
+      steps: resetSteps,
       canSkip: true,
       dontShowAgain: false
     });
     
-    // Recarregar dados para garantir sincronia
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    console.log('Onboarding reset completed - state updated');
   };
 
   // Helper para páginas
