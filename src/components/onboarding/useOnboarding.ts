@@ -55,20 +55,6 @@ export const useOnboarding = () => {
     return stepProgress?.completed || false;
   };
 
-  // Encontrar o primeiro passo incompleto
-  const findFirstIncompleteStep = () => {
-    const incompleteIndex = ONBOARDING_STEPS.findIndex(step => 
-      !isStepCompleted(step.id) && step.id !== 'complete'
-    );
-    
-    // Se todos os passos principais estão completos, ir para o último (complete)
-    if (incompleteIndex === -1) {
-      return ONBOARDING_STEPS.length - 1;
-    }
-    
-    return incompleteIndex;
-  };
-
   // Detectar e marcar passos concluídos automaticamente
   useEffect(() => {
     if (!user || loading || servicesLoading || employeesLoading || progressLoading || !isInitialized) {
@@ -106,29 +92,21 @@ export const useOnboarding = () => {
       completed: isStepCompleted(step.id)
     }));
 
-    const firstIncompleteIndex = findFirstIncompleteStep();
+    // Usar SEMPRE o current_step_index do banco, sem "adivinhar"
+    const currentStepIndex = settings.current_step_index || 0;
     const allMainStepsComplete = ONBOARDING_STEPS.slice(0, -1).every(step => isStepCompleted(step.id));
 
-    let currentStepIndex = settings.current_step_index || 0;
     let shouldShowOnboarding = true;
 
+    // Só não mostrar se está completamente finalizado
     if (allMainStepsComplete && settings.is_completed) {
-      // Tutorial completamente finalizado
       console.log('Tutorial completely finished');
       shouldShowOnboarding = false;
-    } else if (allMainStepsComplete && !settings.is_completed) {
-      // Todos os passos principais completos, mostrar passo final
-      console.log('All main steps complete, showing final step');
-      currentStepIndex = ONBOARDING_STEPS.length - 1;
-    } else if (currentStepIndex === 0 && firstIncompleteIndex > 0) {
-      // Se está no passo 0 mas há passos incompletos à frente, usar o primeiro incompleto
-      console.log('Found incomplete steps, starting from:', firstIncompleteIndex);
-      currentStepIndex = firstIncompleteIndex;
     }
 
     const initialState = {
       isOpen: shouldShowOnboarding,
-      currentStepIndex,
+      currentStepIndex, // Usar exatamente o valor do banco
       steps: updatedSteps,
       canSkip: true,
       dontShowAgain: settings.dont_show_again
