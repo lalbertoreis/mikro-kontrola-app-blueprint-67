@@ -34,7 +34,7 @@ export const useOnboarding = () => {
 
   const [isInitialized, setIsInitialized] = useState(false);
 
-  console.log('useOnboarding state:', {
+  /*console.log('useOnboarding state:', {
     currentStepIndex: state.currentStepIndex,
     currentStepId: state.steps[state.currentStepIndex]?.id,
     servicesCount: services.length,
@@ -47,7 +47,7 @@ export const useOnboarding = () => {
     progressCount: progress.length,
     settings,
     progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed }))
-  });
+  });*/
 
   // Verificar se um passo está completo APENAS baseado no progresso do banco
   const isStepCompleted = (stepId: string) => {
@@ -69,14 +69,14 @@ export const useOnboarding = () => {
   useEffect(() => {
     if (!user || loading || progressLoading) return;
 
-    // console.log('Initializing onboarding state', { 
+    /* console.log('Initializing onboarding state', { 
       servicesCount: services.length, 
       employeesCount: employees.length,
       progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed })),
       dontShowAgain: settings.dont_show_again,
       isCompleted: settings.is_completed,
       currentStepIndex: settings.current_step_index
-    });
+    });*/
 
     // Se usuário escolheu não mostrar mais
     if (settings.dont_show_again) {
