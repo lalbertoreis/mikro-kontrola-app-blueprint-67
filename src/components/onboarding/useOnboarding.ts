@@ -94,6 +94,8 @@ export const useOnboarding = () => {
 
     // Usar SEMPRE o current_step_index do banco, sem "adivinhar"
     const currentStepIndex = settings.current_step_index || 0;
+    
+    // Verificar se está completo baseado apenas no banco
     const allMainStepsComplete = ONBOARDING_STEPS.slice(0, -1).every(step => isStepCompleted(step.id));
 
     let shouldShowOnboarding = true;
@@ -116,7 +118,7 @@ export const useOnboarding = () => {
     setState(initialState);
     
     setIsInitialized(true);
-  }, [user, loading, progressLoading, progress, settings, services.length, employees.length]);
+  }, [user, loading, progressLoading, progress, settings]);
 
   // Ações do onboarding
   const nextStep = () => {
