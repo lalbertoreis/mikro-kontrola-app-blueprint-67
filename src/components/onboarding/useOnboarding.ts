@@ -34,6 +34,7 @@ export const useOnboarding = () => {
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasRunInitialDetection, setHasRunInitialDetection] = useState(false);
+  const [hasNavigatedFromModal, setHasNavigatedFromModal] = useState(false);
 
   // Verificar se um passo está completo APENAS baseado no progresso do banco
   const isStepCompleted = (stepId: string) => {
@@ -74,7 +75,8 @@ export const useOnboarding = () => {
       progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed })),
       dontShowAgain: settings.dont_show_again,
       isCompleted: settings.is_completed,
-      currentStepIndex: settings.current_step_index
+      currentStepIndex: settings.current_step_index,
+      hasNavigatedFromModal
     });
 
     // Se usuário escolheu não mostrar mais
@@ -103,6 +105,11 @@ export const useOnboarding = () => {
       shouldShowOnboarding = false;
     }
 
+    // Se navegou do modal para uma página, não reabrir automaticamente
+    if (hasNavigatedFromModal) {
+      shouldShowOnboarding = false;
+    }
+
     const initialState = {
       isOpen: shouldShowOnboarding,
       currentStepIndex, // Usar exatamente o valor do banco
@@ -113,13 +120,23 @@ export const useOnboarding = () => {
 
     setState(initialState);
     setIsInitialized(true);
-  }, [user, loading, progressLoading, progress, settings]);
+  }, [user, loading, progressLoading, progress, settings, hasNavigatedFromModal]);
+
+  // Resetar flag quando a localização muda para uma rota diferente do passo atual
+  useEffect(() => {
+    if (hasNavigatedFromModal && state.steps[state.currentStepIndex]?.route !== location.pathname) {
+      setHasNavigatedFromModal(false);
+    }
+  }, [location.pathname, hasNavigatedFromModal, state.currentStepIndex, state.steps]);
 
   // Ações do onboarding
   const nextStep = () => {
     const currentStep = state.steps[state.currentStepIndex];
     
     if (currentStep.route) {
+      // Marcar que navegou do modal
+      setHasNavigatedFromModal(true);
+      
       // Navegar para a rota do passo
       navigate(currentStep.route);
       
@@ -130,7 +147,6 @@ export const useOnboarding = () => {
       // Apenas mover para próximo passo
       const nextIndex = state.currentStepIndex + 1;
       if (nextIndex < state.steps.length) {
-        // console.log('Moving to next step:', nextIndex);
         setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
         updateSettings({ current_step_index: nextIndex });
       }
@@ -139,7 +155,6 @@ export const useOnboarding = () => {
 
   const goToStep = (stepIndex: number) => {
     if (stepIndex >= 0 && stepIndex < state.steps.length) {
-      // console.log('Going to step:', stepIndex);
       setState(prev => ({ ...prev, currentStepIndex: stepIndex }));
       updateSettings({ current_step_index: stepIndex });
     }
@@ -185,13 +200,14 @@ export const useOnboarding = () => {
       dontShowAgain: false
     });
     
-    // Resetar flag de detecção para permitir nova detecção apenas se não houver progresso
+    // Resetar flags
     setHasRunInitialDetection(false);
+    setHasNavigatedFromModal(false);
     
     console.log('Onboarding reset completed - state updated to step 0');
   };
 
-  // Helper para páginas
+  // Helper para páginas - agora permite reabrir o modal quando interage com o banner
   const getCurrentStepForPage = () => {
     if (settings.dont_show_again || !isInitialized) return null;
     
@@ -205,6 +221,12 @@ export const useOnboarding = () => {
     return matchingStep || null;
   };
 
+  // Função para reabrir o modal quando o usuário interage com o banner
+  const reopenModal = () => {
+    setHasNavigatedFromModal(false);
+    setState(prev => ({ ...prev, isOpen: true }));
+  };
+
   const isOnboardingActive = !settings.dont_show_again && 
     state.steps.some(step => !isStepCompleted(step.id) && step.id !== 'welcome' && step.id !== 'complete');
 
@@ -216,6 +238,7 @@ export const useOnboarding = () => {
     dontShowAgain: state.dontShowAgain,
     isOnboardingActive,
     getCurrentStepForPage,
+    reopenModal,
     setDontShowAgain,
     nextStep,
     goToStep,

@@ -7,7 +7,7 @@ import { Sparkles, ArrowRight, Plus } from 'lucide-react';
 import { useOnboarding } from './useOnboarding';
 
 export const OnboardingPageBanner: React.FC = () => {
-  const { nextStep, isOnboardingActive, getCurrentStepForPage } = useOnboarding();
+  const { nextStep, reopenModal, isOnboardingActive, getCurrentStepForPage } = useOnboarding();
   
   const stepForCurrentPage = getCurrentStepForPage();
   
@@ -23,9 +23,9 @@ export const OnboardingPageBanner: React.FC = () => {
   }
 
   const handleCadastrar = () => {
-    // The step completion will be detected automatically by useOnboarding
-    // when the user creates the item, which will advance to next step
-    console.log('Banner button clicked - waiting for step completion detection');
+    // Reabrir o modal do onboarding quando clicar em cadastrar
+    console.log('Banner cadastrar button clicked - reopening modal');
+    reopenModal();
   };
 
   const handleAvancar = () => {
