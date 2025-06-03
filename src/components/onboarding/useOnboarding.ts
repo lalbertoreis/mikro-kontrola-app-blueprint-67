@@ -41,22 +41,19 @@ export const useOnboarding = () => {
     return stepProgress?.completed || false;
   };
 
-  // Detectar e marcar passos concluídos automaticamente - APENAS na primeira inicialização E se não há progresso
+  // Detectar e marcar passos concluídos automaticamente - APENAS na primeira inicialização
   useEffect(() => {
     if (!user || loading || servicesLoading || employeesLoading || progressLoading || !isInitialized) {
       return;
     }
 
-    // Só executar detecção automática se:
-    // 1. Ainda não executou a detecção inicial
-    // 2. Não há progresso registrado (length === 0)
-    // 3. O usuário não escolheu não mostrar mais
-    if (!hasRunInitialDetection && progress.length === 0 && !settings.dont_show_again) {
+    // Só executar detecção automática se ainda não executou
+    if (!hasRunInitialDetection) {
       console.log('Running initial auto-detection of completed steps');
       detectAndMarkCompletedSteps(services.length, employees.length);
       setHasRunInitialDetection(true);
     }
-  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized, hasRunInitialDetection, settings.dont_show_again, progress.length, detectAndMarkCompletedSteps]);
+  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized, hasRunInitialDetection, detectAndMarkCompletedSteps]);
 
   // Inicializar estado do onboarding
   useEffect(() => {

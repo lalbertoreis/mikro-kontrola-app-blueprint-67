@@ -135,12 +135,12 @@ export const useOnboardingProgress = () => {
       servicesCount, 
       employeesCount, 
       progressCount: progress.length,
-      hasAnyProgress: progress.length > 0 
+      hasAnyCompletedProgress: progress.some(p => p.completed === true)
     });
 
-    // Se já existe QUALQUER progresso registrado, não fazer detecção automática
-    if (progress.length > 0) {
-      console.log('Progress already exists, skipping auto-detection');
+    // Se já existe QUALQUER progresso registrado como completo, não fazer detecção automática
+    if (progress.some(p => p.completed === true)) {
+      console.log('Completed progress already exists, skipping auto-detection');
       return;
     }
 
@@ -202,26 +202,42 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Resetar onboarding - LIMPAR completamente o progresso
+  // Resetar onboarding - MARCAR como false ao invés de deletar
   const resetOnboarding = async () => {
     if (!user) return;
 
     try {
-      console.log('Resetting onboarding - clearing progress and settings');
+      console.log('Resetting onboarding - marking all steps as incomplete');
       
       // Marcar que acabou de ser resetado para prevenir auto-detecção
       setWasRecentlyReset(true);
       
-      // Limpar progresso no banco
-      const { error: progressError } = await supabase
+      // Primeiro, obter todos os passos existentes
+      const { data: existingProgress } = await supabase
         .from('onboarding_progress')
-        .delete()
+        .select('step_id')
         .eq('user_id', user.id);
 
-      if (progressError) {
-        console.error('Error clearing progress:', progressError);
-        toast.error('Erro ao limpar progresso');
-        return;
+      // Marcar todos os passos como false ao invés de deletar
+      if (existingProgress && existingProgress.length > 0) {
+        const updates = existingProgress.map(p => ({
+          user_id: user.id,
+          step_id: p.step_id,
+          completed: false,
+          completed_at: null
+        }));
+
+        const { error: progressError } = await supabase
+          .from('onboarding_progress')
+          .upsert(updates, {
+            onConflict: 'user_id,step_id'
+          });
+
+        if (progressError) {
+          console.error('Error resetting progress:', progressError);
+          toast.error('Erro ao resetar progresso');
+          return;
+        }
       }
 
       // Resetar configurações no banco
@@ -242,21 +258,27 @@ export const useOnboardingProgress = () => {
         return;
       }
 
-      // Limpar estado local IMEDIATAMENTE
-      setProgress([]);
+      // Atualizar estado local IMEDIATAMENTE
+      const resetProgress = existingProgress?.map(p => ({
+        step_id: p.step_id,
+        completed: false,
+        completed_at: null
+      })) || [];
+
+      setProgress(resetProgress);
       setSettings({
         dont_show_again: false,
         current_step_index: 0,
         is_completed: false
       });
       
-      console.log('Onboarding reset completed - all progress cleared');
+      console.log('Onboarding reset completed - all progress marked as false');
       toast.success('Tutorial reiniciado');
       
-      // Remover a flag de reset após 2 segundos para permitir futuras detecções
+      // Remover a flag de reset após 3 segundos para permitir futuras detecções
       setTimeout(() => {
         setWasRecentlyReset(false);
-      }, 2000);
+      }, 3000);
     } catch (error) {
       console.error('Error resetting onboarding:', error);
       toast.error('Erro ao reiniciar tutorial');
