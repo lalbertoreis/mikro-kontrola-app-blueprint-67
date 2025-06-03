@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,7 +68,7 @@ export const useOnboarding = () => {
   useEffect(() => {
     if (!user || loading || progressLoading) return;
 
-    /* console.log('Initializing onboarding state', { 
+    /*console.log('Initializing onboarding state', { 
       servicesCount: services.length, 
       employeesCount: employees.length,
       progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed })),
