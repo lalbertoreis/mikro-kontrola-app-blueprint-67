@@ -41,32 +41,41 @@ export const useOnboarding = () => {
     return stepProgress?.completed || false;
   };
 
-  // Detectar e marcar passos concluídos automaticamente - APENAS na primeira inicialização
+  // Detectar e marcar passos concluídos automaticamente - APENAS na primeira inicialização E se não há progresso
   useEffect(() => {
     if (!user || loading || servicesLoading || employeesLoading || progressLoading || !isInitialized) {
       return;
     }
 
-    // Só executar detecção automática se ainda não executou
-    if (!hasRunInitialDetection) {
-      console.log('Running initial auto-detection of completed steps');
+    // Só executar detecção automática se:
+    // 1. Ainda não executou
+    // 2. NÃO há nenhum progresso na tabela (nem true nem false)
+    // 3. Há dados para detectar
+    if (!hasRunInitialDetection && progress.length === 0 && (services.length > 0 || employees.length > 0)) {
+      console.log('Running initial auto-detection of completed steps - no existing progress found');
       detectAndMarkCompletedSteps(services.length, employees.length);
       setHasRunInitialDetection(true);
+    } else {
+      console.log('Skipping auto-detection:', {
+        hasRunInitialDetection,
+        progressExists: progress.length > 0,
+        hasData: services.length > 0 || employees.length > 0
+      });
     }
-  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized, hasRunInitialDetection, detectAndMarkCompletedSteps]);
+  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized, hasRunInitialDetection, progress.length, detectAndMarkCompletedSteps]);
 
   // Inicializar estado do onboarding
   useEffect(() => {
     if (!user || loading || progressLoading) return;
 
-    /*console.log('Initializing onboarding state', { 
+    console.log('Initializing onboarding state', { 
       servicesCount: services.length, 
       employeesCount: employees.length,
       progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed })),
       dontShowAgain: settings.dont_show_again,
       isCompleted: settings.is_completed,
       currentStepIndex: settings.current_step_index
-    });*/
+    });
 
     // Se usuário escolheu não mostrar mais
     if (settings.dont_show_again) {
@@ -176,7 +185,7 @@ export const useOnboarding = () => {
       dontShowAgain: false
     });
     
-    // Resetar flag de detecção para permitir nova detecção se necessário (mas só após delay)
+    // Resetar flag de detecção para permitir nova detecção apenas se não houver progresso
     setHasRunInitialDetection(false);
     
     console.log('Onboarding reset completed - state updated to step 0');

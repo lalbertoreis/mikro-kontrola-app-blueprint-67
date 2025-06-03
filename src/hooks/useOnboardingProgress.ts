@@ -120,7 +120,7 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Detectar e marcar passos automaticamente baseado nos dados - MUITO MAIS CONSERVADOR
+  // Detectar e marcar passos automaticamente - MUITO MAIS RESTRITIVO
   const detectAndMarkCompletedSteps = async (servicesCount: number, employeesCount: number) => {
     if (!user || isLoading || wasRecentlyReset) {
       console.log('Skipping auto-detection:', { 
@@ -131,24 +131,24 @@ export const useOnboardingProgress = () => {
       return;
     }
 
-    console.log('Detecting completed steps:', { 
+    console.log('Checking if auto-detection should run:', { 
       servicesCount, 
       employeesCount, 
       progressCount: progress.length,
+      hasAnyProgress: progress.length > 0,
       hasAnyCompletedProgress: progress.some(p => p.completed === true)
     });
 
-    // Se já existe QUALQUER progresso registrado como completo, não fazer detecção automática
-    if (progress.some(p => p.completed === true)) {
-      console.log('Completed progress already exists, skipping auto-detection');
+    // NUNCA executar detecção automática se:
+    // 1. Já existe QUALQUER progresso na tabela (mesmo que false)
+    // 2. Não há serviços nem funcionários para detectar
+    // 3. Foi resetado recentemente
+    if (progress.length > 0 || (servicesCount === 0 && employeesCount === 0)) {
+      console.log('Skipping auto-detection - progress exists or no data to detect');
       return;
     }
 
-    // Se não há serviços nem funcionários, não há nada para detectar
-    if (servicesCount === 0 && employeesCount === 0) {
-      console.log('No services or employees to detect');
-      return;
-    }
+    console.log('Running auto-detection for the first time');
 
     const stepsToCheck = [];
 
@@ -275,10 +275,11 @@ export const useOnboardingProgress = () => {
       console.log('Onboarding reset completed - all progress marked as false');
       toast.success('Tutorial reiniciado');
       
-      // Remover a flag de reset após 3 segundos para permitir futuras detecções
+      // Remover a flag de reset após 10 segundos para permitir futuras detecções apenas em novos carregamentos
       setTimeout(() => {
+        console.log('Clearing wasRecentlyReset flag');
         setWasRecentlyReset(false);
-      }, 3000);
+      }, 10000);
     } catch (error) {
       console.error('Error resetting onboarding:', error);
       toast.error('Erro ao reiniciar tutorial');
