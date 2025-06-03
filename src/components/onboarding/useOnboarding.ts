@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,7 +41,7 @@ export const useOnboarding = () => {
     return stepProgress?.completed || false;
   };
 
-  // Detectar e marcar passos concluídos automaticamente - APENAS na primeira inicialização
+  // Detectar e marcar passos concluídos automaticamente - APENAS na primeira inicialização E se não há progresso
   useEffect(() => {
     if (!user || loading || servicesLoading || employeesLoading || progressLoading || !isInitialized) {
       return;
@@ -48,14 +49,14 @@ export const useOnboarding = () => {
 
     // Só executar detecção automática se:
     // 1. Ainda não executou a detecção inicial
-    // 2. Não foi resetado recentemente (verificar se há progresso vazio)
+    // 2. Não há progresso registrado (length === 0)
     // 3. O usuário não escolheu não mostrar mais
-    if (!hasRunInitialDetection && !settings.dont_show_again && progress.length === 0) {
+    if (!hasRunInitialDetection && progress.length === 0 && !settings.dont_show_again) {
       console.log('Running initial auto-detection of completed steps');
       detectAndMarkCompletedSteps(services.length, employees.length);
       setHasRunInitialDetection(true);
     }
-  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized, hasRunInitialDetection, settings.dont_show_again, progress.length]);
+  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized, hasRunInitialDetection, settings.dont_show_again, progress.length, detectAndMarkCompletedSteps]);
 
   // Inicializar estado do onboarding
   useEffect(() => {
@@ -178,7 +179,7 @@ export const useOnboarding = () => {
       dontShowAgain: false
     });
     
-    // Resetar flag de detecção para permitir nova detecção se necessário
+    // Resetar flag de detecção para permitir nova detecção se necessário (mas só após delay)
     setHasRunInitialDetection(false);
     
     console.log('Onboarding reset completed - state updated to step 0');

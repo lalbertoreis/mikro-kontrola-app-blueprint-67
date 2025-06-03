@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,6 +25,7 @@ export const useOnboardingProgress = () => {
     is_completed: false
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [wasRecentlyReset, setWasRecentlyReset] = useState(false);
 
   // Carregar progresso do banco
   const loadProgress = async () => {
@@ -118,36 +120,48 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Detectar e marcar passos automaticamente baseado nos dados - MAIS CONSERVADOR
+  // Detectar e marcar passos automaticamente baseado nos dados - MUITO MAIS CONSERVADOR
   const detectAndMarkCompletedSteps = async (servicesCount: number, employeesCount: number) => {
-    if (!user || isLoading) return;
+    if (!user || isLoading || wasRecentlyReset) {
+      console.log('Skipping auto-detection:', { 
+        noUser: !user, 
+        isLoading, 
+        wasRecentlyReset 
+      });
+      return;
+    }
 
-    console.log('Detecting completed steps:', { servicesCount, employeesCount, progressCount: progress.length });
+    console.log('Detecting completed steps:', { 
+      servicesCount, 
+      employeesCount, 
+      progressCount: progress.length,
+      hasAnyProgress: progress.length > 0 
+    });
 
-    // Se já existe progresso registrado, não fazer detecção automática
+    // Se já existe QUALQUER progresso registrado, não fazer detecção automática
     if (progress.length > 0) {
       console.log('Progress already exists, skipping auto-detection');
       return;
     }
 
-    const stepsToCheck = [];
-
-    // Verificar se serviços foram adicionados E não há registro deste passo
-    if (servicesCount > 0) {
-      const servicesProgress = progress.find(p => p.step_id === 'services');
-      if (!servicesProgress) {
-        console.log('Auto-completing services step');
-        stepsToCheck.push('services');
-      }
+    // Se não há serviços nem funcionários, não há nada para detectar
+    if (servicesCount === 0 && employeesCount === 0) {
+      console.log('No services or employees to detect');
+      return;
     }
 
-    // Verificar se funcionários foram adicionados E não há registro deste passo
+    const stepsToCheck = [];
+
+    // Verificar se serviços foram adicionados
+    if (servicesCount > 0) {
+      console.log('Auto-completing services step');
+      stepsToCheck.push('services');
+    }
+
+    // Verificar se funcionários foram adicionados
     if (employeesCount > 0) {
-      const employeesProgress = progress.find(p => p.step_id === 'employees');
-      if (!employeesProgress) {
-        console.log('Auto-completing employees step');
-        stepsToCheck.push('employees');
-      }
+      console.log('Auto-completing employees step');
+      stepsToCheck.push('employees');
     }
 
     // Marcar todos os passos detectados como completos
@@ -195,6 +209,9 @@ export const useOnboardingProgress = () => {
     try {
       console.log('Resetting onboarding - clearing progress and settings');
       
+      // Marcar que acabou de ser resetado para prevenir auto-detecção
+      setWasRecentlyReset(true);
+      
       // Limpar progresso no banco
       const { error: progressError } = await supabase
         .from('onboarding_progress')
@@ -235,6 +252,11 @@ export const useOnboardingProgress = () => {
       
       console.log('Onboarding reset completed - all progress cleared');
       toast.success('Tutorial reiniciado');
+      
+      // Remover a flag de reset após 2 segundos para permitir futuras detecções
+      setTimeout(() => {
+        setWasRecentlyReset(false);
+      }, 2000);
     } catch (error) {
       console.error('Error resetting onboarding:', error);
       toast.error('Erro ao reiniciar tutorial');
