@@ -32,21 +32,7 @@ export const useOnboarding = () => {
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
-
-  /*console.log('useOnboarding state:', {
-    currentStepIndex: state.currentStepIndex,
-    currentStepId: state.steps[state.currentStepIndex]?.id,
-    servicesCount: services.length,
-    employeesCount: employees.length,
-    isLoading: servicesLoading || employeesLoading || progressLoading,
-    pathname: location.pathname,
-    isInitialized,
-    isOpen: state.isOpen,
-    dontShowAgain: settings.dont_show_again,
-    progressCount: progress.length,
-    settings,
-    progressSteps: progress.map(p => ({ id: p.step_id, completed: p.completed }))
-  });*/
+  const [hasRunInitialDetection, setHasRunInitialDetection] = useState(false);
 
   // Verificar se um passo está completo APENAS baseado no progresso do banco
   const isStepCompleted = (stepId: string) => {
@@ -54,15 +40,22 @@ export const useOnboarding = () => {
     return stepProgress?.completed || false;
   };
 
-  // Detectar e marcar passos concluídos automaticamente
+  // Detectar e marcar passos concluídos automaticamente - APENAS na primeira inicialização
   useEffect(() => {
     if (!user || loading || servicesLoading || employeesLoading || progressLoading || !isInitialized) {
       return;
     }
 
-    // console.log('Running auto-detection of completed steps');
-    detectAndMarkCompletedSteps(services.length, employees.length);
-  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized]);
+    // Só executar detecção automática se:
+    // 1. Ainda não executou a detecção inicial
+    // 2. Não foi resetado recentemente (verificar se há progresso vazio)
+    // 3. O usuário não escolheu não mostrar mais
+    if (!hasRunInitialDetection && !settings.dont_show_again && progress.length === 0) {
+      console.log('Running initial auto-detection of completed steps');
+      detectAndMarkCompletedSteps(services.length, employees.length);
+      setHasRunInitialDetection(true);
+    }
+  }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized, hasRunInitialDetection, settings.dont_show_again, progress.length]);
 
   // Inicializar estado do onboarding
   useEffect(() => {
@@ -79,7 +72,6 @@ export const useOnboarding = () => {
 
     // Se usuário escolheu não mostrar mais
     if (settings.dont_show_again) {
-      // console.log('User chose not to see onboarding again');
       setState(prev => ({ ...prev, dontShowAgain: true, isOpen: false }));
       setIsInitialized(true);
       return;
@@ -101,7 +93,6 @@ export const useOnboarding = () => {
 
     // Só não mostrar se está completamente finalizado
     if (allMainStepsComplete && settings.is_completed) {
-      // console.log('Tutorial completely finished');
       shouldShowOnboarding = false;
     }
 
@@ -113,9 +104,7 @@ export const useOnboarding = () => {
       dontShowAgain: settings.dont_show_again
     };
 
-    // console.log('Setting initial onboarding state:', initialState);
     setState(initialState);
-    
     setIsInitialized(true);
   }, [user, loading, progressLoading, progress, settings]);
 
@@ -176,7 +165,7 @@ export const useOnboarding = () => {
   };
 
   const handleResetOnboarding = async () => {
-    // console.log('Resetting onboarding');
+    console.log('Resetting onboarding');
     await resetOnboarding();
     
     // Resetar estado local IMEDIATAMENTE - sempre começar do passo 0
@@ -189,7 +178,10 @@ export const useOnboarding = () => {
       dontShowAgain: false
     });
     
-    // console.log('Onboarding reset completed - state updated to step 0');
+    // Resetar flag de detecção para permitir nova detecção se necessário
+    setHasRunInitialDetection(false);
+    
+    console.log('Onboarding reset completed - state updated to step 0');
   };
 
   // Helper para páginas

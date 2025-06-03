@@ -118,27 +118,33 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Detectar e marcar passos automaticamente baseado nos dados
+  // Detectar e marcar passos automaticamente baseado nos dados - MAIS CONSERVADOR
   const detectAndMarkCompletedSteps = async (servicesCount: number, employeesCount: number) => {
     if (!user || isLoading) return;
 
-    console.log('Detecting completed steps:', { servicesCount, employeesCount });
+    console.log('Detecting completed steps:', { servicesCount, employeesCount, progressCount: progress.length });
+
+    // Se já existe progresso registrado, não fazer detecção automática
+    if (progress.length > 0) {
+      console.log('Progress already exists, skipping auto-detection');
+      return;
+    }
 
     const stepsToCheck = [];
 
-    // Verificar se serviços foram adicionados
+    // Verificar se serviços foram adicionados E não há registro deste passo
     if (servicesCount > 0) {
       const servicesProgress = progress.find(p => p.step_id === 'services');
-      if (!servicesProgress?.completed) {
+      if (!servicesProgress) {
         console.log('Auto-completing services step');
         stepsToCheck.push('services');
       }
     }
 
-    // Verificar se funcionários foram adicionados
+    // Verificar se funcionários foram adicionados E não há registro deste passo
     if (employeesCount > 0) {
       const employeesProgress = progress.find(p => p.step_id === 'employees');
-      if (!employeesProgress?.completed) {
+      if (!employeesProgress) {
         console.log('Auto-completing employees step');
         stepsToCheck.push('employees');
       }
@@ -182,7 +188,7 @@ export const useOnboardingProgress = () => {
     }
   };
 
-  // Resetar onboarding - CORRIGIDO para limpar progresso local também
+  // Resetar onboarding - LIMPAR completamente o progresso
   const resetOnboarding = async () => {
     if (!user) return;
 
@@ -227,7 +233,7 @@ export const useOnboardingProgress = () => {
         is_completed: false
       });
       
-      console.log('Onboarding reset completed');
+      console.log('Onboarding reset completed - all progress cleared');
       toast.success('Tutorial reiniciado');
     } catch (error) {
       console.error('Error resetting onboarding:', error);
