@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -7,6 +8,7 @@ import { Service } from "@/types/service";
 import ServiceDialog from "./ServiceDialog";
 import { useServices } from "@/hooks/useServices";
 import { toast } from "sonner";
+import { useOnboarding } from "@/components/onboarding/useOnboarding";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +32,10 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
   
   const { services, isLoading, deleteService, isDeleting } = useServices();
+  const { isOnboardingActive, getCurrentStepForPage, markStepCompleted, nextStep } = useOnboarding();
+
+  const stepForCurrentPage = getCurrentStepForPage();
+  const isInOnboardingContext = isOnboardingActive && stepForCurrentPage?.id === 'services';
 
   const handleNewService = () => {
     if (onNewService) {
@@ -59,6 +65,23 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
           toast.success("Serviço excluído com sucesso");
         }
       });
+    }
+  };
+
+  const handleServiceDialogClose = async (open: boolean) => {
+    setOpen(open);
+    
+    // Se fechou o dialog e estamos no contexto do onboarding, verificar se foi criado um serviço
+    if (!open && isInOnboardingContext) {
+      // Aguardar um pequeno delay para garantir que a lista seja atualizada
+      setTimeout(async () => {
+        const hasServices = services.filter(service => service.price > 0).length > 0;
+        if (hasServices) {
+          console.log('Service created during onboarding - completing step and advancing');
+          await markStepCompleted('services');
+          nextStep();
+        }
+      }, 500);
     }
   };
 
@@ -184,7 +207,7 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
       
       <ServiceDialog
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={handleServiceDialogClose}
         service={selectedService}
       />
       

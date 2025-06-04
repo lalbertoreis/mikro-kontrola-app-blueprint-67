@@ -244,6 +244,7 @@ export const useOnboarding = () => {
     goToStep,
     skipTutorial,
     closeTutorial,
-    resetOnboarding: handleResetOnboarding
+    resetOnboarding: handleResetOnboarding,
+    markStepCompleted
   };
 };

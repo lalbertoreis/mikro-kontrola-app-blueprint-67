@@ -8,7 +8,7 @@ import { useOnboarding } from './useOnboarding';
 import ServiceDialog from '@/components/services/ServiceDialog';
 
 export const OnboardingPageBanner: React.FC = () => {
-  const { nextStep, reopenModal, isOnboardingActive, getCurrentStepForPage } = useOnboarding();
+  const { nextStep, reopenModal, isOnboardingActive, getCurrentStepForPage, markStepCompleted } = useOnboarding();
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
   
   const stepForCurrentPage = getCurrentStepForPage();
@@ -35,17 +35,20 @@ export const OnboardingPageBanner: React.FC = () => {
     }
   };
 
-  const handleAvancar = () => {
-    console.log('Advancing to next step manually');
+  const handleAvancar = async () => {
+    console.log('Advancing to next step manually and marking current step as completed');
+    // Marcar o step atual como completo antes de avançar
+    await markStepCompleted(stepForCurrentPage.id);
     nextStep();
   };
 
-  const handleServiceDialogClose = (wasCreated: boolean) => {
+  const handleServiceDialogClose = async (wasCreated: boolean) => {
     setServiceDialogOpen(false);
     
-    // Se um serviço foi criado, avançar automaticamente para o próximo step
+    // Se um serviço foi criado, marcar step como completo e avançar automaticamente
     if (wasCreated) {
-      console.log('Service created - advancing to next step');
+      console.log('Service created - marking step as completed and advancing to next step');
+      await markStepCompleted(stepForCurrentPage.id);
       nextStep();
     }
   };
@@ -107,6 +110,7 @@ export const OnboardingPageBanner: React.FC = () => {
         <ServiceDialog 
           open={serviceDialogOpen}
           onOpenChange={(open) => handleServiceDialogClose(!open)}
+          onServiceCreated={() => handleServiceDialogClose(true)}
         />
       )}
     </>
