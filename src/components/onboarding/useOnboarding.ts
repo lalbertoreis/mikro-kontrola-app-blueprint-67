@@ -263,6 +263,7 @@ export const useOnboarding = () => {
     skipTutorial,
     closeTutorial,
     resetOnboarding: handleResetOnboarding,
-    markStepCompleted
+    markStepCompleted,
+    updateSettings
   };
 };
