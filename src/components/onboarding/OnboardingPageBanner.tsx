@@ -8,7 +8,7 @@ import { useOnboarding } from './useOnboarding';
 import ServiceDialog from '@/components/services/ServiceDialog';
 
 export const OnboardingPageBanner: React.FC = () => {
-  const { nextStep, reopenModal, isOnboardingActive, getCurrentStepForPage, markStepCompleted } = useOnboarding();
+  const { nextStep, reopenModal, isOnboardingActive, getCurrentStepForPage, markStepCompleted, updateSettings, currentStepIndex } = useOnboarding();
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
   
   const stepForCurrentPage = getCurrentStepForPage();
@@ -16,7 +16,8 @@ export const OnboardingPageBanner: React.FC = () => {
   console.log('OnboardingPageBanner debug:', {
     isOnboardingActive,
     stepForCurrentPage,
-    stepCompleted: stepForCurrentPage?.completed
+    stepCompleted: stepForCurrentPage?.completed,
+    currentStepIndex
   });
   
   // Only show if we're in onboarding mode, have a step for this page, and step is NOT completed
@@ -40,6 +41,10 @@ export const OnboardingPageBanner: React.FC = () => {
     // Marcar o step atual como completo antes de avançar
     await markStepCompleted(stepForCurrentPage.id);
     
+    // Atualizar o índice para o próximo step
+    const nextIndex = currentStepIndex + 1;
+    await updateSettings({ current_step_index: nextIndex });
+    
     // Navegar automaticamente para o próximo step com modal ou página
     nextStep();
   };
@@ -52,6 +57,11 @@ export const OnboardingPageBanner: React.FC = () => {
     if (wasCreated) {
       console.log('Service created - marking step as completed and advancing to next step');
       await markStepCompleted(stepForCurrentPage.id);
+      
+      // Atualizar o índice para o próximo step
+      const nextIndex = currentStepIndex + 1;
+      await updateSettings({ current_step_index: nextIndex });
+      
       nextStep();
     }
   };

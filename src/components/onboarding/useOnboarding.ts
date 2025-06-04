@@ -131,28 +131,42 @@ export const useOnboarding = () => {
 
   // Ações do onboarding
   const nextStep = () => {
-    const nextIndex = state.currentStepIndex + 1;
+    const currentStep = state.steps[state.currentStepIndex];
     
-    if (nextIndex < state.steps.length) {
-      const nextStep = state.steps[nextIndex];
+    console.log('NextStep called - current step:', currentStep);
+    
+    // Se o step atual tem uma rota, apenas navegar SEM atualizar o índice no banco
+    if (currentStep.route) {
+      console.log('Current step has route, navigating to:', currentStep.route);
+      setHasNavigatedFromModal(true);
+      navigate(currentStep.route);
+      setState(prev => ({ ...prev, isOpen: false }));
+      // NÃO atualizar o current_step_index aqui - só atualizar quando o usuário interagir com o banner
+    } else {
+      // Se não tem rota, avançar para o próximo passo
+      const nextIndex = state.currentStepIndex + 1;
       
-      console.log('Moving to next step:', nextStep);
-      
-      // Atualizar o índice atual
-      setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
-      updateSettings({ current_step_index: nextIndex });
-      
-      // Se o próximo step tem uma rota, navegar para lá e manter modal fechado
-      if (nextStep.route) {
-        console.log('Next step has route, navigating to:', nextStep.route);
-        setHasNavigatedFromModal(true);
-        navigate(nextStep.route);
-        setState(prev => ({ ...prev, isOpen: false }));
-      } else {
-        // Se não tem rota, abrir o modal do onboarding
-        console.log('Next step has no route, opening modal');
-        setHasNavigatedFromModal(false);
-        setState(prev => ({ ...prev, isOpen: true }));
+      if (nextIndex < state.steps.length) {
+        const nextStep = state.steps[nextIndex];
+        
+        console.log('Moving to next step:', nextStep);
+        
+        // Atualizar o índice atual
+        setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
+        updateSettings({ current_step_index: nextIndex });
+        
+        // Se o próximo step tem uma rota, navegar para lá
+        if (nextStep.route) {
+          console.log('Next step has route, navigating to:', nextStep.route);
+          setHasNavigatedFromModal(true);
+          navigate(nextStep.route);
+          setState(prev => ({ ...prev, isOpen: false }));
+        } else {
+          // Se não tem rota, abrir o modal do onboarding
+          console.log('Next step has no route, opening modal');
+          setHasNavigatedFromModal(false);
+          setState(prev => ({ ...prev, isOpen: true }));
+        }
       }
     }
   };
