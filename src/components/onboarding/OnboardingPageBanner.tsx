@@ -6,18 +6,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles, ArrowRight, Plus } from 'lucide-react';
 import { useOnboarding } from './useOnboarding';
 import ServiceDialog from '@/components/services/ServiceDialog';
+import EmployeeDialog from '@/components/employees/EmployeeDialog';
 
 export const OnboardingPageBanner: React.FC = () => {
-  const { nextStep, reopenModal, isOnboardingActive, getCurrentStepForPage, markStepCompleted, updateSettings, currentStepIndex } = useOnboarding();
+  const { advanceOnboarding, isOnboardingActive, getCurrentStepForPage, markStepCompleted } = useOnboarding();
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [employeeDialogOpen, setEmployeeDialogOpen] = useState(false);
   
   const stepForCurrentPage = getCurrentStepForPage();
   
   console.log('OnboardingPageBanner debug:', {
     isOnboardingActive,
     stepForCurrentPage,
-    stepCompleted: stepForCurrentPage?.completed,
-    currentStepIndex
+    stepCompleted: stepForCurrentPage?.completed
   });
   
   // Only show if we're in onboarding mode, have a step for this page, and step is NOT completed
@@ -27,12 +28,14 @@ export const OnboardingPageBanner: React.FC = () => {
 
   const handleCadastrar = () => {
     // Abrir modal de cadastro específico para o step atual
-    console.log('Banner cadastrar button clicked - opening service dialog');
+    console.log('Banner cadastrar button clicked for step:', stepForCurrentPage.id);
     if (stepForCurrentPage.id === 'services') {
       setServiceDialogOpen(true);
     } else if (stepForCurrentPage.id === 'employees') {
-      // TODO: Implementar quando tiver a página de funcionários
-      console.log('Employee registration not implemented yet');
+      setEmployeeDialogOpen(true);
+    } else {
+      // Para outros steps, apenas marcar como completo e avançar
+      handleAvancar();
     }
   };
 
@@ -41,12 +44,8 @@ export const OnboardingPageBanner: React.FC = () => {
     // Marcar o step atual como completo antes de avançar
     await markStepCompleted(stepForCurrentPage.id);
     
-    // Atualizar o índice para o próximo step
-    const nextIndex = currentStepIndex + 1;
-    await updateSettings({ current_step_index: nextIndex });
-    
-    // Navegar automaticamente para o próximo step com modal ou página
-    nextStep();
+    // Avançar automaticamente para o próximo step
+    await advanceOnboarding();
   };
 
   const handleServiceDialogClose = async (wasCreated: boolean) => {
@@ -57,12 +56,44 @@ export const OnboardingPageBanner: React.FC = () => {
     if (wasCreated) {
       console.log('Service created - marking step as completed and advancing to next step');
       await markStepCompleted(stepForCurrentPage.id);
-      
-      // Atualizar o índice para o próximo step
-      const nextIndex = currentStepIndex + 1;
-      await updateSettings({ current_step_index: nextIndex });
-      
-      nextStep();
+      await advanceOnboarding();
+    }
+  };
+
+  const handleEmployeeDialogClose = async (wasCreated: boolean) => {
+    console.log('Employee dialog closed, wasCreated:', wasCreated);
+    setEmployeeDialogOpen(false);
+    
+    // Se um funcionário foi criado, marcar step como completo e avançar automaticamente
+    if (wasCreated) {
+      console.log('Employee created - marking step as completed and advancing to next step');
+      await markStepCompleted(stepForCurrentPage.id);
+      await advanceOnboarding();
+    }
+  };
+
+  const getButtonText = () => {
+    switch (stepForCurrentPage.id) {
+      case 'services':
+        return 'Cadastrar Serviço';
+      case 'employees':
+        return 'Cadastrar Funcionário';
+      case 'clients':
+        return 'Cadastrar Cliente';
+      case 'booking-settings':
+        return 'Configurar';
+      case 'calendar':
+        return 'Ver Agenda';
+      case 'holidays':
+        return 'Configurar Feriados';
+      case 'payment-methods':
+        return 'Adicionar Método';
+      case 'fixed-costs':
+        return 'Adicionar Custo';
+      case 'finance':
+        return 'Ver Financeiro';
+      default:
+        return 'Cadastrar';
     }
   };
 
@@ -106,11 +137,7 @@ export const OnboardingPageBanner: React.FC = () => {
                   className="bg-primary hover:bg-primary/90 flex items-center space-x-2"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>
-                    {stepForCurrentPage.id === 'services' ? 'Cadastrar Serviço' : 
-                     stepForCurrentPage.id === 'employees' ? 'Cadastrar Funcionário' : 
-                     'Cadastrar'}
-                  </span>
+                  <span>{getButtonText()}</span>
                 </Button>
               </div>
             </div>
@@ -124,6 +151,15 @@ export const OnboardingPageBanner: React.FC = () => {
           open={serviceDialogOpen}
           onOpenChange={(open) => !open && handleServiceDialogClose(false)}
           onServiceCreated={() => handleServiceDialogClose(true)}
+        />
+      )}
+
+      {/* Employee Dialog */}
+      {stepForCurrentPage.id === 'employees' && (
+        <EmployeeDialog 
+          open={employeeDialogOpen}
+          onOpenChange={(open) => !open && handleEmployeeDialogClose(false)}
+          onEmployeeCreated={() => handleEmployeeDialogClose(true)}
         />
       )}
     </>

@@ -245,6 +245,42 @@ export const useOnboarding = () => {
     setState(prev => ({ ...prev, isOpen: true }));
   };
 
+  // Função para avançar o onboarding programaticamente
+  const advanceOnboarding = async () => {
+    console.log('Advancing onboarding programmatically');
+    
+    // Atualizar o índice para o próximo step
+    const nextIndex = state.currentStepIndex + 1;
+    
+    if (nextIndex < state.steps.length) {
+      console.log('Moving to next step index:', nextIndex);
+      
+      // Atualizar no banco e no estado local
+      await updateSettings({ current_step_index: nextIndex });
+      setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
+      
+      const nextStep = state.steps[nextIndex];
+      
+      // Se o próximo step tem uma rota, navegar para lá
+      if (nextStep.route) {
+        console.log('Next step has route, navigating to:', nextStep.route);
+        setHasNavigatedFromModal(true);
+        navigate(nextStep.route);
+        setState(prev => ({ ...prev, isOpen: false }));
+      } else {
+        // Se não tem rota, abrir o modal do onboarding
+        console.log('Next step has no route, opening modal');
+        setHasNavigatedFromModal(false);
+        setState(prev => ({ ...prev, isOpen: true }));
+      }
+    } else {
+      // Se chegou no final, marcar como completo
+      console.log('Onboarding completed!');
+      await updateSettings({ is_completed: true });
+      setState(prev => ({ ...prev, isOpen: true })); // Mostrar o step de conclusão
+    }
+  };
+
   const isOnboardingActive = !settings.dont_show_again && 
     state.steps.some(step => !isStepCompleted(step.id) && step.id !== 'welcome' && step.id !== 'complete');
 
@@ -257,6 +293,7 @@ export const useOnboarding = () => {
     isOnboardingActive,
     getCurrentStepForPage,
     reopenModal,
+    advanceOnboarding,
     setDontShowAgain,
     nextStep,
     goToStep,
