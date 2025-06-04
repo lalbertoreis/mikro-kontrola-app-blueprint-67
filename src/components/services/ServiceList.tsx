@@ -25,7 +25,7 @@ interface ServiceListProps {
 
 const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
   const [open, setOpen] = useState(false);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
   
@@ -35,13 +35,13 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
     if (onNewService) {
       onNewService();
     } else {
-      setSelectedServiceId(undefined);
+      setSelectedService(null);
       setOpen(true);
     }
   };
 
-  const handleEditService = (id: string) => {
-    setSelectedServiceId(id);
+  const handleEditService = (service: Service) => {
+    setSelectedService(service);
     setOpen(true);
   };
 
@@ -138,7 +138,7 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-1 justify-end">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditService(service.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditService(service)}>
                           <Tooltip>
                             <TooltipTrigger>
                               <Edit className="h-4 w-4" />
@@ -185,7 +185,7 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
       <ServiceDialog
         open={open}
         onOpenChange={setOpen}
-        serviceId={selectedServiceId}
+        service={selectedService}
       />
       
       <AlertDialog 

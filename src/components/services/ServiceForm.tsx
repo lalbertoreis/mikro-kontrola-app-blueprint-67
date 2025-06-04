@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -43,18 +42,21 @@ interface ServiceFormProps {
   onFormChange?: () => void;
   onClose?: () => void;
   onSuccess?: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
 const ServiceForm: React.FC<ServiceFormProps> = ({
   service,
   onFormChange,
   onClose,
-  onSuccess
+  onSuccess,
+  onSubmittingChange
 }) => {
   const navigate = useNavigate();
   const { createService, updateService, isCreating, isUpdating } = useServices();
   const isEditing = Boolean(service?.id);
   const isDialogMode = Boolean(onClose);
+  const isSubmitting = isCreating || isUpdating;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -86,6 +88,13 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
       return () => subscription.unsubscribe();
     }
   }, [form, onFormChange]);
+
+  // Notify parent about submitting state changes
+  useEffect(() => {
+    if (onSubmittingChange) {
+      onSubmittingChange(isSubmitting);
+    }
+  }, [isSubmitting, onSubmittingChange]);
 
   // Watch for multipleAttendees changes to conditionally show maxAttendees
   const multipleAttendees = form.watch("multipleAttendees");
