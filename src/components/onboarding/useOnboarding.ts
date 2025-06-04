@@ -131,24 +131,28 @@ export const useOnboarding = () => {
 
   // Ações do onboarding
   const nextStep = () => {
-    const currentStep = state.steps[state.currentStepIndex];
+    const nextIndex = state.currentStepIndex + 1;
     
-    if (currentStep.route) {
-      // Marcar que navegou do modal
-      setHasNavigatedFromModal(true);
+    if (nextIndex < state.steps.length) {
+      const nextStep = state.steps[nextIndex];
       
-      // Navegar para a rota do passo
-      navigate(currentStep.route);
+      console.log('Moving to next step:', nextStep);
       
-      // Fechar modal temporariamente
-      setState(prev => ({ ...prev, isOpen: false }));
-      updateSettings({ current_step_index: state.currentStepIndex });
-    } else {
-      // Apenas mover para próximo passo
-      const nextIndex = state.currentStepIndex + 1;
-      if (nextIndex < state.steps.length) {
-        setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
-        updateSettings({ current_step_index: nextIndex });
+      // Atualizar o índice atual
+      setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
+      updateSettings({ current_step_index: nextIndex });
+      
+      // Se o próximo step tem uma rota, navegar para lá e manter modal fechado
+      if (nextStep.route) {
+        console.log('Next step has route, navigating to:', nextStep.route);
+        setHasNavigatedFromModal(true);
+        navigate(nextStep.route);
+        setState(prev => ({ ...prev, isOpen: false }));
+      } else {
+        // Se não tem rota, abrir o modal do onboarding
+        console.log('Next step has no route, opening modal');
+        setHasNavigatedFromModal(false);
+        setState(prev => ({ ...prev, isOpen: true }));
       }
     }
   };

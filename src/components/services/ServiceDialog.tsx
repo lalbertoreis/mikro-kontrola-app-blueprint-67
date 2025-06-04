@@ -26,8 +26,11 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
   };
 
   const handleSuccess = () => {
-    handleClose();
+    console.log('Service form success - calling onServiceCreated and closing dialog');
+    // Primeiro notificar que o serviço foi criado
     onServiceCreated?.();
+    // Depois fechar o dialog
+    handleClose();
   };
 
   return (

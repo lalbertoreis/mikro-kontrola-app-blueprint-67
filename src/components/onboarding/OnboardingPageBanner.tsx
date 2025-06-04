@@ -39,10 +39,13 @@ export const OnboardingPageBanner: React.FC = () => {
     console.log('Advancing to next step manually and marking current step as completed');
     // Marcar o step atual como completo antes de avançar
     await markStepCompleted(stepForCurrentPage.id);
+    
+    // Navegar automaticamente para o próximo step com modal ou página
     nextStep();
   };
 
   const handleServiceDialogClose = async (wasCreated: boolean) => {
+    console.log('Service dialog closed, wasCreated:', wasCreated);
     setServiceDialogOpen(false);
     
     // Se um serviço foi criado, marcar step como completo e avançar automaticamente
@@ -109,7 +112,7 @@ export const OnboardingPageBanner: React.FC = () => {
       {stepForCurrentPage.id === 'services' && (
         <ServiceDialog 
           open={serviceDialogOpen}
-          onOpenChange={(open) => handleServiceDialogClose(!open)}
+          onOpenChange={(open) => !open && handleServiceDialogClose(false)}
           onServiceCreated={() => handleServiceDialogClose(true)}
         />
       )}
