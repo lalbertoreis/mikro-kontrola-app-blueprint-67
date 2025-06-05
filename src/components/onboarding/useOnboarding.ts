@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,6 +39,12 @@ export const useOnboarding = () => {
   const isStepCompleted = (stepId: string) => {
     const stepProgress = progress.find(p => p.step_id === stepId);
     return stepProgress?.completed || false;
+  };
+
+  // Função para calcular o índice do próximo passo não completado
+  const getNextIncompleteStepIndex = () => {
+    const incompleteStepIndex = ONBOARDING_STEPS.findIndex(step => !isStepCompleted(step.id));
+    return incompleteStepIndex >= 0 ? incompleteStepIndex : ONBOARDING_STEPS.length - 1;
   };
 
   // Detectar e marcar passos concluídos automaticamente - APENAS na primeira inicialização E se não há progresso
@@ -92,8 +97,8 @@ export const useOnboarding = () => {
       completed: isStepCompleted(step.id)
     }));
 
-    // Usar SEMPRE o current_step_index do banco, sem "adivinhar"
-    const currentStepIndex = settings.current_step_index || 0;
+    // SEMPRE usar o índice do próximo passo não completado ao invés do que está salvo
+    const nextIncompleteIndex = getNextIncompleteStepIndex();
     
     // Verificar se está completo baseado apenas no banco
     const allMainStepsComplete = ONBOARDING_STEPS.slice(0, -1).every(step => isStepCompleted(step.id));
@@ -112,13 +117,19 @@ export const useOnboarding = () => {
 
     const initialState = {
       isOpen: shouldShowOnboarding,
-      currentStepIndex, // Usar exatamente o valor do banco
+      currentStepIndex: nextIncompleteIndex, // Usar sempre o próximo passo não completado
       steps: updatedSteps,
       canSkip: true,
       dontShowAgain: settings.dont_show_again
     };
 
     setState(initialState);
+    
+    // Atualizar o banco com o índice correto se for diferente
+    if (settings.current_step_index !== nextIncompleteIndex) {
+      updateSettings({ current_step_index: nextIncompleteIndex });
+    }
+    
     setIsInitialized(true);
   }, [user, loading, progressLoading, progress, settings, hasNavigatedFromModal]);
 
@@ -141,10 +152,9 @@ export const useOnboarding = () => {
       setHasNavigatedFromModal(true);
       navigate(currentStep.route);
       setState(prev => ({ ...prev, isOpen: false }));
-      // NÃO atualizar o current_step_index aqui - só atualizar quando o usuário interagir com o banner
     } else {
-      // Se não tem rota, avançar para o próximo passo
-      const nextIndex = state.currentStepIndex + 1;
+      // Se não tem rota, avançar para o próximo passo não completado
+      const nextIndex = getNextIncompleteStepIndex();
       
       if (nextIndex < state.steps.length) {
         const nextStep = state.steps[nextIndex];
@@ -249,8 +259,8 @@ export const useOnboarding = () => {
   const advanceOnboarding = async () => {
     console.log('Advancing onboarding programmatically');
     
-    // Atualizar o índice para o próximo step
-    const nextIndex = state.currentStepIndex + 1;
+    // Calcular o próximo passo não completado
+    const nextIndex = getNextIncompleteStepIndex();
     
     if (nextIndex < state.steps.length) {
       console.log('Moving to next step index:', nextIndex);
