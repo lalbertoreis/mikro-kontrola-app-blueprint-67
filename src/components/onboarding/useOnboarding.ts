@@ -45,7 +45,8 @@ export const useOnboarding = () => {
     state,
     setState,
     updateSettings,
-    setHasNavigatedFromModal
+    setHasNavigatedFromModal,
+    progress // Passar progress para o navigation
   );
 
   // Initialize onboarding

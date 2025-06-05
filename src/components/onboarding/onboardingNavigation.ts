@@ -8,7 +8,8 @@ export const useOnboardingNavigation = (
   state: OnboardingState,
   setState: React.Dispatch<React.SetStateAction<OnboardingState>>,
   updateSettings: (settings: Partial<OnboardingSettings>) => Promise<void>,
-  setHasNavigatedFromModal: (value: boolean) => void
+  setHasNavigatedFromModal: (value: boolean) => void,
+  progress: any[] // Adicionar progress como parâmetro
 ) => {
   const navigate = useNavigate();
 
@@ -23,7 +24,7 @@ export const useOnboardingNavigation = (
       navigate(currentStep.route);
       setState(prev => ({ ...prev, isOpen: false }));
     } else {
-      const nextIndex = getNextIncompleteStepIndex([]);
+      const nextIndex = state.currentStepIndex + 1;
       
       if (nextIndex < state.steps.length) {
         const nextStep = state.steps[nextIndex];
@@ -87,7 +88,7 @@ export const useOnboardingNavigation = (
   const advanceOnboarding = async () => {
     console.log('Advancing onboarding programmatically');
     
-    const nextIndex = getNextIncompleteStepIndex([]);
+    const nextIndex = getNextIncompleteStepIndex(progress);
     
     if (nextIndex < state.steps.length) {
       console.log('Moving to next step index:', nextIndex);
