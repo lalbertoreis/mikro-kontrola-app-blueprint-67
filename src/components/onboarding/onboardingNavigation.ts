@@ -9,7 +9,7 @@ export const useOnboardingNavigation = (
   setState: React.Dispatch<React.SetStateAction<OnboardingState>>,
   updateSettings: (settings: Partial<OnboardingSettings>) => Promise<void>,
   setHasNavigatedFromModal: (value: boolean) => void,
-  progress: any[] // Adicionar progress como parâmetro
+  progress: any[]
 ) => {
   const navigate = useNavigate();
 
@@ -18,12 +18,14 @@ export const useOnboardingNavigation = (
     
     console.log('NextStep called - current step:', currentStep);
     
+    // Se o step atual tem rota, navegar para ela e minimizar o modal
     if (currentStep.route) {
       console.log('Current step has route, navigating to:', currentStep.route);
       setHasNavigatedFromModal(true);
       navigate(currentStep.route);
       setState(prev => ({ ...prev, isOpen: false }));
     } else {
+      // Se não tem rota, avançar para o próximo step
       const nextIndex = state.currentStepIndex + 1;
       
       if (nextIndex < state.steps.length) {
@@ -34,13 +36,15 @@ export const useOnboardingNavigation = (
         setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
         updateSettings({ current_step_index: nextIndex });
         
+        // Se o próximo step tem rota, navegar para ela e minimizar
         if (nextStep.route) {
           console.log('Next step has route, navigating to:', nextStep.route);
           setHasNavigatedFromModal(true);
           navigate(nextStep.route);
           setState(prev => ({ ...prev, isOpen: false }));
         } else {
-          console.log('Next step has no route, opening modal');
+          // Se não tem rota, manter modal aberto
+          console.log('Next step has no route, keeping modal open');
           setHasNavigatedFromModal(false);
           setState(prev => ({ ...prev, isOpen: true }));
         }
@@ -111,7 +115,7 @@ export const useOnboardingNavigation = (
     } else {
       console.log('Onboarding completed!');
       await updateSettings({ is_completed: true });
-      setState(prev => ({ ...prev, isOpen: true }));
+      setState(prev => ({ ...prev, isOpen: false }));
     }
   };
 

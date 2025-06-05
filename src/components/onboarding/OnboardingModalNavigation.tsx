@@ -32,7 +32,7 @@ export const OnboardingModalNavigation: React.FC<OnboardingModalNavigationProps>
         </Button>
       ) : <div />}
 
-      {!currentStep.route && !isLastStep && (
+      {!isLastStep && (
         <Button onClick={onNext} className="bg-primary text-white">
           Próximo
         </Button>

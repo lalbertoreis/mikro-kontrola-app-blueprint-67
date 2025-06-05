@@ -34,17 +34,14 @@ export const OnboardingPageBanner: React.FC = () => {
     } else if (stepForCurrentPage.id === 'employees') {
       setEmployeeDialogOpen(true);
     } else {
-      // Para outros steps, apenas marcar como completo e avançar
+      // Para outros steps, apenas avançar
       handleAvancar();
     }
   };
 
   const handleAvancar = async () => {
-    console.log('Advancing to next step manually and marking current step as completed');
-    // Marcar o step atual como completo antes de avançar
-    await markStepCompleted(stepForCurrentPage.id);
-    
-    // Avançar automaticamente para o próximo step
+    console.log('Advancing to next step manually (skip current step)');
+    // Avançar para o próximo step SEM marcar o atual como completo
     await advanceOnboarding();
   };
 
@@ -129,7 +126,7 @@ export const OnboardingPageBanner: React.FC = () => {
                   className="flex items-center space-x-2"
                 >
                   <ArrowRight className="w-4 h-4" />
-                  <span>Fazer depois</span>
+                  <span>Pular</span>
                 </Button>
                 
                 <Button
