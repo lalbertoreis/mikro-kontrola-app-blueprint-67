@@ -28,9 +28,10 @@ const employeeSchema = z.object({
 interface EmployeeFormProps {
   employeeId?: string;
   onSuccess: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
-const EmployeeForm = ({ employeeId, onSuccess }: EmployeeFormProps) => {
+const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFormProps) => {
   const { toast } = useToast();
   const isEditing = Boolean(employeeId);
   const [activeTab, setActiveTab] = useState("info");
@@ -66,6 +67,9 @@ const EmployeeForm = ({ employeeId, onSuccess }: EmployeeFormProps) => {
       return;
     }
 
+    // Notificar que está enviando
+    onSubmittingChange?.(true);
+
     // Montar dados completos do funcionário - ensuring name and role are required
     const employeeData: EmployeeFormData = {
       name: data.name,
@@ -78,6 +82,7 @@ const EmployeeForm = ({ employeeId, onSuccess }: EmployeeFormProps) => {
     
     // Simulando sucesso após envio
     setTimeout(() => {
+      onSubmittingChange?.(false);
       toast({
         title: isEditing ? "Funcionário atualizado" : "Funcionário adicionado",
         description: isEditing 
