@@ -13,35 +13,48 @@ export const OnboardingStepIndicator: React.FC<OnboardingStepIndicatorProps> = (
   steps,
   currentStepIndex
 }) => {
-  // Mostrar apenas 5 passos por vez para não sobrecarregar o usuário
-  const maxVisibleSteps = 5;
+  // Mostrar apenas os steps até o atual + alguns à frente para dar contexto
+  const maxStepsToShow = 3;
   
-  // Calcular qual faixa de passos mostrar
-  const startIndex = Math.max(0, Math.min(currentStepIndex - 2, steps.length - maxVisibleSteps));
-  const endIndex = Math.min(startIndex + maxVisibleSteps, steps.length);
+  // Calcular quantos steps já foram completados
+  const completedStepsCount = steps.filter(step => step.completed).length;
+  
+  // Mostrar do primeiro step não completado até alguns à frente
+  const firstIncompleteIndex = steps.findIndex(step => !step.completed);
+  const startIndex = Math.max(0, firstIncompleteIndex);
+  const endIndex = Math.min(startIndex + maxStepsToShow, steps.length);
+  
   const visibleSteps = steps.slice(startIndex, endIndex);
   
   return (
     <div className="flex items-center justify-center space-x-2 mb-6">
-      {/* Indicador de passos anteriores se houver */}
+      {/* Mostrar indicador de steps anteriores completados se houver */}
       {startIndex > 0 && (
-        <div className="text-xs text-gray-400 mr-2">...</div>
+        <div className="flex items-center space-x-1 mr-2">
+          <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+            <Check className="w-3 h-3 text-white" />
+          </div>
+          <div className="text-xs text-green-600 font-medium">+{startIndex}</div>
+          <div className="text-xs text-gray-400">...</div>
+        </div>
       )}
       
       {visibleSteps.map((step, index) => {
         const actualIndex = startIndex + index;
+        const isCurrentStep = actualIndex === currentStepIndex;
+        
         return (
           <div key={step.id} className="flex items-center">
             <motion.div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                 step.completed 
                   ? 'bg-green-500 text-white' 
-                  : actualIndex === currentStepIndex
-                  ? 'bg-primary text-white'
+                  : isCurrentStep
+                  ? 'bg-primary text-white shadow-lg ring-2 ring-primary/30'
                   : 'bg-gray-200 text-gray-600'
               }`}
               animate={{
-                scale: actualIndex === currentStepIndex ? 1.1 : 1,
+                scale: isCurrentStep ? 1.1 : 1,
               }}
               transition={{ duration: 0.3 }}
             >
@@ -62,9 +75,12 @@ export const OnboardingStepIndicator: React.FC<OnboardingStepIndicatorProps> = (
         );
       })}
       
-      {/* Indicador de passos posteriores se houver */}
+      {/* Mostrar indicador de steps posteriores se houver */}
       {endIndex < steps.length && (
-        <div className="text-xs text-gray-400 ml-2">...</div>
+        <div className="flex items-center space-x-1 ml-2">
+          <div className="text-xs text-gray-400">...</div>
+          <div className="text-xs text-gray-500">+{steps.length - endIndex}</div>
+        </div>
       )}
     </div>
   );

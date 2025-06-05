@@ -97,8 +97,10 @@ export const useOnboarding = () => {
       completed: isStepCompleted(step.id)
     }));
 
-    // SEMPRE usar o índice do próximo passo não completado ao invés do que está salvo
+    // SEMPRE usar o índice do próximo passo não completado
     const nextIncompleteIndex = getNextIncompleteStepIndex();
+    
+    console.log('Next incomplete step index:', nextIncompleteIndex, 'Step:', ONBOARDING_STEPS[nextIncompleteIndex]?.id);
     
     // Verificar se está completo baseado apenas no banco
     const allMainStepsComplete = ONBOARDING_STEPS.slice(0, -1).every(step => isStepCompleted(step.id));
@@ -127,11 +129,12 @@ export const useOnboarding = () => {
     
     // Atualizar o banco com o índice correto se for diferente
     if (settings.current_step_index !== nextIncompleteIndex) {
+      console.log('Updating current step index from', settings.current_step_index, 'to', nextIncompleteIndex);
       updateSettings({ current_step_index: nextIncompleteIndex });
     }
     
     setIsInitialized(true);
-  }, [user, loading, progressLoading, progress, settings, hasNavigatedFromModal]);
+  }, [user, loading, progressLoading, progress, settings, hasNavigatedFromModal, services.length, employees.length]);
 
   // Resetar flag quando a localização muda para uma rota diferente do passo atual
   useEffect(() => {
