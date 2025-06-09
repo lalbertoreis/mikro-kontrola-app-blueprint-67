@@ -93,11 +93,16 @@ export const useOnboardingWizard = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSkipped, setIsSkipped] = useState(false);
   const [isWizardVisible, setIsWizardVisible] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Carregar estado inicial apenas uma vez
   useEffect(() => {
+    if (isInitialized) return;
+    
     const loadInitialState = () => {
       const saved = localStorage.getItem(STORAGE_KEY);
+      console.log('Carregando estado inicial do localStorage:', saved);
+      
       if (saved) {
         try {
           const state: OnboardingState = JSON.parse(saved);
@@ -120,10 +125,12 @@ export const useOnboardingWizard = () => {
         // Primeira vez - mostrar onboarding
         setIsWizardVisible(true);
       }
+      
+      setIsInitialized(true);
     };
 
     loadInitialState();
-  }, []);
+  }, [isInitialized]);
 
   // Função para salvar no localStorage sempre que houver mudanças
   const saveToStorage = (updates: Partial<OnboardingState>) => {
@@ -134,6 +141,7 @@ export const useOnboardingWizard = () => {
       isWizardVisible,
       ...updates
     };
+    console.log('Salvando no localStorage:', newState);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
   };
 
@@ -163,18 +171,21 @@ export const useOnboardingWizard = () => {
   };
 
   const skipOnboarding = () => {
+    console.log('Pulando onboarding');
     setIsSkipped(true);
     setIsWizardVisible(false);
     saveToStorage({ isSkipped: true, isWizardVisible: false });
   };
 
   const completeOnboarding = () => {
+    console.log('Completando onboarding');
     setIsCompleted(true);
     setIsWizardVisible(false);
     saveToStorage({ isCompleted: true, isWizardVisible: false });
   };
 
   const resetOnboarding = () => {
+    console.log('Resetando onboarding');
     localStorage.removeItem(STORAGE_KEY);
     setCurrentStep(0);
     setIsCompleted(false);
@@ -183,11 +194,13 @@ export const useOnboardingWizard = () => {
   };
 
   const hideWizard = () => {
+    console.log('Escondendo wizard');
     setIsWizardVisible(false);
     saveToStorage({ isWizardVisible: false });
   };
 
   const showWizard = () => {
+    console.log('Mostrando wizard');
     setIsWizardVisible(true);
     saveToStorage({ isWizardVisible: true });
   };
