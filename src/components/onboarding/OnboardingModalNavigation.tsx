@@ -32,7 +32,8 @@ export const OnboardingModalNavigation: React.FC<OnboardingModalNavigationProps>
         </Button>
       ) : <div />}
 
-      {!isLastStep && (
+      {/* Só mostrar botão Próximo se NÃO tem rota e NÃO é último step */}
+      {!currentStep.route && !isLastStep && (
         <Button onClick={onNext} className="bg-primary text-white">
           Próximo
         </Button>

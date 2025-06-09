@@ -24,31 +24,16 @@ export const useOnboardingNavigation = (
       setHasNavigatedFromModal(true);
       navigate(currentStep.route);
       setState(prev => ({ ...prev, isOpen: false }));
-    } else {
-      // Se não tem rota, avançar para o próximo step
-      const nextIndex = state.currentStepIndex + 1;
-      
-      if (nextIndex < state.steps.length) {
-        const nextStep = state.steps[nextIndex];
-        
-        console.log('Moving to next step:', nextStep);
-        
-        setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
-        updateSettings({ current_step_index: nextIndex });
-        
-        // Se o próximo step tem rota, navegar para ela e minimizar
-        if (nextStep.route) {
-          console.log('Next step has route, navigating to:', nextStep.route);
-          setHasNavigatedFromModal(true);
-          navigate(nextStep.route);
-          setState(prev => ({ ...prev, isOpen: false }));
-        } else {
-          // Se não tem rota, manter modal aberto
-          console.log('Next step has no route, keeping modal open');
-          setHasNavigatedFromModal(false);
-          setState(prev => ({ ...prev, isOpen: true }));
-        }
-      }
+      return;
+    }
+
+    // Se não tem rota, avançar para o próximo step
+    const nextIndex = state.currentStepIndex + 1;
+    
+    if (nextIndex < state.steps.length) {
+      console.log('Moving to next step index:', nextIndex);
+      setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
+      updateSettings({ current_step_index: nextIndex });
     }
   };
 
@@ -92,7 +77,7 @@ export const useOnboardingNavigation = (
   const advanceOnboarding = async () => {
     console.log('Advancing onboarding programmatically');
     
-    const nextIndex = getNextIncompleteStepIndex(progress);
+    const nextIndex = getNextIncompleteStepIndex(progress, state.steps);
     
     if (nextIndex < state.steps.length) {
       console.log('Moving to next step index:', nextIndex);

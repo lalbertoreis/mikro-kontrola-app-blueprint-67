@@ -41,7 +41,7 @@ export const OnboardingModalContent: React.FC<OnboardingModalContentProps> = ({
         </p>
       </div>
 
-      {currentStep.route && !isLastStep && (
+      {currentStep.route && (
         <Button 
           onClick={onNext}
           className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"

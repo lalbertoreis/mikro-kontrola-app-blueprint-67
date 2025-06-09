@@ -7,9 +7,9 @@ export const isStepCompleted = (stepId: string, progress: OnboardingProgress[]) 
   return stepProgress?.completed || false;
 };
 
-export const getNextIncompleteStepIndex = (progress: OnboardingProgress[]) => {
-  const incompleteStepIndex = ONBOARDING_STEPS.findIndex(step => !isStepCompleted(step.id, progress));
-  return incompleteStepIndex >= 0 ? incompleteStepIndex : ONBOARDING_STEPS.length - 1;
+export const getNextIncompleteStepIndex = (progress: OnboardingProgress[], steps: any[] = ONBOARDING_STEPS) => {
+  const incompleteStepIndex = steps.findIndex(step => !isStepCompleted(step.id, progress));
+  return incompleteStepIndex >= 0 ? incompleteStepIndex : steps.length - 1;
 };
 
 export const getCurrentStepForPage = (
