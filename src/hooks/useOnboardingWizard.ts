@@ -182,7 +182,9 @@ export const useOnboardingWizard = () => {
   };
 
   const openModal = () => {
-    if (!isCompleted && !isSkipped && isVisible) {
+    // Sempre permitir abrir se não foi completado nem pulado
+    if (!isCompleted && !isSkipped) {
+      saveState({ isVisible: true });
       setIsOpen(true);
     }
   };
@@ -199,6 +201,7 @@ export const useOnboardingWizard = () => {
     }
   };
 
+  // Lógica corrigida para mostrar o botão de retomar
   const shouldShowResumeButton = !isCompleted && !isSkipped && !isVisible && !isOpen;
 
   return {
