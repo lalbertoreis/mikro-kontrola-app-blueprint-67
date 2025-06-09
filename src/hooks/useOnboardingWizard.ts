@@ -5,7 +5,7 @@ import { ONBOARDING_STEPS } from './onboarding/constants';
 import { loadOnboardingState } from './onboarding/storage';
 import { useOnboardingActions } from './onboarding/useOnboardingActions';
 
-export { OnboardingStep } from './onboarding/types';
+export type { OnboardingStep } from './onboarding/types';
 
 export const useOnboardingWizard = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,7 +38,7 @@ export const useOnboardingWizard = () => {
   const actions = useOnboardingActions(state, updateState, setIsOpen);
 
   // Lógica para mostrar o botão de retomar
-  const shouldShowResumeButton = !state.isCompleted && !state.isSkipped && !state.isVisible && !isOpen;
+  const shouldShowResumeButton = !state.isCompleted && !state.isSkipped && (!state.isVisible || !isOpen);
 
   return {
     // Estado
