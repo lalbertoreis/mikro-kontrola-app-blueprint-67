@@ -10,6 +10,7 @@ export const useOnboardingActions = (
 ) => {
   const saveState = (newState: Partial<OnboardingState>) => {
     const updatedState = { ...currentState, ...newState };
+    console.log('Saving onboarding state:', updatedState);
     saveOnboardingState(updatedState);
     setState(newState);
   };
@@ -37,16 +38,19 @@ export const useOnboardingActions = (
   };
 
   const skipOnboarding = () => {
+    console.log('Skipping onboarding');
     saveState({ isSkipped: true, isVisible: false });
     setIsOpen(false);
   };
 
   const completeOnboarding = () => {
+    console.log('Completing onboarding');
     saveState({ isCompleted: true, isVisible: false });
     setIsOpen(false);
   };
 
   const resetOnboarding = () => {
+    console.log('Resetting onboarding');
     clearOnboardingState();
     setState({
       currentStep: 0,
@@ -58,25 +62,28 @@ export const useOnboardingActions = (
   };
 
   const closeModal = () => {
-    // Quando fechar o modal, marcar como não visível para mostrar o botão de retomar
+    console.log('Closing modal - marking as not visible');
     saveState({ isVisible: false });
     setIsOpen(false);
   };
 
   const openModal = () => {
     if (!currentState.isCompleted && !currentState.isSkipped) {
+      console.log('Opening modal - marking as visible');
       saveState({ isVisible: true });
       setIsOpen(true);
     }
   };
 
   const hideWizard = () => {
+    console.log('Hiding wizard - marking as not visible');
     saveState({ isVisible: false });
     setIsOpen(false);
   };
 
   const showWizard = () => {
     if (!currentState.isCompleted && !currentState.isSkipped) {
+      console.log('Showing wizard - marking as visible');
       saveState({ isVisible: true });
       setIsOpen(true);
     }
