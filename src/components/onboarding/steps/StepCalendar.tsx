@@ -3,9 +3,16 @@ import React from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 
 export const StepCalendar: React.FC = () => {
   const navigate = useNavigate();
+  const { hideWizard } = useOnboardingWizard();
+
+  const handleGoToCalendar = () => {
+    hideWizard();
+    navigate('/dashboard/calendar');
+  };
 
   return (
     <div className="space-y-6">
@@ -36,7 +43,7 @@ export const StepCalendar: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={() => navigate('/dashboard/calendar')}
+            onClick={handleGoToCalendar}
             className="flex items-center space-x-2"
           >
             <Clock className="w-4 h-4" />

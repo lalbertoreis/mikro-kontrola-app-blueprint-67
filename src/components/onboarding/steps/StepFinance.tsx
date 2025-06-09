@@ -3,9 +3,16 @@ import React from 'react';
 import { TrendingUp, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 
 export const StepFinance: React.FC = () => {
   const navigate = useNavigate();
+  const { hideWizard } = useOnboardingWizard();
+
+  const handleGoToFinance = () => {
+    hideWizard();
+    navigate('/dashboard/finance');
+  };
 
   return (
     <div className="space-y-6">
@@ -36,7 +43,7 @@ export const StepFinance: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={() => navigate('/dashboard/finance')}
+            onClick={handleGoToFinance}
             className="flex items-center space-x-2"
           >
             <BarChart3 className="w-4 h-4" />

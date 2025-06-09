@@ -3,9 +3,16 @@ import React from 'react';
 import { UserCheck, ContactRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 
 export const StepClients: React.FC = () => {
   const navigate = useNavigate();
+  const { hideWizard } = useOnboardingWizard();
+
+  const handleGoToClients = () => {
+    hideWizard();
+    navigate('/dashboard/clients');
+  };
 
   return (
     <div className="space-y-6">
@@ -36,7 +43,7 @@ export const StepClients: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={() => navigate('/dashboard/clients')}
+            onClick={handleGoToClients}
             className="flex items-center space-x-2"
           >
             <ContactRound className="w-4 h-4" />
