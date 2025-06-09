@@ -14,8 +14,7 @@ export const OnboardingManager: React.FC = () => {
     showWizard 
   } = useOnboardingWizard();
 
-  // Debug logs para verificar estado
-  console.log('OnboardingManager state:', {
+  console.log('OnboardingManager render:', {
     isCompleted,
     isSkipped,
     isWizardVisible,

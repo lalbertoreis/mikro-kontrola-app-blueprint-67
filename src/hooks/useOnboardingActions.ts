@@ -12,8 +12,10 @@ export const useOnboardingActions = () => {
     // Esconder o wizard imediatamente
     hideWizard();
     
-    // Navegar para a rota
-    navigate(path);
+    // Pequeno delay para garantir que o estado seja atualizado
+    setTimeout(() => {
+      navigate(path);
+    }, 50);
   };
 
   return {

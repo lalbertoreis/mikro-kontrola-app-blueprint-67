@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface OnboardingStep {
   id: string;
@@ -88,52 +88,15 @@ interface OnboardingState {
 }
 
 export const useOnboardingWizard = () => {
-  // Estados reativos
+  // Estados reativos principais
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSkipped, setIsSkipped] = useState(false);
   const [isWizardVisible, setIsWizardVisible] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Carregar estado inicial apenas uma vez
-  useEffect(() => {
-    if (isInitialized) return;
-    
-    const loadInitialState = () => {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      console.log('Carregando estado inicial do localStorage:', saved);
-      
-      if (saved) {
-        try {
-          const state: OnboardingState = JSON.parse(saved);
-          setCurrentStep(state.currentStep || 0);
-          setIsCompleted(state.isCompleted || false);
-          setIsSkipped(state.isSkipped || false);
-          
-          // Só mostrar se não foi completado nem pulado
-          if (!state.isCompleted && !state.isSkipped) {
-            setIsWizardVisible(state.isWizardVisible ?? true);
-          } else {
-            setIsWizardVisible(false);
-          }
-        } catch (error) {
-          console.error('Erro ao carregar estado do onboarding:', error);
-          // Primeira vez - mostrar onboarding
-          setIsWizardVisible(true);
-        }
-      } else {
-        // Primeira vez - mostrar onboarding
-        setIsWizardVisible(true);
-      }
-      
-      setIsInitialized(true);
-    };
-
-    loadInitialState();
-  }, [isInitialized]);
-
-  // Função para salvar no localStorage sempre que houver mudanças
-  const saveToStorage = (updates: Partial<OnboardingState>) => {
+  // Função para salvar no localStorage
+  const saveToStorage = useCallback((updates: Partial<OnboardingState>) => {
     const newState = {
       currentStep,
       isCompleted,
@@ -143,9 +106,42 @@ export const useOnboardingWizard = () => {
     };
     console.log('Salvando no localStorage:', newState);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-  };
+  }, [currentStep, isCompleted, isSkipped, isWizardVisible]);
 
-  const nextStep = () => {
+  // Carregar estado inicial apenas uma vez
+  useEffect(() => {
+    if (isInitialized) return;
+    
+    const saved = localStorage.getItem(STORAGE_KEY);
+    console.log('Carregando estado inicial do localStorage:', saved);
+    
+    if (saved) {
+      try {
+        const state: OnboardingState = JSON.parse(saved);
+        setCurrentStep(state.currentStep || 0);
+        setIsCompleted(state.isCompleted || false);
+        setIsSkipped(state.isSkipped || false);
+        
+        // Só mostrar se não foi completado nem pulado
+        if (!state.isCompleted && !state.isSkipped) {
+          setIsWizardVisible(state.isWizardVisible ?? true);
+        } else {
+          setIsWizardVisible(false);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar estado do onboarding:', error);
+        // Primeira vez - mostrar onboarding
+        setIsWizardVisible(true);
+      }
+    } else {
+      // Primeira vez - mostrar onboarding
+      setIsWizardVisible(true);
+    }
+    
+    setIsInitialized(true);
+  }, [isInitialized]);
+
+  const nextStep = useCallback(() => {
     const nextStepIndex = currentStep + 1;
     if (nextStepIndex < ONBOARDING_STEPS.length) {
       setCurrentStep(nextStepIndex);
@@ -153,61 +149,61 @@ export const useOnboardingWizard = () => {
     } else {
       completeOnboarding();
     }
-  };
+  }, [currentStep, saveToStorage]);
 
-  const previousStep = () => {
+  const previousStep = useCallback(() => {
     const prevStepIndex = currentStep - 1;
     if (prevStepIndex >= 0) {
       setCurrentStep(prevStepIndex);
       saveToStorage({ currentStep: prevStepIndex });
     }
-  };
+  }, [currentStep, saveToStorage]);
 
-  const goToStep = (stepIndex: number) => {
+  const goToStep = useCallback((stepIndex: number) => {
     if (stepIndex >= 0 && stepIndex < ONBOARDING_STEPS.length) {
       setCurrentStep(stepIndex);
       saveToStorage({ currentStep: stepIndex });
     }
-  };
+  }, [saveToStorage]);
 
-  const skipOnboarding = () => {
+  const skipOnboarding = useCallback(() => {
     console.log('Pulando onboarding');
     setIsSkipped(true);
     setIsWizardVisible(false);
     saveToStorage({ isSkipped: true, isWizardVisible: false });
-  };
+  }, [saveToStorage]);
 
-  const completeOnboarding = () => {
+  const completeOnboarding = useCallback(() => {
     console.log('Completando onboarding');
     setIsCompleted(true);
     setIsWizardVisible(false);
     saveToStorage({ isCompleted: true, isWizardVisible: false });
-  };
+  }, [saveToStorage]);
 
-  const resetOnboarding = () => {
+  const resetOnboarding = useCallback(() => {
     console.log('Resetando onboarding');
     localStorage.removeItem(STORAGE_KEY);
     setCurrentStep(0);
     setIsCompleted(false);
     setIsSkipped(false);
     setIsWizardVisible(true);
-  };
+  }, []);
 
-  const hideWizard = () => {
+  const hideWizard = useCallback(() => {
     console.log('Escondendo wizard');
     setIsWizardVisible(false);
     saveToStorage({ isWizardVisible: false });
-  };
+  }, [saveToStorage]);
 
-  const showWizard = () => {
+  const showWizard = useCallback(() => {
     console.log('Mostrando wizard');
     setIsWizardVisible(true);
     saveToStorage({ isWizardVisible: true });
-  };
+  }, [saveToStorage]);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     hideWizard();
-  };
+  }, [hideWizard]);
 
   return {
     // Estado reativo
