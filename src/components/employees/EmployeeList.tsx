@@ -1,6 +1,5 @@
 
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { useEmployees } from "@/hooks/useEmployees";
 import { Employee } from "@/types/employee";
 import { formatDayOfWeek } from "@/utils/dateUtils";
@@ -16,30 +15,26 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Pencil, Trash, UserPlus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import EmployeeDialog from "./EmployeeDialog";
 
-interface EmployeeListProps {
-  onNewEmployee?: () => void;
-  onEditEmployee?: (id: string) => void;
-}
-
-const EmployeeList: React.FC<EmployeeListProps> = ({ onNewEmployee, onEditEmployee }) => {
-  const navigate = useNavigate();
+const EmployeeList: React.FC = () => {
   const { employees, isLoading, deleteEmployee, isDeleting } = useEmployees();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEmployeeId, setEditingEmployeeId] = useState<string | undefined>();
 
   const handleNewEmployee = () => {
-    if (onNewEmployee) {
-      onNewEmployee();
-    } else {
-      navigate("/dashboard/employees/new");
-    }
+    setEditingEmployeeId(undefined);
+    setDialogOpen(true);
   };
 
   const handleEditEmployee = (id: string) => {
-    if (onEditEmployee) {
-      onEditEmployee(id);
-    } else {
-      navigate(`/dashboard/employees/${id}`);
-    }
+    setEditingEmployeeId(id);
+    setDialogOpen(true);
+  };
+
+  const handleEmployeeCreated = () => {
+    // Dialog será fechado automaticamente pelo EmployeeDialog
+    // Aqui podemos adicionar qualquer lógica adicional se necessário
   };
 
   const handleDelete = async (id: string) => {
@@ -179,6 +174,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ onNewEmployee, onEditEmploy
           </div>
         </CardContent>
       </Card>
+
+      <EmployeeDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        employeeId={editingEmployeeId}
+        onEmployeeCreated={handleEmployeeCreated}
+      />
     </>
   );
 };
