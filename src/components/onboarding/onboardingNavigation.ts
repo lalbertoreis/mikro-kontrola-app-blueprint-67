@@ -9,7 +9,8 @@ export const useOnboardingNavigation = (
   setState: React.Dispatch<React.SetStateAction<OnboardingState>>,
   updateSettings: (settings: Partial<OnboardingSettings>) => Promise<void>,
   setHasNavigatedFromModal: (value: boolean) => void,
-  progress: any[]
+  progress: any[],
+  markStepCompleted: (stepId: string) => Promise<void>
 ) => {
   const navigate = useNavigate();
 
@@ -18,26 +19,30 @@ export const useOnboardingNavigation = (
     
     console.log('NextStep called - current step:', currentStep, 'currentIndex:', state.currentStepIndex);
     
-    // Se o step atual tem rota, navegar para ela e minimizar o modal
+    // Se o step atual tem rota, marcar como completo, navegar e minimizar
     if (currentStep.route) {
-      console.log('Current step has route, navigating to:', currentStep.route);
+      console.log('Current step has route, marking as completed and navigating to:', currentStep.route);
       
-      // Primeiro atualizar o step index no banco de dados
+      // Marcar step atual como completo
+      await markStepCompleted(currentStep.id);
+      
+      // Calcular próximo step
       const nextIndex = state.currentStepIndex + 1;
       console.log('Updating step index to:', nextIndex);
       
+      // Atualizar no banco
       await updateSettings({ current_step_index: nextIndex });
       
-      // Atualizar estado local
+      // Atualizar estado local e minimizar modal
       setState(prev => ({ ...prev, currentStepIndex: nextIndex, isOpen: false }));
       
-      // Navegar e minimizar
+      // Navegar e marcar que navegou do modal
       setHasNavigatedFromModal(true);
       navigate(currentStep.route);
       return;
     }
 
-    // Se não tem rota, avançar para o próximo step dentro do modal
+    // Se não tem rota, apenas avançar para o próximo step dentro do modal
     const nextIndex = state.currentStepIndex + 1;
     
     if (nextIndex < state.steps.length) {

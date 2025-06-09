@@ -46,7 +46,8 @@ export const useOnboarding = () => {
     setState,
     updateSettings,
     setHasNavigatedFromModal,
-    progress // Passar progress para o navigation
+    progress,
+    markStepCompleted // Passar markStepCompleted para o navigation
   );
 
   // Initialize onboarding
@@ -71,10 +72,28 @@ export const useOnboarding = () => {
     detectAndMarkCompletedSteps
   );
 
-  // Reset flag when location changes
+  // Reset flag when location changes but prevent modal from reopening immediately
   useEffect(() => {
     if (hasNavigatedFromModal && state.steps[state.currentStepIndex]?.route !== location.pathname) {
+      console.log('Location changed, clearing hasNavigatedFromModal flag');
       setHasNavigatedFromModal(false);
+      
+      // Não reabrir o modal imediatamente se ainda estamos numa página com step
+      const currentPageStep = getCurrentStepForPage(
+        location.pathname, 
+        state.steps, 
+        progress, 
+        settings.dont_show_again, 
+        isInitialized
+      );
+      
+      if (!currentPageStep) {
+        console.log('No step for current page, potentially reopening modal');
+        // Usar um timeout para evitar abertura imediata
+        setTimeout(() => {
+          setState(prev => ({ ...prev, isOpen: true }));
+        }, 500);
+      }
     }
   }, [location.pathname, hasNavigatedFromModal, state.currentStepIndex, state.steps]);
 
