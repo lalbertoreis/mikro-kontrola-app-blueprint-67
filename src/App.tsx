@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Navbar from "@/components/layout/Navbar";
-import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
+import { OnboardingManager } from "@/components/onboarding/OnboardingManager";
 
 // Páginas
 import Index from "@/pages/Index";
@@ -71,7 +71,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       {children}
-      <OnboardingModal />
+      <OnboardingManager />
     </>
   );
 };
