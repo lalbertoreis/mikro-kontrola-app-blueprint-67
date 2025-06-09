@@ -58,6 +58,8 @@ export const useOnboardingActions = (
   };
 
   const closeModal = () => {
+    // Quando fechar o modal, marcar como não visível para mostrar o botão de retomar
+    saveState({ isVisible: false });
     setIsOpen(false);
   };
 

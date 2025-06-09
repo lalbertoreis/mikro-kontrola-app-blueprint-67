@@ -22,7 +22,7 @@ export const useOnboardingWizard = () => {
     if (savedState) {
       setState(savedState);
       // Só abrir se não foi completado nem pulado e está visível
-      if (!savedState.isCompleted && !savedState.isSkipped && savedState.isVisible !== false) {
+      if (!savedState.isCompleted && !savedState.isSkipped && savedState.isVisible) {
         setIsOpen(true);
       }
     } else {
@@ -38,7 +38,7 @@ export const useOnboardingWizard = () => {
   const actions = useOnboardingActions(state, updateState, setIsOpen);
 
   // Lógica para mostrar o botão de retomar
-  const shouldShowResumeButton = !state.isCompleted && !state.isSkipped && (!state.isVisible || !isOpen);
+  const shouldShowResumeButton = !state.isCompleted && !state.isSkipped && !state.isVisible && !isOpen;
 
   return {
     // Estado
