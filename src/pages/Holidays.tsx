@@ -9,6 +9,7 @@ import { HolidayDialog } from "@/components/holidays/HolidayDialog";
 import { Holiday } from "@/types/holiday";
 import { ImportHolidaysDialog } from "@/components/holidays/ImportHolidaysDialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { OnboardingPageBanner } from "@/components/onboarding/OnboardingPageBanner";
 
 const Holidays = () => {
   const { holidays, isLoading, error } = useHolidays();
@@ -32,6 +33,7 @@ const Holidays = () => {
 
   return (
     <DashboardLayout>
+      <OnboardingPageBanner />
       <Card className="bg-white">
         <CardContent className="p-6 space-y-4">
           <div className="flex items-center justify-between">

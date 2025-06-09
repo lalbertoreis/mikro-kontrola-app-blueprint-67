@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { useEmployees } from "@/hooks/useEmployees";
 import { Employee } from "@/types/employee";
 import { formatDayOfWeek } from "@/utils/dateUtils";
@@ -15,26 +15,19 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Pencil, Trash, UserPlus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import EmployeeDialog from "./EmployeeDialog";
 
-const EmployeeList: React.FC = () => {
+interface EmployeeListProps {
+  onNewEmployee?: () => void;
+  onEditEmployee?: (id: string) => void;
+}
+
+const EmployeeList: React.FC<EmployeeListProps> = ({ onNewEmployee, onEditEmployee }) => {
   const { employees, isLoading, deleteEmployee, isDeleting } = useEmployees();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingEmployeeId, setEditingEmployeeId] = useState<string | undefined>();
-
-  const handleNewEmployee = () => {
-    setEditingEmployeeId(undefined);
-    setDialogOpen(true);
-  };
 
   const handleEditEmployee = (id: string) => {
-    setEditingEmployeeId(id);
-    setDialogOpen(true);
-  };
-
-  const handleEmployeeCreated = () => {
-    // Dialog será fechado automaticamente pelo EmployeeDialog
-    // Aqui podemos adicionar qualquer lógica adicional se necessário
+    if (onEditEmployee) {
+      onEditEmployee(id);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -105,12 +98,14 @@ const EmployeeList: React.FC = () => {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <Button onClick={handleNewEmployee} className="flex items-center space-x-2">
-          <UserPlus className="w-4 h-4" />
-          <span>Novo Funcionário</span>
-        </Button>
-      </div>
+      {onNewEmployee && (
+        <div className="flex justify-end mb-4">
+          <Button onClick={onNewEmployee} className="flex items-center space-x-2">
+            <UserPlus className="w-4 h-4" />
+            <span>Novo Funcionário</span>
+          </Button>
+        </div>
+      )}
       
       <Card>
         <CardContent className="p-0">
@@ -174,13 +169,6 @@ const EmployeeList: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-
-      <EmployeeDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        employeeId={editingEmployeeId}
-        onEmployeeCreated={handleEmployeeCreated}
-      />
     </>
   );
 };
