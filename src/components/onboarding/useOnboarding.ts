@@ -72,13 +72,13 @@ export const useOnboarding = () => {
     detectAndMarkCompletedSteps
   );
 
-  // Limpar flag quando a localização muda - SEM reabrir modal automaticamente
+  // EFEITO CRÍTICO: Limpar flag quando localização muda, MAS não reabrir modal automaticamente
   useEffect(() => {
     if (hasNavigatedFromModal) {
-      console.log('Location changed, clearing hasNavigatedFromModal flag');
+      console.log('Location changed, clearing hasNavigatedFromModal flag WITHOUT reopening modal');
       setHasNavigatedFromModal(false);
     }
-  }, [location.pathname, hasNavigatedFromModal, setHasNavigatedFromModal]);
+  }, [location.pathname]);
 
   const handleResetOnboarding = async () => {
     console.log('Resetting onboarding');

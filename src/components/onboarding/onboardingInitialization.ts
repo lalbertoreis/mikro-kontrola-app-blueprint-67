@@ -38,16 +38,10 @@ export const useOnboardingInitialization = (
       console.log('Running initial auto-detection of completed steps - no existing progress found');
       detectAndMarkCompletedSteps(services.length, employees.length);
       setHasRunInitialDetection(true);
-    } else {
-      console.log('Skipping auto-detection:', {
-        hasRunInitialDetection,
-        progressExists: progress.length > 0,
-        hasData: services.length > 0 || employees.length > 0
-      });
     }
   }, [services.length, employees.length, user, loading, servicesLoading, employeesLoading, progressLoading, isInitialized, hasRunInitialDetection, progress.length, detectAndMarkCompletedSteps]);
 
-  // Main initialization effect
+  // Main initialization effect - SIMPLIFICADO
   useEffect(() => {
     if (!user || loading || progressLoading) return;
 
@@ -61,6 +55,7 @@ export const useOnboardingInitialization = (
       hasNavigatedFromModal
     });
 
+    // Se usuário optou por não mostrar mais, não inicializar
     if (settings.dont_show_again) {
       setState(prev => ({ ...prev, dontShowAgain: true, isOpen: false }));
       setIsInitialized(true);
@@ -72,29 +67,28 @@ export const useOnboardingInitialization = (
       completed: isStepCompleted(step.id, progress)
     }));
 
-    // Usar o current_step_index do settings como prioridade, mas validar se é um índice válido
     let targetStepIndex = settings.current_step_index;
     
-    // Se o índice não é válido, calcular o próximo incompleto
     if (targetStepIndex < 0 || targetStepIndex >= ONBOARDING_STEPS.length) {
       targetStepIndex = getNextIncompleteStepIndex(progress);
     }
     
-    console.log('Target step index:', targetStepIndex, 'Settings index:', settings.current_step_index);
-    
     const allMainStepsComplete = ONBOARDING_STEPS.slice(0, -1).every(step => isStepCompleted(step.id, progress));
 
-    // LÓGICA CRUCIAL: Não mostrar onboarding se navegou do modal ou se está completo
+    // LÓGICA CRUCIAL SIMPLIFICADA: 
+    // 1. Se navegou do modal = NÃO mostrar
+    // 2. Se todos steps completos E is_completed = NÃO mostrar  
+    // 3. Caso contrário = mostrar
     let shouldShowOnboarding = true;
 
-    if (allMainStepsComplete && settings.is_completed) {
-      shouldShowOnboarding = false;
-    }
-
-    // IMPORTANTE: Se navegou do modal, NÃO mostrar onboarding
     if (hasNavigatedFromModal) {
       shouldShowOnboarding = false;
-      console.log('Not showing onboarding - user navigated from modal');
+      console.log('NOT showing onboarding - user navigated from modal');
+    } else if (allMainStepsComplete && settings.is_completed) {
+      shouldShowOnboarding = false;
+      console.log('NOT showing onboarding - all steps completed');
+    } else {
+      console.log('SHOWING onboarding - conditions met');
     }
 
     const initialState = {
@@ -107,14 +101,14 @@ export const useOnboardingInitialization = (
 
     setState(initialState);
     
-    // Só atualizar se o índice realmente mudou para evitar loops
+    // Só atualizar índice se realmente mudou
     if (settings.current_step_index !== targetStepIndex) {
       console.log('Updating current step index from', settings.current_step_index, 'to', targetStepIndex);
       updateSettings({ current_step_index: targetStepIndex });
     }
     
     setIsInitialized(true);
-  }, [user, loading, progressLoading, progress, settings, hasNavigatedFromModal, services.length, employees.length]);
+  }, [user, loading, progressLoading, progress, settings, services.length, employees.length]);
 
   return {
     // No return values needed, this hook manages effects only

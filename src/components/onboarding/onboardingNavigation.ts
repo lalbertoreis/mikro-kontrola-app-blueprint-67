@@ -19,45 +19,40 @@ export const useOnboardingNavigation = (
     
     console.log('NextStep called - current step:', currentStep, 'currentIndex:', state.currentStepIndex);
     
-    // Se o step atual tem rota, marcar como completo, navegar e fechar modal DEFINITIVAMENTE
+    // FLUXO SIMPLIFICADO: Se tem rota, executar ações e navegar
     if (currentStep.route) {
-      console.log('Current step has route, marking as completed and navigating to:', currentStep.route);
+      console.log('Step has route - completing and navigating to:', currentStep.route);
       
-      // Marcar step atual como completo PRIMEIRO
+      // 1. Marcar step como completo
       await markStepCompleted(currentStep.id);
       
-      // Calcular próximo step
+      // 2. Calcular próximo índice
       const nextIndex = state.currentStepIndex + 1;
-      console.log('Updating step index to:', nextIndex);
       
-      // Atualizar no banco
+      // 3. Atualizar banco
       await updateSettings({ current_step_index: nextIndex });
       
-      // FECHAR modal e marcar navegação - ORDEM IMPORTANTE
+      // 4. IMPORTANTE: Marcar flag ANTES de fechar modal
+      setHasNavigatedFromModal(true);
+      
+      // 5. Fechar modal
       setState(prev => ({ 
         ...prev, 
         currentStepIndex: nextIndex, 
-        isOpen: false  // Fechar modal DEFINITIVAMENTE
+        isOpen: false 
       }));
       
-      // Marcar que navegou do modal para PREVENIR reabertura
-      setHasNavigatedFromModal(true);
-      
-      // Navegar
+      // 6. Navegar
       navigate(currentStep.route);
       return;
     }
 
-    // Se não tem rota, apenas avançar para o próximo step dentro do modal
+    // Se não tem rota, apenas avançar no modal
     const nextIndex = state.currentStepIndex + 1;
     
     if (nextIndex < state.steps.length) {
       console.log('Moving to next step index:', nextIndex);
-      
-      // Atualizar banco de dados primeiro
       await updateSettings({ current_step_index: nextIndex });
-      
-      // Depois atualizar estado local
       setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
     }
   };
@@ -65,11 +60,7 @@ export const useOnboardingNavigation = (
   const goToStep = async (stepIndex: number) => {
     if (stepIndex >= 0 && stepIndex < state.steps.length) {
       console.log('Going to step index:', stepIndex);
-      
-      // Atualizar banco de dados primeiro
       await updateSettings({ current_step_index: stepIndex });
-      
-      // Depois atualizar estado local
       setState(prev => ({ ...prev, currentStepIndex: stepIndex }));
     }
   };
@@ -100,6 +91,7 @@ export const useOnboardingNavigation = (
   };
 
   const reopenModal = () => {
+    console.log('Reopening modal manually');
     setHasNavigatedFromModal(false);
     setState(prev => ({ ...prev, isOpen: true }));
   };
