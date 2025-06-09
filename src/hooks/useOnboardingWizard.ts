@@ -88,48 +88,53 @@ interface OnboardingState {
 }
 
 export const useOnboardingWizard = () => {
+  // Estados reativos
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSkipped, setIsSkipped] = useState(false);
   const [isWizardVisible, setIsWizardVisible] = useState(false);
 
-  // Carregar estado inicial do localStorage apenas uma vez
+  // Carregar estado inicial apenas uma vez
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const state: OnboardingState = JSON.parse(saved);
-        setCurrentStep(state.currentStep || 0);
-        setIsCompleted(state.isCompleted || false);
-        setIsSkipped(state.isSkipped || false);
-        
-        // Só mostrar se não foi completado nem pulado
-        if (!state.isCompleted && !state.isSkipped) {
-          setIsWizardVisible(state.isWizardVisible ?? true);
-        } else {
-          setIsWizardVisible(false);
+    const loadInitialState = () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const state: OnboardingState = JSON.parse(saved);
+          setCurrentStep(state.currentStep || 0);
+          setIsCompleted(state.isCompleted || false);
+          setIsSkipped(state.isSkipped || false);
+          
+          // Só mostrar se não foi completado nem pulado
+          if (!state.isCompleted && !state.isSkipped) {
+            setIsWizardVisible(state.isWizardVisible ?? true);
+          } else {
+            setIsWizardVisible(false);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar estado do onboarding:', error);
+          // Primeira vez - mostrar onboarding
+          setIsWizardVisible(true);
         }
-      } catch (error) {
-        console.error('Erro ao carregar estado do onboarding:', error);
+      } else {
         // Primeira vez - mostrar onboarding
         setIsWizardVisible(true);
       }
-    } else {
-      // Primeira vez - mostrar onboarding
-      setIsWizardVisible(true);
-    }
+    };
+
+    loadInitialState();
   }, []);
 
-  // Função para salvar no localStorage sem afetar o estado React
+  // Função para salvar no localStorage sempre que houver mudanças
   const saveToStorage = (updates: Partial<OnboardingState>) => {
-    const currentState = {
+    const newState = {
       currentStep,
       isCompleted,
       isSkipped,
       isWizardVisible,
       ...updates
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
   };
 
   const nextStep = () => {
@@ -192,7 +197,7 @@ export const useOnboardingWizard = () => {
   };
 
   return {
-    // Estado
+    // Estado reativo
     isOpen: isWizardVisible,
     currentStep,
     currentStepData: ONBOARDING_STEPS[currentStep],

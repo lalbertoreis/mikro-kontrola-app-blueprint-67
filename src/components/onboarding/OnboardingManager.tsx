@@ -14,30 +14,26 @@ export const OnboardingManager: React.FC = () => {
     showWizard 
   } = useOnboardingWizard();
 
-  // Condição para mostrar o botão "Retomar Tutorial"
-  const shouldShowResumeButton = !isWizardVisible && !isCompleted && !isSkipped;
-
-  // Condição para mostrar os botões de controle quando completado/pulado
-  const shouldShowControlButtons = (isCompleted || isSkipped) && !isWizardVisible;
-
+  // Debug logs para verificar estado
   console.log('OnboardingManager state:', {
     isCompleted,
     isSkipped,
     isWizardVisible,
-    shouldShowResumeButton,
-    shouldShowControlButtons
+    shouldShowResumeButton: !isWizardVisible && !isCompleted && !isSkipped,
+    shouldShowControlButtons: (isCompleted || isSkipped) && !isWizardVisible
   });
 
   return (
     <>
-      <OnboardingWizard />
+      {/* Renderizar o wizard apenas quando visível */}
+      {isWizardVisible && <OnboardingWizard />}
       
-      {/* Botão flutuante "Retomar Tutorial" */}
-      {shouldShowResumeButton && (
+      {/* Botão "Retomar Tutorial" - aparece quando wizard está oculto e não foi completado/pulado */}
+      {!isWizardVisible && !isCompleted && !isSkipped && (
         <div className="fixed bottom-4 right-4 z-50">
           <Button
             onClick={showWizard}
-            className="flex items-center space-x-2 shadow-lg animate-pulse bg-primary hover:bg-primary/90 text-white"
+            className="flex items-center space-x-2 shadow-lg animate-pulse bg-primary hover:bg-primary/90 text-primary-foreground"
             size="sm"
           >
             <PlayCircle className="w-4 h-4" />
@@ -46,8 +42,8 @@ export const OnboardingManager: React.FC = () => {
         </div>
       )}
 
-      {/* Botões discretos no dashboard quando completado/pulado */}
-      {shouldShowControlButtons && (
+      {/* Botões de controle quando completado/pulado */}
+      {(isCompleted || isSkipped) && !isWizardVisible && (
         <div className="fixed bottom-4 right-4 z-40">
           <div className="flex flex-col space-y-2">
             <Button
