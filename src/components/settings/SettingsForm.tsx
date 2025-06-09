@@ -13,6 +13,7 @@ import BusinessInfoForm from "./BusinessInfoForm";
 import OnlineBookingForm from "./OnlineBookingForm";
 import BookingSettingsForm from "./BookingSettingsForm";
 import SubscriptionPlan from "./SubscriptionPlan";
+import ChangePasswordForm from "./ChangePasswordForm";
 
 interface SettingsFormProps {
   defaultValues?: Partial<BusinessSettingsFormData>;
@@ -52,6 +53,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
     <div className="space-y-6">
       {/* Subscription Plan Section */}
       <SubscriptionPlan />
+      
+      {/* Change Password Section */}
+      <ChangePasswordForm />
       
       {/* Settings Forms */}
       <Form {...form}>

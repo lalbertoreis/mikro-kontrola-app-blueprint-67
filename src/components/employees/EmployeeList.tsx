@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useEmployees } from "@/hooks/useEmployees";
 import { Employee } from "@/types/employee";
 import { formatDayOfWeek } from "@/utils/dateUtils";
@@ -22,11 +23,22 @@ interface EmployeeListProps {
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({ onNewEmployee, onEditEmployee }) => {
+  const navigate = useNavigate();
   const { employees, isLoading, deleteEmployee, isDeleting } = useEmployees();
+
+  const handleNewEmployee = () => {
+    if (onNewEmployee) {
+      onNewEmployee();
+    } else {
+      navigate("/dashboard/employees/new");
+    }
+  };
 
   const handleEditEmployee = (id: string) => {
     if (onEditEmployee) {
       onEditEmployee(id);
+    } else {
+      navigate(`/dashboard/employees/${id}`);
     }
   };
 
@@ -98,14 +110,12 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ onNewEmployee, onEditEmploy
 
   return (
     <>
-      {onNewEmployee && (
-        <div className="flex justify-end mb-4">
-          <Button onClick={onNewEmployee} className="flex items-center space-x-2">
-            <UserPlus className="w-4 h-4" />
-            <span>Novo Funcionário</span>
-          </Button>
-        </div>
-      )}
+      <div className="flex justify-end mb-4">
+        <Button onClick={handleNewEmployee} className="flex items-center space-x-2">
+          <UserPlus className="w-4 h-4" />
+          <span>Novo Funcionário</span>
+        </Button>
+      </div>
       
       <Card>
         <CardContent className="p-0">
