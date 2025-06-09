@@ -19,16 +19,27 @@ export const getCurrentStepForPage = (
   dontShowAgain: boolean,
   isInitialized: boolean
 ) => {
-  if (dontShowAgain || !isInitialized) return null;
+  console.log('getCurrentStepForPage called:', { pathname, dontShowAgain, isInitialized });
   
-  const incompleteSteps = steps.filter(step => !isStepCompleted(step.id, progress));
-  if (incompleteSteps.length === 0) return null;
+  if (dontShowAgain || !isInitialized) {
+    console.log('Not showing step - dontShowAgain or not initialized');
+    return null;
+  }
   
-  const matchingStep = steps.find(step => 
-    step.route === pathname && !isStepCompleted(step.id, progress)
-  );
+  // Encontrar o step que corresponde à página atual
+  const stepForPage = steps.find(step => step.route === pathname);
   
-  return matchingStep || null;
+  if (!stepForPage) {
+    console.log('No step found for current page');
+    return null;
+  }
+  
+  // Verificar se o step está completo
+  const isCompleted = isStepCompleted(stepForPage.id, progress);
+  console.log('Step for page:', stepForPage.id, 'completed:', isCompleted);
+  
+  // Retornar o step apenas se NÃO estiver completo
+  return isCompleted ? null : stepForPage;
 };
 
 export const isOnboardingActive = (
@@ -36,6 +47,9 @@ export const isOnboardingActive = (
   steps: any[],
   progress: OnboardingProgress[]
 ) => {
-  return !dontShowAgain && 
+  const active = !dontShowAgain && 
     steps.some(step => !isStepCompleted(step.id, progress) && step.id !== 'welcome' && step.id !== 'complete');
+  
+  console.log('isOnboardingActive:', active);
+  return active;
 };

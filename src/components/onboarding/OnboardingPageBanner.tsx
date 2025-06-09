@@ -9,7 +9,14 @@ import ServiceDialog from '@/components/services/ServiceDialog';
 import EmployeeDialog from '@/components/employees/EmployeeDialog';
 
 export const OnboardingPageBanner: React.FC = () => {
-  const { advanceOnboarding, isOnboardingActive, getCurrentStepForPage, markStepCompleted } = useOnboarding();
+  const { 
+    advanceOnboarding, 
+    isOnboardingActive, 
+    getCurrentStepForPage, 
+    markStepCompleted,
+    nextStep 
+  } = useOnboarding();
+  
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
   const [employeeDialogOpen, setEmployeeDialogOpen] = useState(false);
   
@@ -17,17 +24,17 @@ export const OnboardingPageBanner: React.FC = () => {
   
   console.log('OnboardingPageBanner debug:', {
     isOnboardingActive,
-    stepForCurrentPage,
+    stepForCurrentPage: stepForCurrentPage?.id,
     stepCompleted: stepForCurrentPage?.completed
   });
   
-  // Only show if we're in onboarding mode, have a step for this page, and step is NOT completed
-  if (!isOnboardingActive || !stepForCurrentPage || stepForCurrentPage.completed) {
+  // Only show if we're in onboarding mode AND have a step for this page AND step is NOT completed
+  if (!isOnboardingActive || !stepForCurrentPage) {
+    console.log('Not showing banner - no active onboarding or no step for page');
     return null;
   }
 
   const handleCadastrar = () => {
-    // Abrir modal de cadastro específico para o step atual
     console.log('Banner cadastrar button clicked for step:', stepForCurrentPage.id);
     if (stepForCurrentPage.id === 'services') {
       setServiceDialogOpen(true);
@@ -35,25 +42,26 @@ export const OnboardingPageBanner: React.FC = () => {
       setEmployeeDialogOpen(true);
     } else {
       // Para outros steps, apenas avançar
-      handleAvancar();
+      handlePular();
     }
   };
 
-  const handleAvancar = async () => {
-    console.log('Advancing to next step manually (skip current step)');
-    // Avançar para o próximo step SEM marcar o atual como completo
-    await advanceOnboarding();
+  const handlePular = async () => {
+    console.log('Skipping current step:', stepForCurrentPage.id);
+    // Marcar step atual como completo e avançar
+    await markStepCompleted(stepForCurrentPage.id);
+    await nextStep();
   };
 
   const handleServiceDialogClose = async (wasCreated: boolean) => {
     console.log('Service dialog closed, wasCreated:', wasCreated);
     setServiceDialogOpen(false);
     
-    // Se um serviço foi criado, marcar step como completo e avançar automaticamente
+    // Se um serviço foi criado, marcar step como completo e avançar
     if (wasCreated) {
-      console.log('Service created - marking step as completed and advancing to next step');
+      console.log('Service created - marking step as completed and advancing');
       await markStepCompleted(stepForCurrentPage.id);
-      await advanceOnboarding();
+      await nextStep();
     }
   };
 
@@ -61,11 +69,11 @@ export const OnboardingPageBanner: React.FC = () => {
     console.log('Employee dialog closed, wasCreated:', wasCreated);
     setEmployeeDialogOpen(false);
     
-    // Se um funcionário foi criado, marcar step como completo e avançar automaticamente
+    // Se um funcionário foi criado, marcar step como completo e avançar
     if (wasCreated) {
-      console.log('Employee created - marking step as completed and advancing to next step');
+      console.log('Employee created - marking step as completed and advancing');
       await markStepCompleted(stepForCurrentPage.id);
-      await advanceOnboarding();
+      await nextStep();
     }
   };
 
@@ -122,7 +130,7 @@ export const OnboardingPageBanner: React.FC = () => {
               <div className="flex space-x-3">
                 <Button
                   variant="outline"
-                  onClick={handleAvancar}
+                  onClick={handlePular}
                   className="flex items-center space-x-2"
                 >
                   <ArrowRight className="w-4 h-4" />
