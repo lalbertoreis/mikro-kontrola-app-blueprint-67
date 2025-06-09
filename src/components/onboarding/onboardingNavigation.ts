@@ -19,11 +19,11 @@ export const useOnboardingNavigation = (
     
     console.log('NextStep called - current step:', currentStep, 'currentIndex:', state.currentStepIndex);
     
-    // Se o step atual tem rota, marcar como completo, navegar e fechar modal
+    // Se o step atual tem rota, marcar como completo, navegar e fechar modal DEFINITIVAMENTE
     if (currentStep.route) {
       console.log('Current step has route, marking as completed and navigating to:', currentStep.route);
       
-      // Marcar step atual como completo
+      // Marcar step atual como completo PRIMEIRO
       await markStepCompleted(currentStep.id);
       
       // Calcular próximo step
@@ -33,9 +33,17 @@ export const useOnboardingNavigation = (
       // Atualizar no banco
       await updateSettings({ current_step_index: nextIndex });
       
-      // Fechar modal e navegar
-      setState(prev => ({ ...prev, currentStepIndex: nextIndex, isOpen: false }));
+      // FECHAR modal e marcar navegação - ORDEM IMPORTANTE
+      setState(prev => ({ 
+        ...prev, 
+        currentStepIndex: nextIndex, 
+        isOpen: false  // Fechar modal DEFINITIVAMENTE
+      }));
+      
+      // Marcar que navegou do modal para PREVENIR reabertura
       setHasNavigatedFromModal(true);
+      
+      // Navegar
       navigate(currentStep.route);
       return;
     }

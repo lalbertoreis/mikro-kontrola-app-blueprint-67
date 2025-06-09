@@ -84,14 +84,17 @@ export const useOnboardingInitialization = (
     
     const allMainStepsComplete = ONBOARDING_STEPS.slice(0, -1).every(step => isStepCompleted(step.id, progress));
 
+    // LÓGICA CRUCIAL: Não mostrar onboarding se navegou do modal ou se está completo
     let shouldShowOnboarding = true;
 
     if (allMainStepsComplete && settings.is_completed) {
       shouldShowOnboarding = false;
     }
 
+    // IMPORTANTE: Se navegou do modal, NÃO mostrar onboarding
     if (hasNavigatedFromModal) {
       shouldShowOnboarding = false;
+      console.log('Not showing onboarding - user navigated from modal');
     }
 
     const initialState = {
@@ -112,13 +115,6 @@ export const useOnboardingInitialization = (
     
     setIsInitialized(true);
   }, [user, loading, progressLoading, progress, settings, hasNavigatedFromModal, services.length, employees.length]);
-
-  // Reset navigation flag effect
-  useEffect(() => {
-    if (hasNavigatedFromModal && setState && location.pathname) {
-      // This effect needs access to current step, so we'll handle it in the main hook
-    }
-  }, [location.pathname, hasNavigatedFromModal]);
 
   return {
     // No return values needed, this hook manages effects only
