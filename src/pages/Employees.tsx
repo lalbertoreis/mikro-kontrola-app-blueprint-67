@@ -1,51 +1,27 @@
 
-import React, { useState } from "react";
+import React from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import EmployeeList from "@/components/employees/EmployeeList";
-import EmployeeDialog from "@/components/employees/EmployeeDialog";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
-import { OnboardingPageBanner } from "@/components/onboarding/OnboardingPageBanner";
+import { ConditionalOnboardingBanner } from "@/components/onboarding/ConditionalOnboardingBanner";
 
 const Employees = () => {
-  const [open, setOpen] = useState(false);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined);
-
-  const handleNewEmployee = () => {
-    setSelectedEmployeeId(undefined);
-    setOpen(true);
-  };
-
-  const handleEditEmployee = (id: string) => {
-    setSelectedEmployeeId(id);
-    setOpen(true);
-  };
-
   return (
     <DashboardLayout>
-      <OnboardingPageBanner />
-      <Card className="bg-white">
-        <CardContent className="p-6 space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Funcionários</h1>
-              <p className="text-muted-foreground">
-                Gerencie os funcionários do seu negócio e seus horários de trabalho.
-              </p>
-            </div>
-          </div>
-          
-          <EmployeeList 
-            onNewEmployee={handleNewEmployee}
-            onEditEmployee={handleEditEmployee}
-          />
-          
-          <EmployeeDialog 
-            open={open}
-            onOpenChange={setOpen}
-            employeeId={selectedEmployeeId}
-          />
-        </CardContent>
-      </Card>
+      <TooltipProvider>
+        <ConditionalOnboardingBanner />
+        <Card className="bg-white">
+          <CardContent className="p-6 space-y-4">
+            <h1 className="text-2xl font-bold tracking-tight">Funcionários</h1>
+            <p className="text-muted-foreground">
+              Gerencie sua equipe e configure permissões de acesso.
+            </p>
+            
+            <EmployeeList />
+          </CardContent>
+        </Card>
+      </TooltipProvider>
     </DashboardLayout>
   );
 };
