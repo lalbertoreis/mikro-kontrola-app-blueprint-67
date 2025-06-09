@@ -84,13 +84,14 @@ interface OnboardingState {
   currentStep: number;
   isCompleted: boolean;
   isSkipped: boolean;
+  isWizardVisible: boolean;
 }
 
 export const useOnboardingWizard = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSkipped, setIsSkipped] = useState(false);
+  const [isWizardVisible, setIsWizardVisible] = useState(false);
 
   // Carregar estado do localStorage
   useEffect(() => {
@@ -101,17 +102,18 @@ export const useOnboardingWizard = () => {
         setCurrentStep(state.currentStep);
         setIsCompleted(state.isCompleted);
         setIsSkipped(state.isSkipped);
+        setIsWizardVisible(state.isWizardVisible ?? false);
         
-        // Só abrir se não foi completado nem pulado
-        if (!state.isCompleted && !state.isSkipped) {
-          setIsOpen(true);
+        // Só mostrar se não foi completado nem pulado e estava visível
+        if (!state.isCompleted && !state.isSkipped && (state.isWizardVisible ?? true)) {
+          setIsWizardVisible(true);
         }
       } catch (error) {
         console.error('Erro ao carregar estado do onboarding:', error);
       }
     } else {
       // Primeira vez - mostrar onboarding
-      setIsOpen(true);
+      setIsWizardVisible(true);
     }
   }, []);
 
@@ -121,6 +123,7 @@ export const useOnboardingWizard = () => {
       currentStep,
       isCompleted,
       isSkipped,
+      isWizardVisible,
       ...state
     };
     
@@ -129,6 +132,7 @@ export const useOnboardingWizard = () => {
     if (state.currentStep !== undefined) setCurrentStep(state.currentStep);
     if (state.isCompleted !== undefined) setIsCompleted(state.isCompleted);
     if (state.isSkipped !== undefined) setIsSkipped(state.isSkipped);
+    if (state.isWizardVisible !== undefined) setIsWizardVisible(state.isWizardVisible);
   };
 
   const nextStep = () => {
@@ -154,13 +158,11 @@ export const useOnboardingWizard = () => {
   };
 
   const skipOnboarding = () => {
-    saveState({ isSkipped: true });
-    setIsOpen(false);
+    saveState({ isSkipped: true, isWizardVisible: false });
   };
 
   const completeOnboarding = () => {
-    saveState({ isCompleted: true });
-    setIsOpen(false);
+    saveState({ isCompleted: true, isWizardVisible: false });
   };
 
   const resetOnboarding = () => {
@@ -168,27 +170,30 @@ export const useOnboardingWizard = () => {
     setCurrentStep(0);
     setIsCompleted(false);
     setIsSkipped(false);
-    setIsOpen(true);
+    setIsWizardVisible(true);
+  };
+
+  const hideWizard = () => {
+    saveState({ isWizardVisible: false });
+  };
+
+  const showWizard = () => {
+    saveState({ isWizardVisible: true });
   };
 
   const closeModal = () => {
-    setIsOpen(false);
-  };
-
-  const openModal = () => {
-    if (!isCompleted && !isSkipped) {
-      setIsOpen(true);
-    }
+    hideWizard();
   };
 
   return {
     // Estado
-    isOpen,
+    isOpen: isWizardVisible,
     currentStep,
     currentStepData: ONBOARDING_STEPS[currentStep],
     totalSteps: ONBOARDING_STEPS.length,
     isCompleted,
     isSkipped,
+    isWizardVisible,
     steps: ONBOARDING_STEPS,
     
     // Ações
@@ -199,7 +204,8 @@ export const useOnboardingWizard = () => {
     completeOnboarding,
     resetOnboarding,
     closeModal,
-    openModal,
+    hideWizard,
+    showWizard,
     
     // Helpers
     isFirstStep: currentStep === 0,

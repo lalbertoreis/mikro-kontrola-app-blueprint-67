@@ -2,10 +2,10 @@
 import React from 'react';
 import { Building2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useOnboardingActions } from '@/hooks/useOnboardingActions';
 
 export const StepBusinessInfo: React.FC = () => {
-  const navigate = useNavigate();
+  const { navigateAndHideWizard } = useOnboardingActions();
 
   return (
     <div className="space-y-6">
@@ -36,7 +36,7 @@ export const StepBusinessInfo: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={() => navigate('/dashboard/settings')}
+            onClick={() => navigateAndHideWizard('/dashboard/settings')}
             className="flex items-center space-x-2"
           >
             <Settings className="w-4 h-4" />

@@ -2,10 +2,10 @@
 import React from 'react';
 import { TrendingUp, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useOnboardingActions } from '@/hooks/useOnboardingActions';
 
 export const StepFinance: React.FC = () => {
-  const navigate = useNavigate();
+  const { navigateAndHideWizard } = useOnboardingActions();
 
   return (
     <div className="space-y-6">
@@ -36,7 +36,7 @@ export const StepFinance: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={() => navigate('/dashboard/finance')}
+            onClick={() => navigateAndHideWizard('/dashboard/finance')}
             className="flex items-center space-x-2"
           >
             <BarChart3 className="w-4 h-4" />
