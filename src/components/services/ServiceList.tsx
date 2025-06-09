@@ -8,7 +8,6 @@ import ServiceListTable from "./ServiceListTable";
 import ServiceDeleteDialog from "./ServiceDeleteDialog";
 import { useServices } from "@/hooks/useServices";
 import { toast } from "sonner";
-import { useOnboarding } from "@/components/onboarding/useOnboarding";
 
 interface ServiceListProps {
   onNewService?: () => void;
@@ -21,10 +20,6 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
   
   const { services, isLoading, deleteService, isDeleting } = useServices();
-  const { isOnboardingActive, getCurrentStepForPage, markStepCompleted, nextStep } = useOnboarding();
-
-  const stepForCurrentPage = getCurrentStepForPage();
-  const isInOnboardingContext = isOnboardingActive && stepForCurrentPage?.id === 'services';
 
   const handleNewService = () => {
     if (onNewService) {
@@ -57,23 +52,6 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
     }
   };
 
-  const handleServiceDialogClose = async (open: boolean) => {
-    setOpen(open);
-    
-    // Se fechou o dialog e estamos no contexto do onboarding, verificar se foi criado um serviço
-    if (!open && isInOnboardingContext) {
-      // Aguardar um pequeno delay para garantir que a lista seja atualizada
-      setTimeout(async () => {
-        const hasServices = services.filter(service => service.price > 0).length > 0;
-        if (hasServices) {
-          console.log('Service created during onboarding - completing step and advancing');
-          await markStepCompleted('services');
-          nextStep();
-        }
-      }, 500);
-    }
-  };
-
   // Filter out services with price = 0
   const filteredServices = services.filter(service => service.price > 0);
 
@@ -98,7 +76,7 @@ const ServiceList: React.FC<ServiceListProps> = ({ onNewService }) => {
       
       <ServiceDialog
         open={open}
-        onOpenChange={handleServiceDialogClose}
+        onOpenChange={setOpen}
         service={selectedService}
       />
       
