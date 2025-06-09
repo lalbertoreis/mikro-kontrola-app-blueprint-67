@@ -7,8 +7,13 @@ export const useOnboardingActions = () => {
   const navigate = useNavigate();
 
   const navigateAndHideWizard = (path: string) => {
+    // Primeiro esconde o wizard
     hideWizard();
-    navigate(path);
+    
+    // Pequeno delay para garantir que o estado seja atualizado
+    setTimeout(() => {
+      navigate(path);
+    }, 100);
   };
 
   return {

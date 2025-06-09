@@ -14,14 +14,26 @@ export const OnboardingManager: React.FC = () => {
     showWizard 
   } = useOnboardingWizard();
 
-  const shouldShowFloatingButton = !isWizardVisible && !isCompleted && !isSkipped;
+  // Condição para mostrar o botão "Retomar Tutorial"
+  const shouldShowResumeButton = !isWizardVisible && !isCompleted && !isSkipped;
+
+  // Condição para mostrar os botões de controle quando completado/pulado
+  const shouldShowControlButtons = (isCompleted || isSkipped) && !isWizardVisible;
+
+  console.log('OnboardingManager state:', {
+    isCompleted,
+    isSkipped,
+    isWizardVisible,
+    shouldShowResumeButton,
+    shouldShowControlButtons
+  });
 
   return (
     <>
       <OnboardingWizard />
       
       {/* Botão flutuante "Retomar Tutorial" */}
-      {shouldShowFloatingButton && (
+      {shouldShowResumeButton && (
         <div className="fixed bottom-4 right-4 z-50">
           <Button
             onClick={showWizard}
@@ -35,7 +47,7 @@ export const OnboardingManager: React.FC = () => {
       )}
 
       {/* Botões discretos no dashboard quando completado/pulado */}
-      {(isCompleted || isSkipped) && (
+      {shouldShowControlButtons && (
         <div className="fixed bottom-4 right-4 z-40">
           <div className="flex flex-col space-y-2">
             <Button

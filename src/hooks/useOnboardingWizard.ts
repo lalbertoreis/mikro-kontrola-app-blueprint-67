@@ -93,23 +93,26 @@ export const useOnboardingWizard = () => {
   const [isSkipped, setIsSkipped] = useState(false);
   const [isWizardVisible, setIsWizardVisible] = useState(false);
 
-  // Carregar estado do localStorage
+  // Carregar estado inicial do localStorage apenas uma vez
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const state: OnboardingState = JSON.parse(saved);
-        setCurrentStep(state.currentStep);
-        setIsCompleted(state.isCompleted);
-        setIsSkipped(state.isSkipped);
-        setIsWizardVisible(state.isWizardVisible ?? false);
+        setCurrentStep(state.currentStep || 0);
+        setIsCompleted(state.isCompleted || false);
+        setIsSkipped(state.isSkipped || false);
         
-        // Só mostrar se não foi completado nem pulado e estava visível
-        if (!state.isCompleted && !state.isSkipped && (state.isWizardVisible ?? true)) {
-          setIsWizardVisible(true);
+        // Só mostrar se não foi completado nem pulado
+        if (!state.isCompleted && !state.isSkipped) {
+          setIsWizardVisible(state.isWizardVisible ?? true);
+        } else {
+          setIsWizardVisible(false);
         }
       } catch (error) {
         console.error('Erro ao carregar estado do onboarding:', error);
+        // Primeira vez - mostrar onboarding
+        setIsWizardVisible(true);
       }
     } else {
       // Primeira vez - mostrar onboarding
@@ -117,28 +120,23 @@ export const useOnboardingWizard = () => {
     }
   }, []);
 
-  // Salvar estado no localStorage
-  const saveState = (state: Partial<OnboardingState>) => {
+  // Função para salvar no localStorage sem afetar o estado React
+  const saveToStorage = (updates: Partial<OnboardingState>) => {
     const currentState = {
       currentStep,
       isCompleted,
       isSkipped,
       isWizardVisible,
-      ...state
+      ...updates
     };
-    
     localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState));
-    
-    if (state.currentStep !== undefined) setCurrentStep(state.currentStep);
-    if (state.isCompleted !== undefined) setIsCompleted(state.isCompleted);
-    if (state.isSkipped !== undefined) setIsSkipped(state.isSkipped);
-    if (state.isWizardVisible !== undefined) setIsWizardVisible(state.isWizardVisible);
   };
 
   const nextStep = () => {
     const nextStepIndex = currentStep + 1;
     if (nextStepIndex < ONBOARDING_STEPS.length) {
-      saveState({ currentStep: nextStepIndex });
+      setCurrentStep(nextStepIndex);
+      saveToStorage({ currentStep: nextStepIndex });
     } else {
       completeOnboarding();
     }
@@ -147,22 +145,28 @@ export const useOnboardingWizard = () => {
   const previousStep = () => {
     const prevStepIndex = currentStep - 1;
     if (prevStepIndex >= 0) {
-      saveState({ currentStep: prevStepIndex });
+      setCurrentStep(prevStepIndex);
+      saveToStorage({ currentStep: prevStepIndex });
     }
   };
 
   const goToStep = (stepIndex: number) => {
     if (stepIndex >= 0 && stepIndex < ONBOARDING_STEPS.length) {
-      saveState({ currentStep: stepIndex });
+      setCurrentStep(stepIndex);
+      saveToStorage({ currentStep: stepIndex });
     }
   };
 
   const skipOnboarding = () => {
-    saveState({ isSkipped: true, isWizardVisible: false });
+    setIsSkipped(true);
+    setIsWizardVisible(false);
+    saveToStorage({ isSkipped: true, isWizardVisible: false });
   };
 
   const completeOnboarding = () => {
-    saveState({ isCompleted: true, isWizardVisible: false });
+    setIsCompleted(true);
+    setIsWizardVisible(false);
+    saveToStorage({ isCompleted: true, isWizardVisible: false });
   };
 
   const resetOnboarding = () => {
@@ -174,11 +178,13 @@ export const useOnboardingWizard = () => {
   };
 
   const hideWizard = () => {
-    saveState({ isWizardVisible: false });
+    setIsWizardVisible(false);
+    saveToStorage({ isWizardVisible: false });
   };
 
   const showWizard = () => {
-    saveState({ isWizardVisible: true });
+    setIsWizardVisible(true);
+    saveToStorage({ isWizardVisible: true });
   };
 
   const closeModal = () => {
