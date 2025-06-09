@@ -8,6 +8,13 @@ import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 import { StepWelcome } from './steps/StepWelcome';
 import { StepBusinessInfo } from './steps/StepBusinessInfo';
 import { StepServices } from './steps/StepServices';
+import { StepEmployees } from './steps/StepEmployees';
+import { StepClients } from './steps/StepClients';
+import { StepCalendar } from './steps/StepCalendar';
+import { StepOnlineBooking } from './steps/StepOnlineBooking';
+import { StepPaymentMethods } from './steps/StepPaymentMethods';
+import { StepHolidays } from './steps/StepHolidays';
+import { StepFinance } from './steps/StepFinance';
 import { StepComplete } from './steps/StepComplete';
 
 // Mapeamento dos componentes dos passos
@@ -15,6 +22,13 @@ const stepComponents: Record<string, React.ComponentType> = {
   'welcome': StepWelcome,
   'business-info': StepBusinessInfo,
   'services': StepServices,
+  'employees': StepEmployees,
+  'clients': StepClients,
+  'calendar': StepCalendar,
+  'online-booking': StepOnlineBooking,
+  'payment-methods': StepPaymentMethods,
+  'holidays': StepHolidays,
+  'finance': StepFinance,
   'complete': StepComplete
 };
 
@@ -80,7 +94,7 @@ export const OnboardingWizard: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
             
-            <div className="space-y-3">
+            <div className="space-y-3 pr-12">
               <div className="flex items-center justify-between">
                 <span className="text-sm opacity-90">
                   Passo {currentStep + 1} de {totalSteps}
