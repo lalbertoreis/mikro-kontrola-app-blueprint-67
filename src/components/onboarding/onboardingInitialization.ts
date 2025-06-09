@@ -72,9 +72,15 @@ export const useOnboardingInitialization = (
       completed: isStepCompleted(step.id, progress)
     }));
 
-    const nextIncompleteIndex = getNextIncompleteStepIndex(progress);
+    // Usar o current_step_index do settings como prioridade, mas validar se é um índice válido
+    let targetStepIndex = settings.current_step_index;
     
-    console.log('Next incomplete step index:', nextIncompleteIndex, 'Step:', ONBOARDING_STEPS[nextIncompleteIndex]?.id);
+    // Se o índice não é válido, calcular o próximo incompleto
+    if (targetStepIndex < 0 || targetStepIndex >= ONBOARDING_STEPS.length) {
+      targetStepIndex = getNextIncompleteStepIndex(progress);
+    }
+    
+    console.log('Target step index:', targetStepIndex, 'Settings index:', settings.current_step_index);
     
     const allMainStepsComplete = ONBOARDING_STEPS.slice(0, -1).every(step => isStepCompleted(step.id, progress));
 
@@ -90,7 +96,7 @@ export const useOnboardingInitialization = (
 
     const initialState = {
       isOpen: shouldShowOnboarding,
-      currentStepIndex: nextIncompleteIndex,
+      currentStepIndex: targetStepIndex,
       steps: updatedSteps,
       canSkip: true,
       dontShowAgain: settings.dont_show_again
@@ -98,9 +104,10 @@ export const useOnboardingInitialization = (
 
     setState(initialState);
     
-    if (settings.current_step_index !== nextIncompleteIndex) {
-      console.log('Updating current step index from', settings.current_step_index, 'to', nextIncompleteIndex);
-      updateSettings({ current_step_index: nextIncompleteIndex });
+    // Só atualizar se o índice realmente mudou para evitar loops
+    if (settings.current_step_index !== targetStepIndex) {
+      console.log('Updating current step index from', settings.current_step_index, 'to', targetStepIndex);
+      updateSettings({ current_step_index: targetStepIndex });
     }
     
     setIsInitialized(true);

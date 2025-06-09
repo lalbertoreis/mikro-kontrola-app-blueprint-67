@@ -13,55 +13,74 @@ export const useOnboardingNavigation = (
 ) => {
   const navigate = useNavigate();
 
-  const nextStep = () => {
+  const nextStep = async () => {
     const currentStep = state.steps[state.currentStepIndex];
     
-    console.log('NextStep called - current step:', currentStep);
+    console.log('NextStep called - current step:', currentStep, 'currentIndex:', state.currentStepIndex);
     
     // Se o step atual tem rota, navegar para ela e minimizar o modal
     if (currentStep.route) {
       console.log('Current step has route, navigating to:', currentStep.route);
+      
+      // Primeiro atualizar o step index no banco de dados
+      const nextIndex = state.currentStepIndex + 1;
+      console.log('Updating step index to:', nextIndex);
+      
+      await updateSettings({ current_step_index: nextIndex });
+      
+      // Atualizar estado local
+      setState(prev => ({ ...prev, currentStepIndex: nextIndex, isOpen: false }));
+      
+      // Navegar e minimizar
       setHasNavigatedFromModal(true);
       navigate(currentStep.route);
-      setState(prev => ({ ...prev, isOpen: false }));
       return;
     }
 
-    // Se não tem rota, avançar para o próximo step
+    // Se não tem rota, avançar para o próximo step dentro do modal
     const nextIndex = state.currentStepIndex + 1;
     
     if (nextIndex < state.steps.length) {
       console.log('Moving to next step index:', nextIndex);
+      
+      // Atualizar banco de dados primeiro
+      await updateSettings({ current_step_index: nextIndex });
+      
+      // Depois atualizar estado local
       setState(prev => ({ ...prev, currentStepIndex: nextIndex }));
-      updateSettings({ current_step_index: nextIndex });
     }
   };
 
-  const goToStep = (stepIndex: number) => {
+  const goToStep = async (stepIndex: number) => {
     if (stepIndex >= 0 && stepIndex < state.steps.length) {
+      console.log('Going to step index:', stepIndex);
+      
+      // Atualizar banco de dados primeiro
+      await updateSettings({ current_step_index: stepIndex });
+      
+      // Depois atualizar estado local
       setState(prev => ({ ...prev, currentStepIndex: stepIndex }));
-      updateSettings({ current_step_index: stepIndex });
     }
   };
 
-  const skipTutorial = () => {
+  const skipTutorial = async () => {
     setState(prev => ({ ...prev, isOpen: false, dontShowAgain: true }));
-    updateSettings({ 
+    await updateSettings({ 
       dont_show_again: true, 
       is_completed: true,
       current_step_index: state.steps.length - 1 
     });
   };
 
-  const closeTutorial = () => {
+  const closeTutorial = async () => {
     setState(prev => ({ ...prev, isOpen: false }));
     
     if (state.currentStepIndex === state.steps.length - 1) {
-      updateSettings({ is_completed: true });
+      await updateSettings({ is_completed: true });
     }
     
     if (state.dontShowAgain) {
-      updateSettings({ dont_show_again: true });
+      await updateSettings({ dont_show_again: true });
     }
   };
 
