@@ -3,16 +3,9 @@ import React from 'react';
 import { CreditCard, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 
 export const StepPaymentMethods: React.FC = () => {
   const navigate = useNavigate();
-  const { hideWizard } = useOnboardingWizard();
-
-  const handleGoToPaymentMethods = () => {
-    hideWizard();
-    navigate('/dashboard/payment-methods');
-  };
 
   return (
     <div className="space-y-6">
@@ -43,7 +36,7 @@ export const StepPaymentMethods: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={handleGoToPaymentMethods}
+            onClick={() => navigate('/dashboard/payment-methods')}
             className="flex items-center space-x-2"
           >
             <DollarSign className="w-4 h-4" />

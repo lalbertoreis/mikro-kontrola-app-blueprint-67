@@ -84,7 +84,6 @@ interface OnboardingState {
   currentStep: number;
   isCompleted: boolean;
   isSkipped: boolean;
-  isVisible: boolean;
 }
 
 export const useOnboardingWizard = () => {
@@ -92,7 +91,6 @@ export const useOnboardingWizard = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSkipped, setIsSkipped] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
 
   // Carregar estado do localStorage
   useEffect(() => {
@@ -103,10 +101,9 @@ export const useOnboardingWizard = () => {
         setCurrentStep(state.currentStep);
         setIsCompleted(state.isCompleted);
         setIsSkipped(state.isSkipped);
-        setIsVisible(state.isVisible !== undefined ? state.isVisible : true);
         
-        // Só abrir se não foi completado nem pulado e está visível
-        if (!state.isCompleted && !state.isSkipped && state.isVisible !== false) {
+        // Só abrir se não foi completado nem pulado
+        if (!state.isCompleted && !state.isSkipped) {
           setIsOpen(true);
         }
       } catch (error) {
@@ -124,7 +121,6 @@ export const useOnboardingWizard = () => {
       currentStep,
       isCompleted,
       isSkipped,
-      isVisible,
       ...state
     };
     
@@ -133,7 +129,6 @@ export const useOnboardingWizard = () => {
     if (state.currentStep !== undefined) setCurrentStep(state.currentStep);
     if (state.isCompleted !== undefined) setIsCompleted(state.isCompleted);
     if (state.isSkipped !== undefined) setIsSkipped(state.isSkipped);
-    if (state.isVisible !== undefined) setIsVisible(state.isVisible);
   };
 
   const nextStep = () => {
@@ -159,12 +154,12 @@ export const useOnboardingWizard = () => {
   };
 
   const skipOnboarding = () => {
-    saveState({ isSkipped: true, isVisible: false });
+    saveState({ isSkipped: true });
     setIsOpen(false);
   };
 
   const completeOnboarding = () => {
-    saveState({ isCompleted: true, isVisible: false });
+    saveState({ isCompleted: true });
     setIsOpen(false);
   };
 
@@ -173,7 +168,6 @@ export const useOnboardingWizard = () => {
     setCurrentStep(0);
     setIsCompleted(false);
     setIsSkipped(false);
-    setIsVisible(true);
     setIsOpen(true);
   };
 
@@ -182,24 +176,10 @@ export const useOnboardingWizard = () => {
   };
 
   const openModal = () => {
-    if (!isCompleted && !isSkipped && isVisible) {
-      setIsOpen(true);
-    }
-  };
-
-  const hideWizard = () => {
-    saveState({ isVisible: false });
-    setIsOpen(false);
-  };
-
-  const showWizard = () => {
     if (!isCompleted && !isSkipped) {
-      saveState({ isVisible: true });
       setIsOpen(true);
     }
   };
-
-  const shouldShowResumeButton = !isCompleted && !isSkipped && !isVisible && !isOpen;
 
   return {
     // Estado
@@ -209,9 +189,7 @@ export const useOnboardingWizard = () => {
     totalSteps: ONBOARDING_STEPS.length,
     isCompleted,
     isSkipped,
-    isVisible,
     steps: ONBOARDING_STEPS,
-    shouldShowResumeButton,
     
     // Ações
     nextStep,
@@ -222,8 +200,6 @@ export const useOnboardingWizard = () => {
     resetOnboarding,
     closeModal,
     openModal,
-    hideWizard,
-    showWizard,
     
     // Helpers
     isFirstStep: currentStep === 0,

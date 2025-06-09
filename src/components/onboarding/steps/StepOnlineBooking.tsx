@@ -3,16 +3,9 @@ import React from 'react';
 import { Globe, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 
 export const StepOnlineBooking: React.FC = () => {
   const navigate = useNavigate();
-  const { hideWizard } = useOnboardingWizard();
-
-  const handleGoToSettings = () => {
-    hideWizard();
-    navigate('/dashboard/settings');
-  };
 
   return (
     <div className="space-y-6">
@@ -43,7 +36,7 @@ export const StepOnlineBooking: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={handleGoToSettings}
+            onClick={() => navigate('/dashboard/settings')}
             className="flex items-center space-x-2"
           >
             <Link className="w-4 h-4" />
