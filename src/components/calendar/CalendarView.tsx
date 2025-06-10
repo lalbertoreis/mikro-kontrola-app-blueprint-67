@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useCalendarState } from "@/hooks/useCalendarState";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -58,7 +57,6 @@ export default function CalendarView() {
   if (isMobile) {
     return (
       <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-slate-900">
-        {/* Mobile Calendar View */}
         <MobileCalendarView
           appointments={appointmentsWithDetails}
           currentDate={currentDate}
@@ -76,7 +74,6 @@ export default function CalendarView() {
           isLoading={isLoading}
         />
 
-        {/* Dialogs */}
         <CalendarDialogs
           appointmentDialogOpen={appointmentDialogOpen}
           blockTimeDialogOpen={blockTimeDialogOpen}
@@ -128,7 +125,6 @@ export default function CalendarView() {
           isLoading={isLoading}
         />
 
-        {/* Dialogs */}
         <CalendarDialogs
           appointmentDialogOpen={appointmentDialogOpen}
           blockTimeDialogOpen={blockTimeDialogOpen}

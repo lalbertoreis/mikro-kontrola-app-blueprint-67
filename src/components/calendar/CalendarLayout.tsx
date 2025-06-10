@@ -39,7 +39,7 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
   onNavigateNext,
 }) => {
   return (
-    <div className="flex h-full w-full bg-slate-50 dark:bg-slate-900 overflow-hidden">
+    <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
       {/* Sidebar - Fixed width but responsive */}
       <div className="w-72 lg:w-80 flex-shrink-0 p-3 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
         <CalendarSidebar
@@ -69,7 +69,7 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
           />
         </div>
 
-        {/* Calendar Content - Full expansion without any padding limitations */}
+        {/* Calendar Content - Full expansion */}
         <div className="flex-1 overflow-hidden w-full h-full">
           {children}
         </div>

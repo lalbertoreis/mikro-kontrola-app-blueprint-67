@@ -1,18 +1,15 @@
 
 import React from "react";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import CalendarView from "@/components/calendar/CalendarView";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import CalendarView from "@/components/calendar/CalendarView";
 
 const Calendar = () => {
   return (
-    <DashboardLayout>
-      <TooltipProvider>
-        <div className="h-full w-full">
-          <CalendarView />
-        </div>
-      </TooltipProvider>
-    </DashboardLayout>
+    <TooltipProvider>
+      <div className="h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-900">
+        <CalendarView />
+      </div>
+    </TooltipProvider>
   );
 };
 
