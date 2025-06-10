@@ -1,10 +1,12 @@
 
 import React from "react";
-import { format, startOfWeek, addDays, isSameDay, parseISO, isToday } from "date-fns";
+import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppointmentWithDetails } from "@/types/calendar";
 import { Employee } from "@/types/employee";
-import AppointmentChip from "./AppointmentChip";
+import AppointmentCard from "./AppointmentCard";
+import HolidayIndicator from "./HolidayIndicator";
+import { useHolidaysByDate } from "@/hooks/useHolidaysByDate";
 
 interface WeekCalendarProps {
   appointments: AppointmentWithDetails[];
@@ -23,141 +25,195 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
   onSelectAppointment,
   onSelectTimeSlot,
 }) => {
-  // Gerar horários de 7h às 20h (horário comercial)
-  const hours = Array.from({ length: 14 }, (_, i) => i + 7);
-  
-  // Gerar dias da semana
   const weekStart = startOfWeek(date, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const hours = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
 
-  // Filtrar agendamentos para a semana atual
-  const weekAppointments = appointments.filter(appointment => {
-    const appointmentDate = typeof appointment.start === 'string' 
-      ? parseISO(appointment.start) 
-      : appointment.start;
-    
-    return weekDays.some(day => isSameDay(appointmentDate, day));
-  });
+  // Get holidays for each day of the week
+  const holidayQueries = weekDays.map(day => 
+    useHolidaysByDate(format(day, 'yyyy-MM-dd'))
+  );
 
-  // Função para obter agendamentos de um dia e hora específicos
-  const getAppointmentsForTimeSlot = (day: Date, hour: number) => {
-    return weekAppointments.filter(appointment => {
-      const appointmentDate = typeof appointment.start === 'string' 
-        ? parseISO(appointment.start) 
-        : appointment.start;
+  const getAppointmentsForSlot = (day: Date, hour: number) => {
+    return appointments.filter(appointment => {
+      const appointmentStart = new Date(appointment.start);
+      const appointmentHour = appointmentStart.getHours();
       
-      return isSameDay(appointmentDate, day) && 
-             appointmentDate.getHours() === hour;
+      return (
+        isSameDay(appointmentStart, day) &&
+        appointmentHour === hour &&
+        (!selectedEmployee || appointment.employeeId === selectedEmployee)
+      );
     });
   };
 
-  // Função para lidar com clique em slot de tempo
+  const getHolidaysForDay = (dayIndex: number) => {
+    const query = holidayQueries[dayIndex];
+    return query.data || [];
+  };
+
   const handleTimeSlotClick = (day: Date, hour: number) => {
+    // Check if there are blocking holidays for this time slot
+    const dayIndex = weekDays.findIndex(d => isSameDay(d, day));
+    const holidays = getHolidaysForDay(dayIndex);
+    
+    const isBlocked = holidays.some(holiday => {
+      if (!holiday.isActive) return false;
+      
+      switch (holiday.blockingType) {
+        case 'full_day':
+          return true;
+        case 'morning':
+          return hour < 12;
+        case 'afternoon':
+          return hour >= 12;
+        case 'custom':
+          if (holiday.customStartTime && holiday.customEndTime) {
+            const [customStartHour] = holiday.customStartTime.split(':').map(Number);
+            const [customEndHour] = holiday.customEndTime.split(':').map(Number);
+            return hour >= customStartHour && hour < customEndHour;
+          }
+          return false;
+        default:
+          return false;
+      }
+    });
+
+    if (isBlocked) {
+      const blockingHoliday = holidays.find(holiday => {
+        if (!holiday.isActive) return false;
+        
+        switch (holiday.blockingType) {
+          case 'full_day':
+            return true;
+          case 'morning':
+            return hour < 12;
+          case 'afternoon':
+            return hour >= 12;
+          case 'custom':
+            if (holiday.customStartTime && holiday.customEndTime) {
+              const [customStartHour] = holiday.customStartTime.split(':').map(Number);
+              const [customEndHour] = holiday.customEndTime.split(':').map(Number);
+              return hour >= customStartHour && hour < customEndHour;
+            }
+            return false;
+          default:
+            return false;
+        }
+      });
+      
+      alert(`Agendamento bloqueado devido ao feriado: ${blockingHoliday?.name}`);
+      return;
+    }
+
     onSelectTimeSlot(day, hour);
   };
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-900 overflow-hidden">
-      {/* Header com dias da semana */}
-      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-        <div className="grid grid-cols-8 min-h-[70px]">
-          {/* Coluna vazia para os horários */}
-          <div className="p-3 border-r border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Horário</span>
-          </div>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header with days */}
+      <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800 border-b">
+        <div className="bg-white dark:bg-slate-900 p-4 text-center font-medium">
+          Horário
+        </div>
+        {weekDays.map((day, index) => {
+          const holidays = getHolidaysForDay(index);
+          const hasHoliday = holidays.length > 0;
           
-          {/* Colunas dos dias */}
-          {weekDays.map((day, index) => {
-            const isDayToday = isToday(day);
-            
-            return (
-              <div 
-                key={index}
-                className={`
-                  p-3 text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0 
-                  flex flex-col items-center justify-center
-                  ${isDayToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
-                `}
-              >
-                <div className={`text-sm font-medium ${isDayToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'}`}>
+          return (
+            <div
+              key={day.toISOString()}
+              className={`bg-white dark:bg-slate-900 p-4 text-center relative ${
+                isToday(day) ? "bg-blue-50 dark:bg-blue-950" : ""
+              } ${hasHoliday ? "bg-red-50 dark:bg-red-950" : ""}`}
+            >
+              {hasHoliday && (
+                <HolidayIndicator 
+                  holiday={holidays[0]} 
+                  date={day}
+                  className="rounded-t-lg"
+                />
+              )}
+              <div className="relative z-10">
+                <div className="text-sm text-slate-600 dark:text-slate-400">
                   {format(day, "EEE", { locale: ptBR })}
                 </div>
-                <div className={`
-                  text-lg font-bold mt-1
-                  ${isDayToday ? 'bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center' : 'text-slate-700 dark:text-slate-300'}
-                `}>
-                  {format(day, "dd")}
+                <div className={`text-lg font-semibold ${
+                  isToday(day) ? "text-blue-600 dark:text-blue-400" : ""
+                }`}>
+                  {format(day, "d")}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Grid de horários - área scrollável */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="min-h-full">
+      {/* Time grid */}
+      <div className="flex-1 overflow-auto">
+        <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800">
           {hours.map((hour) => (
-            <div key={hour} className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-700 min-h-[80px]">
-              {/* Coluna de horário */}
-              <div className="p-3 border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-start justify-center">
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                  {hour.toString().padStart(2, '0')}:00
-                </span>
+            <React.Fragment key={hour}>
+              {/* Hour label */}
+              <div className="bg-white dark:bg-slate-900 p-2 text-center text-sm font-medium border-r">
+                {hour.toString().padStart(2, "0")}:00
               </div>
               
-              {/* Colunas dos dias */}
+              {/* Day columns */}
               {weekDays.map((day, dayIndex) => {
-                const dayAppointments = getAppointmentsForTimeSlot(day, hour);
-                const isDayToday = isToday(day);
-                const now = new Date();
-                const isCurrentHour = isDayToday && now.getHours() === hour;
+                const slotAppointments = getAppointmentsForSlot(day, hour);
+                const holidays = getHolidaysForDay(dayIndex);
+                const hasBlockingHoliday = holidays.some(holiday => {
+                  if (!holiday.isActive) return false;
+                  
+                  switch (holiday.blockingType) {
+                    case 'full_day':
+                      return true;
+                    case 'morning':
+                      return hour < 12;
+                    case 'afternoon':
+                      return hour >= 12;
+                    case 'custom':
+                      if (holiday.customStartTime && holiday.customEndTime) {
+                        const [customStartHour] = holiday.customStartTime.split(':').map(Number);
+                        const [customEndHour] = holiday.customEndTime.split(':').map(Number);
+                        return hour >= customStartHour && hour < customEndHour;
+                      }
+                      return false;
+                    default:
+                      return false;
+                  }
+                });
                 
                 return (
                   <div
-                    key={dayIndex}
-                    className={`
-                      p-2 border-r border-slate-200 dark:border-slate-700 last:border-r-0 
-                      relative cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 
-                      transition-colors duration-150 min-h-[80px]
-                      ${isDayToday ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}
-                      ${isCurrentHour ? 'bg-blue-100 dark:bg-blue-900/30' : ''}
-                    `}
+                    key={`${day.toISOString()}-${hour}`}
+                    className={`bg-white dark:bg-slate-900 p-1 min-h-[60px] border-b border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 relative ${
+                      hasBlockingHoliday ? "bg-red-50 dark:bg-red-950 cursor-not-allowed" : ""
+                    }`}
                     onClick={() => handleTimeSlotClick(day, hour)}
                   >
-                    {/* Indicador de horário atual */}
-                    {isCurrentHour && (
-                      <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    )}
-                    
-                    {/* Agendamentos */}
-                    <div className="space-y-1 h-full">
-                      {dayAppointments.map((appointment) => (
-                        <AppointmentChip
-                          key={appointment.id}
-                          appointment={appointment}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectAppointment(appointment);
-                          }}
-                          showTime={false}
-                          compact={true}
-                        />
-                      ))}
-                    </div>
-                    
-                    {/* Placeholder para slot vazio */}
-                    {dayAppointments.length === 0 && (
-                      <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-600 text-xs opacity-0 hover:opacity-100 transition-opacity">
-                        <span className="text-center">
-                          +<br/>Novo
+                    {hasBlockingHoliday && (
+                      <div className="absolute inset-0 bg-red-100 dark:bg-red-900 opacity-50 flex items-center justify-center">
+                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+                          Bloqueado
                         </span>
                       </div>
                     )}
+                    
+                    <div className="space-y-1 relative z-10">
+                      {slotAppointments.map((appointment) => (
+                        <AppointmentCard
+                          key={appointment.id}
+                          appointment={appointment}
+                          onClick={() => onSelectAppointment(appointment)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 );
               })}
-            </div>
+            </React.Fragment>
           ))}
         </div>
       </div>
