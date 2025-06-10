@@ -3,11 +3,17 @@ import { useState, useCallback } from "react";
 import { AppointmentWithDetails, CalendarViewOptions } from "@/types/calendar";
 import { addMonths, subMonths, addWeeks, subWeeks, startOfToday } from "date-fns";
 
+interface SelectedTimeSlot {
+  date: Date;
+  hour?: number;
+}
+
 export function useCalendarState() {
   const [view, setView] = useState<CalendarViewOptions["view"]>("week");
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedEmployee, setSelectedEmployee] = useState<string | undefined>();
   const [hideCanceled, setHideCanceled] = useState<boolean>(false);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<SelectedTimeSlot | null>(null);
   
   // Dialog states
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
@@ -87,6 +93,8 @@ export function useCalendarState() {
     setEditMode,
     dialogKey,
     hideCanceled,
+    selectedTimeSlot,
+    setSelectedTimeSlot,
     toggleHideCanceled,
     handleSelectAppointment,
     handleEditAppointment,

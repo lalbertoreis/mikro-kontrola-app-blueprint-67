@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { format, parse } from "date-fns";
+import { format, parse, isAfter, addMinutes } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,6 +39,7 @@ interface AppointmentDialogProps {
   onClose: () => void;
   selectedDate: Date;
   selectedEmployeeId?: string;
+  selectedHour?: number;
   appointmentId?: string;
 }
 
@@ -64,14 +65,12 @@ const appointmentSchema = z.object({
   notes: z.string().optional(),
 });
 
-const DEFAULT_START_TIME = "09:00";
-const DEFAULT_END_TIME = "10:00";
-
 export default function AppointmentDialog({
   isOpen,
   onClose,
   selectedDate,
   selectedEmployeeId,
+  selectedHour,
   appointmentId,
 }: AppointmentDialogProps) {
   const { services } = useServices();
@@ -81,6 +80,39 @@ export default function AppointmentDialog({
   const { data: appointment, isLoading: isLoadingAppointment } = useAppointmentById(appointmentId);
   const [serviceDuration, setServiceDuration] = useState(60);
 
+  // Calculate default start time based on selected hour or current time
+  const getDefaultStartTime = (): string => {
+    if (selectedHour !== undefined) {
+      return `${selectedHour.toString().padStart(2, '0')}:00`;
+    }
+    
+    const now = new Date();
+    const selectedDateStart = new Date(selectedDate);
+    selectedDateStart.setHours(0, 0, 0, 0);
+    
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    // If selected date is today, use current time rounded up to next hour
+    if (selectedDateStart.getTime() === todayStart.getTime()) {
+      const currentHour = now.getHours();
+      const nextHour = currentHour + 1;
+      return `${nextHour.toString().padStart(2, '0')}:00`;
+    }
+    
+    // For future dates, default to 9:00 AM
+    return "09:00";
+  };
+
+  const getDefaultEndTime = (startTime: string, duration: number = 60): string => {
+    const startDate = parse(startTime, "HH:mm", new Date());
+    const endDate = addMinutes(startDate, duration);
+    return format(endDate, "HH:mm");
+  };
+
+  const defaultStartTime = getDefaultStartTime();
+  const defaultEndTime = getDefaultEndTime(defaultStartTime);
+
   const form = useForm<z.infer<typeof appointmentSchema>>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
@@ -88,8 +120,8 @@ export default function AppointmentDialog({
       service: "",
       client: "",
       date: format(selectedDate, "yyyy-MM-dd"),
-      startTime: DEFAULT_START_TIME,
-      endTime: DEFAULT_END_TIME,
+      startTime: defaultStartTime,
+      endTime: defaultEndTime,
       notes: "",
     },
   });
@@ -118,34 +150,51 @@ export default function AppointmentDialog({
         }
       }
     } else if (!appointmentId) {
-      // Reset form for new appointments
+      // Reset form for new appointments with correct default values
       form.reset({
         employee: selectedEmployeeId || "",
         service: "",
         client: "",
         date: format(selectedDate, "yyyy-MM-dd"),
-        startTime: DEFAULT_START_TIME,
-        endTime: DEFAULT_END_TIME,
+        startTime: defaultStartTime,
+        endTime: defaultEndTime,
         notes: "",
       });
     }
-  }, [appointment, isLoadingAppointment, appointmentId, form, selectedDate, selectedEmployeeId, services]);
+  }, [appointment, isLoadingAppointment, appointmentId, form, selectedDate, selectedEmployeeId, services, defaultStartTime, defaultEndTime]);
 
   // Update end time based on service duration
   const handleServiceChange = (serviceId: string) => {
     const service = services.find((s) => s.id === serviceId);
     if (service) {
       const { startTime } = form.getValues();
-      const startDate = parse(startTime, "HH:mm", new Date());
-      const endDate = new Date(startDate.getTime() + service.duration * 60000);
-      const endTime = format(endDate, "HH:mm");
+      const endTime = getDefaultEndTime(startTime, service.duration);
       
       setServiceDuration(service.duration);
       form.setValue("endTime", endTime);
     }
   };
 
+  // Update end time when start time changes
+  const handleStartTimeChange = (startTime: string) => {
+    const endTime = getDefaultEndTime(startTime, serviceDuration);
+    form.setValue("endTime", endTime);
+  };
+
   const onSubmit = (data: z.infer<typeof appointmentSchema>) => {
+    // Validate that the appointment is not in the past
+    const appointmentDateTime = new Date(`${data.date}T${data.startTime}`);
+    const now = new Date();
+    
+    // Only check for past appointments when creating new ones (not editing)
+    if (!appointmentId && appointmentDateTime < now) {
+      form.setError("startTime", {
+        type: "manual",
+        message: "Não é possível agendar em horários passados",
+      });
+      return;
+    }
+
     // Create appointment data with all required fields
     const appointmentData = {
       employee: data.employee,
@@ -288,7 +337,15 @@ export default function AppointmentDialog({
                   <FormItem>
                     <FormLabel>Horário de Início</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} className="w-full" />
+                      <Input 
+                        type="time" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleStartTimeChange(e.target.value);
+                        }}
+                        className="w-full" 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

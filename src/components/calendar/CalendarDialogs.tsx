@@ -5,6 +5,11 @@ import AppointmentDialog from "./AppointmentDialog";
 import BlockTimeDialog from "./BlockTimeDialog";
 import AppointmentActionsDialog from "./AppointmentActionsDialog";
 
+interface SelectedTimeSlot {
+  date: Date;
+  hour?: number;
+}
+
 interface CalendarDialogsProps {
   appointmentDialogOpen: boolean;
   blockTimeDialogOpen: boolean;
@@ -13,6 +18,7 @@ interface CalendarDialogsProps {
   editMode: boolean;
   currentDate: Date;
   selectedEmployeeId?: string;
+  selectedTimeSlot?: SelectedTimeSlot | null;
   dialogKey: number;
   onAppointmentDialogClose: () => void;
   onBlockTimeDialogClose: () => void;
@@ -28,6 +34,7 @@ const CalendarDialogs: React.FC<CalendarDialogsProps> = ({
   editMode,
   currentDate,
   selectedEmployeeId,
+  selectedTimeSlot,
   dialogKey,
   onAppointmentDialogClose,
   onBlockTimeDialogClose,
@@ -42,8 +49,9 @@ const CalendarDialogs: React.FC<CalendarDialogsProps> = ({
           key={`appointment-dialog-${dialogKey}`}
           isOpen={appointmentDialogOpen}
           onClose={onAppointmentDialogClose}
-          selectedDate={currentDate}
+          selectedDate={selectedTimeSlot?.date || currentDate}
           selectedEmployeeId={selectedEmployeeId}
+          selectedHour={selectedTimeSlot?.hour}
           appointmentId={editMode ? selectedAppointment?.id : undefined}
         />
       )}

@@ -72,25 +72,25 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
       <div className="h-full flex flex-col">
         {/* Header with days of the week */}
         <div className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-          <div className="p-4 font-medium text-sm text-center border-r border-slate-200 dark:border-slate-700">
+          <div className="p-2 lg:p-4 font-medium text-xs lg:text-sm text-center border-r border-slate-200 dark:border-slate-700">
             <div className="text-slate-600 dark:text-slate-400">Horário</div>
           </div>
           {weekDates.map((day, index) => (
             <div 
               key={index} 
-              className={`p-4 font-medium text-sm text-center ${
+              className={`p-2 lg:p-4 font-medium text-xs lg:text-sm text-center ${
                 index < 6 ? 'border-r border-slate-200 dark:border-slate-700' : ''
               } ${isSameDay(day, new Date()) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
             >
               <div className="text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wide">
                 {format(day, "EEE", { locale: ptBR })}
               </div>
-              <div className={`text-lg font-semibold mt-1 ${
+              <div className={`text-sm lg:text-lg font-semibold mt-1 ${
                 isSameDay(day, new Date()) ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'
               }`}>
                 {format(day, "dd")}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">
+              <div className="text-xs text-slate-500 dark:text-slate-400 hidden lg:block">
                 {format(day, "MMM", { locale: ptBR })}
               </div>
             </div>
@@ -102,9 +102,9 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
           {HOURS.map((hour) => (
             <div key={hour} className="grid grid-cols-8 border-b border-slate-100 dark:border-slate-800 last:border-b-0 hover:bg-slate-25 dark:hover:bg-slate-800/50">
               {/* Hour column */}
-              <div className="p-3 text-sm font-medium text-center border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+              <div className="p-2 lg:p-3 text-xs lg:text-sm font-medium text-center border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                 <div className="text-slate-700 dark:text-slate-300">{`${hour}:00`}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden lg:block">
                   {hour < 12 ? 'AM' : 'PM'}
                 </div>
               </div>
@@ -116,7 +116,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                 return (
                   <div 
                     key={dayIndex} 
-                    className={`min-h-[100px] p-2 relative cursor-pointer transition-colors ${
+                    className={`min-h-[60px] lg:min-h-[100px] p-1 lg:p-2 relative cursor-pointer transition-colors ${
                       dayIndex < 6 ? 'border-r border-slate-200 dark:border-slate-700' : ''
                     } ${isSameDay(day, new Date()) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''} hover:bg-slate-50 dark:hover:bg-slate-800/30`}
                     onClick={(e) => handleTimeSlotClick(day, hour, e)}
