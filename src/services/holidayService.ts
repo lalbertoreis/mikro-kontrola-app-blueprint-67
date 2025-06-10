@@ -4,9 +4,13 @@ import { Holiday, HolidayFormData, HolidayType, BlockingType } from "@/types/hol
 
 export async function fetchHolidays(): Promise<Holiday[]> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
     const { data, error } = await supabase
       .from('holidays')
       .select('*')
+      .eq('user_id', user.id)
       .order('date', { ascending: true });
     
     if (error) throw error;
@@ -34,10 +38,14 @@ export async function fetchHolidays(): Promise<Holiday[]> {
 
 export async function fetchHolidayById(id: string): Promise<Holiday | null> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
     const { data, error } = await supabase
       .from('holidays')
       .select('*')
       .eq('id', id)
+      .eq('user_id', user.id)
       .single();
     
     if (error) throw error;
@@ -65,10 +73,14 @@ export async function fetchHolidayById(id: string): Promise<Holiday | null> {
 
 export async function createHoliday(holidayData: HolidayFormData): Promise<Holiday> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
     const { date, name, type, description, isActive, blockingType } = holidayData;
     
     // Preparando o objeto para inserção
     const insertData: any = {
+      user_id: user.id, // Incluindo o user_id automaticamente
       date: date.toISOString().split('T')[0], // Formata como YYYY-MM-DD
       name,
       type,
@@ -114,6 +126,9 @@ export async function createHoliday(holidayData: HolidayFormData): Promise<Holid
 
 export async function updateHoliday(id: string, holidayData: HolidayFormData): Promise<Holiday> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
     const { date, name, type, description, isActive, blockingType } = holidayData;
     
     // Preparando o objeto para atualização
@@ -140,6 +155,7 @@ export async function updateHoliday(id: string, holidayData: HolidayFormData): P
       .from('holidays')
       .update(updateData)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single();
     
@@ -167,10 +183,14 @@ export async function updateHoliday(id: string, holidayData: HolidayFormData): P
 
 export async function deleteHoliday(id: string): Promise<void> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
     const { error } = await supabase
       .from('holidays')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
     
     if (error) throw error;
   } catch (error) {
