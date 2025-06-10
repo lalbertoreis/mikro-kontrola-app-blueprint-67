@@ -22,9 +22,9 @@ export function useAppointments() {
 
   const createMutation = useMutation({
     mutationFn: (newAppointment: AppointmentFormData) => createAppointment(newAppointment),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      toast.success("Agendamento criado com sucesso!");
+      // Don't show toast here as it's handled in the component
     },
     onError: (error: any) => {
       console.error("Erro ao criar agendamento:", error);
@@ -67,11 +67,12 @@ export function useAppointments() {
     mutationFn: (appointmentId: string) => cancelAppointment(appointmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      toast.success("Agendamento cancelado com sucesso!");
+      // Don't show success toast here as it's handled in the component
     },
     onError: (error: any) => {
       console.error("Erro ao cancelar agendamento:", error);
-      toast.error(error.message || "Erro ao cancelar agendamento. Tente novamente.");
+      // Re-throw the error so it can be handled in the component
+      throw error;
     },
   });
 
@@ -79,10 +80,10 @@ export function useAppointments() {
     appointments,
     isLoading,
     error,
-    createAppointment: createMutation.mutate,
+    createAppointment: createMutation.mutateAsync,
     blockTimeSlot: blockTimeMutation.mutate,
     registerPayment: paymentMutation.mutate,
-    cancelAppointment: cancelMutation.mutate,
+    cancelAppointment: cancelMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isBlocking: blockTimeMutation.isPending,
     isRegisteringPayment: paymentMutation.isPending,

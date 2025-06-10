@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { format, parse, isAfter, addMinutes, isSameDay } from "date-fns";
+import { format, parse, addMinutes, isSameDay } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,6 +34,7 @@ import { useServices } from "@/hooks/useServices";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments, useAppointmentById } from "@/hooks/useAppointments";
+import { toast } from "sonner";
 
 interface AppointmentDialogProps {
   isOpen: boolean;
@@ -77,9 +78,11 @@ export default function AppointmentDialog({
   const { services } = useServices();
   const { employees } = useEmployees();
   const { clients } = useClients();
-  const { createAppointment, isCreating } = useAppointments();
+  const { createAppointment, isCreating, appointments } = useAppointments();
   const { data: appointment, isLoading: isLoadingAppointment } = useAppointmentById(appointmentId);
   const [serviceDuration, setServiceDuration] = useState(60);
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [availableServices, setAvailableServices] = useState(services);
 
   // Calculate default start time based on selected hour or current time
   const getDefaultStartTime = (): string => {
@@ -91,7 +94,6 @@ export default function AppointmentDialog({
     const isToday = isSameDay(selectedDate, now);
     
     if (isToday) {
-      // Se for hoje, começar com a próxima hora disponível
       const currentHour = now.getHours();
       const currentMinutes = now.getMinutes();
       
@@ -103,7 +105,6 @@ export default function AppointmentDialog({
       }
     }
     
-    // Para datas futuras, começar às 9:00
     return "09:00";
   };
 
@@ -129,6 +130,21 @@ export default function AppointmentDialog({
     },
   });
 
+  // Filter services based on selected employee
+  useEffect(() => {
+    if (selectedEmployee) {
+      const employee = employees.find(emp => emp.id === selectedEmployee);
+      if (employee && employee.services) {
+        const filteredServices = services.filter(service => 
+          employee.services.includes(service.id)
+        );
+        setAvailableServices(filteredServices);
+      }
+    } else {
+      setAvailableServices(services);
+    }
+  }, [selectedEmployee, employees, services]);
+
   // Load appointment data when editing
   useEffect(() => {
     if (appointment && !isLoadingAppointment) {
@@ -145,7 +161,8 @@ export default function AppointmentDialog({
         notes: appointment.notes || "",
       });
 
-      // Find the service to get its duration
+      setSelectedEmployee(appointment.employeeId);
+
       if (appointment.serviceId) {
         const service = services.find((s) => s.id === appointment.serviceId);
         if (service) {
@@ -153,7 +170,6 @@ export default function AppointmentDialog({
         }
       }
     } else if (!appointmentId) {
-      // Reset form for new appointments with correct default values
       const newDefaultStartTime = getDefaultStartTime();
       const newDefaultEndTime = getDefaultEndTime(newDefaultStartTime);
       
@@ -166,12 +182,21 @@ export default function AppointmentDialog({
         endTime: newDefaultEndTime,
         notes: "",
       });
+      
+      setSelectedEmployee(selectedEmployeeId || "");
     }
   }, [appointment, isLoadingAppointment, appointmentId, form, selectedDate, selectedEmployeeId, services, selectedHour]);
 
+  // Handle employee change
+  const handleEmployeeChange = (employeeId: string) => {
+    setSelectedEmployee(employeeId);
+    form.setValue("employee", employeeId);
+    form.setValue("service", ""); // Reset service when employee changes
+  };
+
   // Update end time based on service duration
   const handleServiceChange = (serviceId: string) => {
-    const service = services.find((s) => s.id === serviceId);
+    const service = availableServices.find((s) => s.id === serviceId);
     if (service) {
       const { startTime } = form.getValues();
       const endTime = getDefaultEndTime(startTime, service.duration);
@@ -187,27 +212,111 @@ export default function AppointmentDialog({
     form.setValue("endTime", endTime);
   };
 
-  const onSubmit = (data: z.infer<typeof appointmentSchema>) => {
-    // Create appointment data with all required fields
-    const appointmentData = {
-      employee: data.employee,
-      service: data.service,
-      client: data.client,
-      date: data.date,
-      startTime: data.startTime,
-      endTime: data.endTime,
-      notes: data.notes,
-      // Only add id when editing an existing appointment
-      ...(appointmentId ? { id: appointmentId } : {})
-    };
+  // Check for conflicts before creating appointment
+  const checkForConflicts = (formData: z.infer<typeof appointmentSchema>) => {
+    const appointmentDate = new Date(formData.date + 'T00:00:00');
+    const [startHours, startMinutes] = formData.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = formData.endTime.split(':').map(Number);
     
-    createAppointment(appointmentData);
+    const startDateTime = new Date(appointmentDate);
+    startDateTime.setHours(startHours, startMinutes, 0, 0);
+    
+    const endDateTime = new Date(appointmentDate);
+    endDateTime.setHours(endHours, endMinutes, 0, 0);
+
+    // Check for employee conflicts
+    const employeeConflicts = appointments.filter(apt => {
+      if (appointmentId && apt.id === appointmentId) return false; // Skip current appointment when editing
+      if (apt.employeeId !== formData.employee) return false;
+      if (apt.status === 'canceled') return false;
+
+      const aptStart = new Date(apt.start);
+      const aptEnd = new Date(apt.end);
+
+      return (startDateTime < aptEnd && endDateTime > aptStart);
+    });
+
+    if (employeeConflicts.length > 0) {
+      return "Este profissional já possui um agendamento neste horário.";
+    }
+
+    // Check for client conflicts
+    const clientConflicts = appointments.filter(apt => {
+      if (appointmentId && apt.id === appointmentId) return false; // Skip current appointment when editing
+      if (apt.clientId !== formData.client) return false;
+      if (apt.status === 'canceled') return false;
+
+      const aptStart = new Date(apt.start);
+      const aptEnd = new Date(apt.end);
+
+      return (startDateTime < aptEnd && endDateTime > aptStart);
+    });
+
+    if (clientConflicts.length > 0) {
+      return "Este cliente já possui um agendamento neste horário.";
+    }
+
+    return null;
+  };
+
+  const onSubmit = async (data: z.infer<typeof appointmentSchema>) => {
+    try {
+      // Check for conflicts before creating
+      const conflictMessage = checkForConflicts(data);
+      if (conflictMessage) {
+        toast.error(conflictMessage);
+        return;
+      }
+
+      const appointmentData = {
+        employee: data.employee,
+        service: data.service,
+        client: data.client,
+        date: data.date,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        notes: data.notes,
+        ...(appointmentId ? { id: appointmentId } : {})
+      };
+      
+      await createAppointment(appointmentData);
+      
+      // Reset form and close dialog
+      form.reset({
+        employee: "",
+        service: "",
+        client: "",
+        date: format(new Date(), "yyyy-MM-dd"),
+        startTime: "09:00",
+        endTime: "10:00",
+        notes: "",
+      });
+      setSelectedEmployee("");
+      onClose();
+      
+      toast.success(appointmentId ? "Agendamento atualizado com sucesso!" : "Agendamento criado com sucesso!");
+    } catch (error) {
+      console.error("Error submitting appointment:", error);
+    }
+  };
+
+  const handleClose = () => {
+    // Reset form when closing
+    form.reset({
+      employee: "",
+      service: "",
+      client: "",
+      date: format(new Date(), "yyyy-MM-dd"),
+      startTime: "09:00",
+      endTime: "10:00",
+      notes: "",
+    });
+    setSelectedEmployee("");
     onClose();
-    form.reset();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="w-full max-w-lg mx-auto p-4 sm:p-6 bg-white dark:bg-slate-900 overflow-hidden">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-lg font-semibold">
@@ -226,10 +335,9 @@ export default function AppointmentDialog({
                 name="employee"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Profissional</FormLabel>
+                    <FormLabel>Profissional *</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      onValueChange={handleEmployeeChange}
                       value={field.value}
                     >
                       <FormControl>
@@ -255,25 +363,24 @@ export default function AppointmentDialog({
                 name="service"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Serviço</FormLabel>
+                    <FormLabel>Serviço *</FormLabel>
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
                         handleServiceChange(value);
                       }}
-                      defaultValue={field.value}
                       value={field.value}
+                      disabled={!selectedEmployee}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione um serviço" />
+                          <SelectValue placeholder={selectedEmployee ? "Selecione um serviço" : "Primeiro selecione um profissional"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {services.map((service) => (
+                        {availableServices.map((service) => (
                           <SelectItem key={service.id} value={service.id}>
-                            {service.name} - {service.duration} min - R${" "}
-                            {service.price?.toFixed(2)}
+                            {service.name} - {service.duration} min - R$ {service.price?.toFixed(2)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -288,10 +395,9 @@ export default function AppointmentDialog({
                 name="client"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cliente</FormLabel>
+                    <FormLabel>Cliente *</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
                       value={field.value}
                     >
                       <FormControl>
@@ -317,7 +423,7 @@ export default function AppointmentDialog({
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data</FormLabel>
+                    <FormLabel>Data *</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} className="w-full" />
                     </FormControl>
@@ -331,7 +437,7 @@ export default function AppointmentDialog({
                 name="startTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Horário de Início</FormLabel>
+                    <FormLabel>Horário de Início *</FormLabel>
                     <FormControl>
                       <Input 
                         type="time" 
@@ -353,7 +459,7 @@ export default function AppointmentDialog({
                 name="endTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Horário de Término</FormLabel>
+                    <FormLabel>Horário de Término *</FormLabel>
                     <FormControl>
                       <Input type="time" {...field} className="w-full" />
                     </FormControl>
@@ -370,7 +476,7 @@ export default function AppointmentDialog({
                 <FormItem>
                   <FormLabel>Observações</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="w-full resize-none" />
+                    <Textarea {...field} className="w-full resize-none" placeholder="Observações opcionais..." />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -378,13 +484,13 @@ export default function AppointmentDialog({
             />
 
             <DialogFooter className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <Button type="button" variant="outline" onClick={onClose} size="sm">
+              <Button type="button" variant="outline" onClick={handleClose} size="sm">
                 Cancelar
               </Button>
               <Button type="submit" disabled={isCreating} size="sm">
                 {appointmentId 
-                  ? isCreating ? "Salvando..." : "Salvar" 
-                  : isCreating ? "Agendando..." : "Agendar"}
+                  ? isCreating ? "Salvando..." : "Salvar Alterações" 
+                  : isCreating ? "Agendando..." : "Criar Agendamento"}
               </Button>
             </DialogFooter>
           </form>

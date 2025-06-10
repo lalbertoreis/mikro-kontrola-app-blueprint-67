@@ -27,36 +27,31 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
       endDateTime: endDateTime.toISOString()
     });
 
-    // Validação de data apenas para novos agendamentos
+    // Enhanced date validation for new appointments
     if (!id) {
       const now = new Date();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const appointmentDay = new Date(appointmentDate);
-      appointmentDay.setHours(0, 0, 0, 0);
+      const currentTime = now.getTime();
+      const appointmentTime = startDateTime.getTime();
       
       console.log('Date validation:', {
         now: now.toISOString(),
-        today: today.toISOString(),
-        appointmentDay: appointmentDay.toISOString(),
-        startDateTime: startDateTime.toISOString()
+        startDateTime: startDateTime.toISOString(),
+        currentTime,
+        appointmentTime,
+        diff: appointmentTime - currentTime
       });
       
-      // Verificar se é uma data passada (apenas dia, não horário)
-      if (appointmentDay < today) {
-        console.error('Tentativa de agendar em data passada');
-        throw new Error('Não é possível agendar em datas passadas.');
+      // For past appointments (more than 5 minutes ago), reject
+      const fiveMinutesAgo = currentTime - (5 * 60 * 1000);
+      if (appointmentTime < fiveMinutesAgo) {
+        console.error('Tentativa de agendar em horário muito passado');
+        throw new Error('Não é possível agendar em horários passados.');
       }
       
-      // Se for hoje, verificar se o horário não passou (com 15 min de tolerância)
-      if (appointmentDay.getTime() === today.getTime()) {
-        const nowMinus15Min = new Date(now.getTime() - (15 * 60 * 1000));
-        
-        if (startDateTime < nowMinus15Min) {
-          console.error('Tentativa de agendar em horário passado');
-          throw new Error('Não é possível agendar em horários passados. Mínimo de 15 minutos de antecedência.');
-        }
+      // For very close appointments (less than 5 minutes), show warning but allow
+      const fiveMinutesFromNow = currentTime + (5 * 60 * 1000);
+      if (appointmentTime < fiveMinutesFromNow && appointmentTime >= fiveMinutesAgo) {
+        console.warn('Agendamento muito próximo do horário atual');
       }
     }
 
@@ -97,7 +92,7 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
       
       if (error) {
         console.error('Error updating appointment:', error);
-        throw error;
+        throw new Error(`Erro ao atualizar agendamento: ${error.message}`);
       }
       
       return {
@@ -147,7 +142,7 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     
     if (error) {
       console.error('Error creating appointment:', error);
-      throw error;
+      throw new Error(`Erro ao criar agendamento: ${error.message}`);
     }
     
     console.log('Appointment created successfully:', data);
