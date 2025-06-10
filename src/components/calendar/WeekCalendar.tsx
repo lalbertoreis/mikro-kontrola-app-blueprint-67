@@ -46,12 +46,12 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
   const getEmployeeColor = (employeeId: string) => {
     // Define color palette for employees
     const colors = [
-      "bg-kontrola-100 border-kontrola-600 text-kontrola-800",
-      "bg-blue-100 border-blue-600 text-blue-800",
-      "bg-green-100 border-green-600 text-green-800",
-      "bg-yellow-100 border-yellow-600 text-yellow-800",
-      "bg-red-100 border-red-600 text-red-800",
-      "bg-purple-100 border-purple-600 text-purple-800"
+      "bg-blue-100 border-blue-500 text-blue-900",
+      "bg-green-100 border-green-500 text-green-900",
+      "bg-purple-100 border-purple-500 text-purple-900",
+      "bg-orange-100 border-orange-500 text-orange-900",
+      "bg-pink-100 border-pink-500 text-pink-900",
+      "bg-indigo-100 border-indigo-500 text-indigo-900"
     ];
     
     // Find employee index and use modulo to cycle through colors if more employees than colors
@@ -69,56 +69,72 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
 
   return (
     <TooltipProvider>
-      <div className="border rounded-lg bg-white overflow-hidden">
+      <div className="h-full flex flex-col">
         {/* Header with days of the week */}
-        <div className="grid grid-cols-8 border-b">
-          <div className="p-2 font-medium text-sm text-center border-r"></div>
+        <div className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <div className="p-4 font-medium text-sm text-center border-r border-slate-200 dark:border-slate-700">
+            <div className="text-slate-600 dark:text-slate-400">Horário</div>
+          </div>
           {weekDates.map((day, index) => (
             <div 
               key={index} 
-              className={`p-2 font-medium text-sm text-center ${
-                index < 6 ? 'border-r' : ''
-              } ${isSameDay(day, new Date()) ? 'bg-accent' : ''}`}
+              className={`p-4 font-medium text-sm text-center ${
+                index < 6 ? 'border-r border-slate-200 dark:border-slate-700' : ''
+              } ${isSameDay(day, new Date()) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
             >
-              <div>{format(day, "EEE", { locale: ptBR })}</div>
-              <div>{format(day, "dd/MM")}</div>
+              <div className="text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wide">
+                {format(day, "EEE", { locale: ptBR })}
+              </div>
+              <div className={`text-lg font-semibold mt-1 ${
+                isSameDay(day, new Date()) ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'
+              }`}>
+                {format(day, "dd")}
+              </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                {format(day, "MMM", { locale: ptBR })}
+              </div>
             </div>
           ))}
         </div>
         
         {/* Time slots */}
-        {HOURS.map((hour) => (
-          <div key={hour} className="grid grid-cols-8 border-b last:border-b-0">
-            {/* Hour column */}
-            <div className="p-2 text-xs font-medium text-center border-r">
-              {`${hour}:00`}
-            </div>
-            
-            {/* Days columns */}
-            {weekDates.map((day, dayIndex) => {
-              const appointmentsInSlot = getAppointmentsForTimeSlot(day, hour);
-              
-              return (
-                <div 
-                  key={dayIndex} 
-                  className={`min-h-[80px] p-1 relative ${
-                    dayIndex < 6 ? 'border-r' : ''
-                  } ${isSameDay(day, new Date()) ? 'bg-accent/20' : ''}`}
-                  onClick={(e) => handleTimeSlotClick(day, hour, e)}
-                >
-                  {appointmentsInSlot.map((appointment) => (
-                    <AppointmentCard
-                      key={appointment.id}
-                      appointment={appointment}
-                      colorClass={getEmployeeColor(appointment.employeeId)}
-                      onClick={() => onSelectAppointment(appointment)}
-                    />
-                  ))}
+        <div className="flex-1 overflow-auto">
+          {HOURS.map((hour) => (
+            <div key={hour} className="grid grid-cols-8 border-b border-slate-100 dark:border-slate-800 last:border-b-0 hover:bg-slate-25 dark:hover:bg-slate-800/50">
+              {/* Hour column */}
+              <div className="p-3 text-sm font-medium text-center border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                <div className="text-slate-700 dark:text-slate-300">{`${hour}:00`}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {hour < 12 ? 'AM' : 'PM'}
                 </div>
-              );
-            })}
-          </div>
-        ))}
+              </div>
+              
+              {/* Days columns */}
+              {weekDates.map((day, dayIndex) => {
+                const appointmentsInSlot = getAppointmentsForTimeSlot(day, hour);
+                
+                return (
+                  <div 
+                    key={dayIndex} 
+                    className={`min-h-[100px] p-2 relative cursor-pointer transition-colors ${
+                      dayIndex < 6 ? 'border-r border-slate-200 dark:border-slate-700' : ''
+                    } ${isSameDay(day, new Date()) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''} hover:bg-slate-50 dark:hover:bg-slate-800/30`}
+                    onClick={(e) => handleTimeSlotClick(day, hour, e)}
+                  >
+                    {appointmentsInSlot.map((appointment) => (
+                      <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        colorClass={getEmployeeColor(appointment.employeeId)}
+                        onClick={() => onSelectAppointment(appointment)}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </TooltipProvider>
   );

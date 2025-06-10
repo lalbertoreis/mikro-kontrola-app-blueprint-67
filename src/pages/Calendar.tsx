@@ -8,12 +8,7 @@ const Calendar = () => {
   return (
     <DashboardLayout>
       <TooltipProvider>
-        <div className="space-y-4">
-          <h1 className="text-2xl font-bold tracking-tight">Agenda</h1>
-          <p className="text-muted-foreground">
-            Visualize e gerencie todos os agendamentos.
-          </p>
-          
+        <div className="h-full">
           <CalendarView />
         </div>
       </TooltipProvider>

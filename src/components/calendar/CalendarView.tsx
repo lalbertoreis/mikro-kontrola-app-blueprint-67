@@ -1,12 +1,10 @@
 
 import React from "react";
-import { startOfToday } from "date-fns";
 import { useCalendarState } from "@/hooks/useCalendarState";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useEmployees } from "@/hooks/useEmployees";
-import CalendarHeader from "./CalendarHeader";
-import CalendarNavigation from "./CalendarNavigation";
-import EmployeeFilter from "./EmployeeFilter";
+import CalendarSidebar from "./CalendarSidebar";
+import CalendarMainHeader from "./CalendarMainHeader";
 import WeekCalendar from "./WeekCalendar";
 import MonthCalendar from "./MonthCalendar";
 import CalendarDialogs from "./CalendarDialogs";
@@ -17,7 +15,6 @@ export default function CalendarView() {
     view,
     setView,
     currentDate,
-    setCurrentDate,
     selectedEmployee,
     setSelectedEmployee,
     appointmentDialogOpen,
@@ -37,6 +34,7 @@ export default function CalendarView() {
     navigateNext,
     handleOpenNewAppointment,
     handleOpenBlockTime,
+    goToToday,
   } = useCalendarState();
 
   const { appointments, isLoading } = useAppointments();
@@ -89,81 +87,87 @@ export default function CalendarView() {
   };
 
   return (
-    <Card className="glass-panel">
-      <CardContent className="p-0">
-        <div className="p-6 space-y-6">
-          <div className="space-y-4">
-            <CalendarHeader 
-              view={view}
-              onViewChange={setView}
-              onNewAppointment={handleOpenNewAppointment}
-              onBlockTime={handleOpenBlockTime}
-              hideCanceled={hideCanceled}
-              onToggleHideCanceled={toggleHideCanceled}
-            />
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
+      {/* Sidebar */}
+      <div className="w-80 flex-shrink-0 p-4 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+        <CalendarSidebar
+          view={view}
+          onViewChange={setView}
+          employees={employees}
+          selectedEmployeeId={selectedEmployee}
+          onEmployeeChange={setSelectedEmployee}
+          hideCanceled={hideCanceled}
+          onToggleHideCanceled={toggleHideCanceled}
+          onNewAppointment={handleOpenNewAppointment}
+          onBlockTime={handleOpenBlockTime}
+          onGoToToday={goToToday}
+        />
+      </div>
 
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <CalendarNavigation 
-                currentDate={currentDate}
-                view={view}
-                onNavigatePrevious={navigatePrevious}
-                onNavigateNext={navigateNext}
-                onToday={() => setCurrentDate(startOfToday())}
-              />
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <CalendarMainHeader
+          currentDate={currentDate}
+          view={view}
+          onNavigatePrevious={navigatePrevious}
+          onNavigateNext={navigateNext}
+          onToday={goToToday}
+        />
 
-              <EmployeeFilter
-                employees={employees}
-                selectedEmployeeId={selectedEmployee}
-                onChange={setSelectedEmployee}
-              />
-            </div>
-          </div>
-
-          <div className="relative min-h-[500px]">
-            {isLoading ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <p>Carregando agendamentos...</p>
-              </div>
-            ) : view === "week" ? (
-              <WeekCalendar
-                appointments={appointmentsWithDetails}
-                date={currentDate}
-                employees={employees}
-                selectedEmployee={selectedEmployee}
-                onSelectAppointment={handleSelectAppointment}
-                onSelectTimeSlot={handleSelectTimeSlot}
-              />
-            ) : (
-              <MonthCalendar
-                appointments={appointmentsWithDetails}
-                date={currentDate}
-                employees={employees}
-                selectedEmployee={selectedEmployee}
-                onSelectAppointment={handleSelectAppointment}
-                onSelectDate={(date) => {
-                  setCurrentDate(date);
-                  setView("week");
-                }}
-              />
-            )}
-          </div>
-
-          <CalendarDialogs
-            appointmentDialogOpen={appointmentDialogOpen}
-            blockTimeDialogOpen={blockTimeDialogOpen}
-            actionsDialogOpen={actionsDialogOpen}
-            selectedAppointment={selectedAppointment}
-            editMode={editMode}
-            currentDate={currentDate}
-            selectedEmployeeId={selectedEmployee}
-            dialogKey={dialogKey}
-            onAppointmentDialogClose={() => setAppointmentDialogOpen(false)}
-            onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
-            onActionsDialogOpenChange={setActionsDialogOpen}
-            onEditAppointment={handleEditAppointment}
-          />
+        {/* Calendar Content */}
+        <div className="flex-1 p-6 overflow-auto">
+          <Card className="h-full">
+            <CardContent className="p-0 h-full">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center space-y-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-slate-600 dark:text-slate-400">Carregando agendamentos...</p>
+                  </div>
+                </div>
+              ) : view === "week" ? (
+                <WeekCalendar
+                  appointments={appointmentsWithDetails}
+                  date={currentDate}
+                  employees={employees}
+                  selectedEmployee={selectedEmployee}
+                  onSelectAppointment={handleSelectAppointment}
+                  onSelectTimeSlot={handleSelectTimeSlot}
+                />
+              ) : (
+                <MonthCalendar
+                  appointments={appointmentsWithDetails}
+                  date={currentDate}
+                  employees={employees}
+                  selectedEmployee={selectedEmployee}
+                  onSelectAppointment={handleSelectAppointment}
+                  onSelectDate={(date) => {
+                    // setCurrentDate(date);
+                    setView("week");
+                  }}
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Dialogs */}
+      <CalendarDialogs
+        appointmentDialogOpen={appointmentDialogOpen}
+        blockTimeDialogOpen={blockTimeDialogOpen}
+        actionsDialogOpen={actionsDialogOpen}
+        selectedAppointment={selectedAppointment}
+        editMode={editMode}
+        currentDate={currentDate}
+        selectedEmployeeId={selectedEmployee}
+        dialogKey={dialogKey}
+        onAppointmentDialogClose={() => setAppointmentDialogOpen(false)}
+        onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+        onActionsDialogOpenChange={setActionsDialogOpen}
+        onEditAppointment={handleEditAppointment}
+      />
+    </div>
   );
 }

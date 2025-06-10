@@ -55,12 +55,12 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
   const getEmployeeColor = (employeeId: string) => {
     // Define color palette for employees
     const colors = [
-      "bg-kontrola-600 text-white",
       "bg-blue-600 text-white",
       "bg-green-600 text-white",
-      "bg-yellow-600 text-white",
-      "bg-red-600 text-white",
-      "bg-purple-600 text-white"
+      "bg-purple-600 text-white",
+      "bg-orange-600 text-white",
+      "bg-pink-600 text-white",
+      "bg-indigo-600 text-white"
     ];
     
     // Find employee index and use modulo to cycle through colors if more employees than colors
@@ -78,40 +78,48 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
 
   return (
     <TooltipProvider>
-      <div className="border rounded-lg bg-white overflow-hidden">
+      <div className="h-full flex flex-col">
         {/* Header with weekday names */}
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
           {WEEKDAY_NAMES.map((day) => (
             <div 
               key={day} 
-              className="p-2 font-medium text-xs text-center border-b border-r last:border-r-0"
+              className="p-4 font-medium text-sm text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0"
             >
-              {day}
+              <div className="text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                {day}
+              </div>
             </div>
           ))}
         </div>
         
         {/* Calendar grid */}
-        <div className="grid grid-cols-7">
+        <div className="flex-1 grid grid-cols-7 auto-rows-fr">
           {calendarDays.map((day, i) => {
             const isCurrentMonth = isSameMonth(day, date);
             const isCurrentDay = isToday(day);
             const dayAppointments = getAppointmentsForDay(day);
-            const maxToShow = 3;
+            const maxToShow = 2;
             
             return (
               <div 
                 key={i}
-                className={`min-h-[100px] p-1 border-b border-r last:border-r-0 ${
-                  isCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'
-                } ${isCurrentDay ? 'bg-accent/20' : ''}`}
+                className={`min-h-[120px] p-2 border-b border-r border-slate-200 dark:border-slate-700 last:border-r-0 cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                  isCurrentMonth ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800/30'
+                } ${isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
                 onClick={(e) => handleDayCellClick(day, e)}
               >
-                <div className="text-xs font-medium p-1">
+                <div className={`text-sm font-medium p-1 mb-2 ${
+                  isCurrentDay 
+                    ? 'bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center' 
+                    : isCurrentMonth 
+                      ? 'text-slate-900 dark:text-slate-100' 
+                      : 'text-slate-400 dark:text-slate-600'
+                }`}>
                   {format(day, "d")}
                 </div>
                 
-                <div className="space-y-1 mt-1">
+                <div className="space-y-1">
                   {dayAppointments.slice(0, maxToShow).map(appointment => (
                     <AppointmentChip
                       key={appointment.id}
@@ -125,7 +133,7 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   ))}
                   
                   {dayAppointments.length > maxToShow && (
-                    <div className="text-xs text-center text-muted-foreground">
+                    <div className="text-xs text-center text-slate-500 dark:text-slate-400 p-1 bg-slate-100 dark:bg-slate-800 rounded">
                       +{dayAppointments.length - maxToShow} mais
                     </div>
                   )}
