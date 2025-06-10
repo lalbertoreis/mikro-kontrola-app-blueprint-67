@@ -9,28 +9,24 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     
     console.log('Creating appointment with data:', appointmentData);
     
-    // Criar timestamps corretos com timezone brasileiro (-03:00)
-    const appointmentDate = new Date(date + 'T00:00:00-03:00');
-    const [startHours, startMinutes] = startTime.split(':').map(Number);
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    // Criar timestamps com timezone brasileiro (-03:00) explícito
+    const startTimeString = `${date}T${startTime}:00-03:00`;
+    const endTimeString = `${date}T${endTime}:00-03:00`;
     
-    // Criar datetime objects com timezone brasileiro
-    const startDateTime = new Date(appointmentDate);
-    startDateTime.setHours(startHours, startMinutes, 0, 0);
-    
-    const endDateTime = new Date(appointmentDate);
-    endDateTime.setHours(endHours, endMinutes, 0, 0);
+    // Criar objetos Date que representam o horário local brasileiro
+    const startDateTime = new Date(startTimeString);
+    const endDateTime = new Date(endTimeString);
 
-    // Converter para ISO string com timezone brasileiro
-    const startTimeISO = startDateTime.toISOString().replace('Z', '-03:00');
-    const endTimeISO = endDateTime.toISOString().replace('Z', '-03:00');
-
-    console.log('Parsed dates with Brazilian timezone:', {
-      appointmentDate: appointmentDate.toISOString(),
-      startTimeISO,
-      endTimeISO,
-      localStartTime: startDateTime.toLocaleString('pt-BR'),
-      localEndTime: endDateTime.toLocaleString('pt-BR')
+    console.log('Timezone parsing validation:', {
+      inputDate: date,
+      inputStartTime: startTime,
+      inputEndTime: endTime,
+      startTimeString,
+      endTimeString,
+      localStartTime: startDateTime.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      localEndTime: endDateTime.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      utcStartTime: startDateTime.toISOString(),
+      utcEndTime: endDateTime.toISOString()
     });
 
     // Validação de data para novos agendamentos
@@ -60,6 +56,10 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
         console.warn('Agendamento muito próximo do horário atual');
       }
     }
+
+    // Usar ISO strings para as queries (serão convertidas automaticamente para UTC no banco)
+    const startTimeISO = startDateTime.toISOString();
+    const endTimeISO = endDateTime.toISOString();
 
     // Verificar conflitos de agendamento usando campos corretos
     const { data: conflictingAppointments, error: conflictError } = await supabase
@@ -179,7 +179,13 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
       throw new Error(`Erro ao criar agendamento: ${error.message}`);
     }
     
-    console.log('Appointment created successfully:', data);
+    console.log('Appointment created successfully:', {
+      id: data.id,
+      localStartTime: new Date(data.start_time).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      localEndTime: new Date(data.end_time).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      utcStartTime: data.start_time,
+      utcEndTime: data.end_time
+    });
     
     return {
       id: data.id,
