@@ -66,10 +66,12 @@ export const useOnboardingState = () => {
         const state: OnboardingState = JSON.parse(saved);
         console.log('Estado salvo encontrado:', state);
         
-        // Lógica para mostrar wizard na inicialização
+        // NOVA LÓGICA: Sempre mostrar wizard se não estiver completado nem pulado
         if (!state.isCompleted && !state.isSkipped) {
-          state.isWizardVisible = state.isWizardVisible ?? true;
+          console.log('Tutorial incompleto - mostrando wizard automaticamente');
+          state.isWizardVisible = true;
         } else {
+          console.log('Tutorial já finalizado - wizard oculto');
           state.isWizardVisible = false;
         }
         
