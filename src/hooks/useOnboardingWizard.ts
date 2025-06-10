@@ -87,51 +87,60 @@ interface OnboardingState {
   isWizardVisible: boolean;
 }
 
-// Estado global simples para garantir sincronização
-let globalState: OnboardingState | null = null;
+// Estado global compartilhado entre todas as instâncias
+let globalOnboardingState: OnboardingState = {
+  currentStep: 0,
+  isCompleted: false,
+  isSkipped: false,
+  isWizardVisible: false
+};
+
+// Lista de listeners para notificar mudanças
+const stateListeners = new Set<() => void>();
+
+// Função para notificar todos os listeners
+const notifyStateChange = () => {
+  stateListeners.forEach(listener => listener());
+};
+
+// Função para atualizar o estado global
+const updateGlobalState = (updates: Partial<OnboardingState>) => {
+  console.log('=== ATUALIZANDO ESTADO GLOBAL ===');
+  console.log('Estado anterior:', globalOnboardingState);
+  console.log('Updates:', updates);
+  
+  globalOnboardingState = { ...globalOnboardingState, ...updates };
+  
+  console.log('Novo estado:', globalOnboardingState);
+  
+  // Salvar no localStorage
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(globalOnboardingState));
+  
+  // Notificar todos os componentes
+  notifyStateChange();
+};
 
 export const useOnboardingWizard = () => {
-  // Estados locais que serão sincronizados
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [isSkipped, setIsSkipped] = useState(false);
-  const [isWizardVisible, setIsWizardVisible] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  // Estados locais que são sincronizados com o estado global
+  const [localState, setLocalState] = useState<OnboardingState>(globalOnboardingState);
 
-  // Função para atualizar localStorage
-  const updateStorage = useCallback((state: OnboardingState) => {
-    console.log('Atualizando localStorage:', state);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    globalState = state;
+  // Listener para mudanças no estado global
+  useEffect(() => {
+    const listener = () => {
+      console.log('Listener: Estado global mudou para:', globalOnboardingState);
+      setLocalState({ ...globalOnboardingState });
+    };
+    
+    stateListeners.add(listener);
+    
+    return () => {
+      stateListeners.delete(listener);
+    };
   }, []);
 
-  // Função para atualizar estado completo
-  const updateState = useCallback((updates: Partial<OnboardingState>) => {
-    const newState = {
-      currentStep,
-      isCompleted,
-      isSkipped,
-      isWizardVisible,
-      ...updates
-    };
-
-    console.log('Atualizando estado completo:', newState);
-
-    // Atualizar estados locais
-    if (updates.currentStep !== undefined) setCurrentStep(updates.currentStep);
-    if (updates.isCompleted !== undefined) setIsCompleted(updates.isCompleted);
-    if (updates.isSkipped !== undefined) setIsSkipped(updates.isSkipped);
-    if (updates.isWizardVisible !== undefined) setIsWizardVisible(updates.isWizardVisible);
-
-    // Atualizar localStorage
-    updateStorage(newState);
-  }, [currentStep, isCompleted, isSkipped, isWizardVisible, updateStorage]);
-
-  // Inicialização única
+  // Inicialização única no primeiro render
   useEffect(() => {
-    if (isInitialized) return;
-
-    console.log('Inicializando onboarding...');
+    console.log('=== INICIALIZANDO ONBOARDING ===');
     
     const saved = localStorage.getItem(STORAGE_KEY);
     
@@ -140,117 +149,117 @@ export const useOnboardingWizard = () => {
         const state: OnboardingState = JSON.parse(saved);
         console.log('Estado salvo encontrado:', state);
         
-        globalState = state;
-        setCurrentStep(state.currentStep || 0);
-        setIsCompleted(state.isCompleted || false);
-        setIsSkipped(state.isSkipped || false);
-        
-        // Lógica para mostrar wizard
+        // Lógica para mostrar wizard na inicialização
         if (!state.isCompleted && !state.isSkipped) {
-          setIsWizardVisible(state.isWizardVisible ?? true);
+          state.isWizardVisible = state.isWizardVisible ?? true;
         } else {
-          setIsWizardVisible(false);
+          state.isWizardVisible = false;
         }
+        
+        globalOnboardingState = state;
+        setLocalState(state);
       } catch (error) {
         console.error('Erro ao carregar estado:', error);
-        setIsWizardVisible(true);
+        const defaultState = {
+          currentStep: 0,
+          isCompleted: false,
+          isSkipped: false,
+          isWizardVisible: true
+        };
+        globalOnboardingState = defaultState;
+        setLocalState(defaultState);
       }
     } else {
       console.log('Primeira visita - mostrando onboarding');
-      setIsWizardVisible(true);
+      const defaultState = {
+        currentStep: 0,
+        isCompleted: false,
+        isSkipped: false,
+        isWizardVisible: true
+      };
+      globalOnboardingState = defaultState;
+      setLocalState(defaultState);
     }
-    
-    setIsInitialized(true);
   }, []);
 
   const nextStep = useCallback(() => {
-    const nextStepIndex = currentStep + 1;
+    const nextStepIndex = localState.currentStep + 1;
     if (nextStepIndex < ONBOARDING_STEPS.length) {
-      updateState({ currentStep: nextStepIndex });
+      updateGlobalState({ currentStep: nextStepIndex });
     } else {
       completeOnboarding();
     }
-  }, [currentStep, updateState]);
+  }, [localState.currentStep]);
 
   const previousStep = useCallback(() => {
-    const prevStepIndex = currentStep - 1;
+    const prevStepIndex = localState.currentStep - 1;
     if (prevStepIndex >= 0) {
-      updateState({ currentStep: prevStepIndex });
+      updateGlobalState({ currentStep: prevStepIndex });
     }
-  }, [currentStep, updateState]);
+  }, [localState.currentStep]);
 
   const goToStep = useCallback((stepIndex: number) => {
     if (stepIndex >= 0 && stepIndex < ONBOARDING_STEPS.length) {
-      updateState({ currentStep: stepIndex });
+      updateGlobalState({ currentStep: stepIndex });
     }
-  }, [updateState]);
+  }, []);
 
   const skipOnboarding = useCallback(() => {
-    console.log('Pulando onboarding');
-    updateState({ 
+    console.log('=== PULANDO ONBOARDING ===');
+    updateGlobalState({ 
       isSkipped: true, 
       isWizardVisible: false 
     });
-  }, [updateState]);
+  }, []);
 
   const completeOnboarding = useCallback(() => {
-    console.log('Completando onboarding');
-    updateState({ 
+    console.log('=== COMPLETANDO ONBOARDING ===');
+    updateGlobalState({ 
       isCompleted: true, 
       isWizardVisible: false 
     });
-  }, [updateState]);
+  }, []);
 
   const resetOnboarding = useCallback(() => {
-    console.log('Resetando onboarding');
-    localStorage.removeItem(STORAGE_KEY);
-    globalState = null;
-    
-    setCurrentStep(0);
-    setIsCompleted(false);
-    setIsSkipped(false);
-    setIsWizardVisible(true);
-    
-    updateStorage({
+    console.log('=== RESETANDO ONBOARDING ===');
+    const resetState = {
       currentStep: 0,
       isCompleted: false,
       isSkipped: false,
       isWizardVisible: true
-    });
-  }, [updateStorage]);
+    };
+    updateGlobalState(resetState);
+  }, []);
 
   const hideWizard = useCallback(() => {
-    console.log('Escondendo wizard - estado antes:', { isWizardVisible });
-    updateState({ isWizardVisible: false });
-    console.log('Escondendo wizard - estado depois será:', false);
-  }, [isWizardVisible, updateState]);
+    console.log('=== ESCONDENDO WIZARD ===');
+    console.log('Estado antes de esconder:', localState);
+    updateGlobalState({ isWizardVisible: false });
+  }, [localState]);
 
   const showWizard = useCallback(() => {
-    console.log('Mostrando wizard');
-    updateState({ isWizardVisible: true });
-  }, [updateState]);
+    console.log('=== MOSTRANDO WIZARD ===');
+    updateGlobalState({ isWizardVisible: true });
+  }, []);
 
   const closeModal = useCallback(() => {
     hideWizard();
   }, [hideWizard]);
 
   console.log('useOnboardingWizard render:', {
-    currentStep,
-    isCompleted,
-    isSkipped,
-    isWizardVisible,
-    globalState
+    localState,
+    globalState: globalOnboardingState
   });
 
   return {
     // Estado reativo
-    isOpen: isWizardVisible,
-    currentStep,
-    currentStepData: ONBOARDING_STEPS[currentStep],
+    isOpen: localState.isWizardVisible,
+    currentStep: localState.currentStep,
+    currentStepData: ONBOARDING_STEPS[localState.currentStep],
     totalSteps: ONBOARDING_STEPS.length,
-    isCompleted,
-    isSkipped,
-    isWizardVisible,
+    isCompleted: localState.isCompleted,
+    isSkipped: localState.isSkipped,
+    isWizardVisible: localState.isWizardVisible,
     steps: ONBOARDING_STEPS,
     
     // Ações
@@ -265,8 +274,8 @@ export const useOnboardingWizard = () => {
     showWizard,
     
     // Helpers
-    isFirstStep: currentStep === 0,
-    isLastStep: currentStep === ONBOARDING_STEPS.length - 1,
-    progress: ((currentStep + 1) / ONBOARDING_STEPS.length) * 100
+    isFirstStep: localState.currentStep === 0,
+    isLastStep: localState.currentStep === ONBOARDING_STEPS.length - 1,
+    progress: ((localState.currentStep + 1) / ONBOARDING_STEPS.length) * 100
   };
 };

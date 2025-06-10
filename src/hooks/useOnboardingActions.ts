@@ -10,14 +10,12 @@ export const useOnboardingActions = () => {
     console.log('=== AÇÃO: navigateAndHideWizard ===');
     console.log('Caminho:', path);
     
-    // Esconder wizard IMEDIATAMENTE
+    // Esconder wizard IMEDIATAMENTE e de forma síncrona
     hideWizard();
     
-    // Navegar após um pequeno delay
-    setTimeout(() => {
-      console.log('Navegando para:', path);
-      navigate(path);
-    }, 100);
+    // Navegar imediatamente após esconder
+    console.log('Navegando para:', path);
+    navigate(path);
   };
 
   return {
