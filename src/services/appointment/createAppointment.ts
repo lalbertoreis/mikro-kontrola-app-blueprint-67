@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment, AppointmentFormData, AppointmentStatus } from "@/types/calendar";
 import { checkOverlappingAppointments } from './utils';
@@ -15,10 +16,25 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     const [endHours, endMinutes] = endTime.split(':').map(Number);
     endDate.setHours(endHours, endMinutes, 0, 0);
 
-    // Verificar se a data do agendamento é no passado
-    const now = new Date();
-    if (startDate < now) {
-      throw new Error('Não é possível agendar em datas passadas.');
+    // Verificar se a data do agendamento é no passado - só para novos agendamentos
+    if (!id) {
+      const now = new Date();
+      // Permite agendamentos para o mesmo dia se for após o horário atual
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      
+      const appointmentDay = new Date(startDate);
+      appointmentDay.setHours(0, 0, 0, 0);
+      
+      // Se for um dia anterior a hoje, não permite
+      if (appointmentDay < todayStart) {
+        throw new Error('Não é possível agendar em datas passadas.');
+      }
+      
+      // Se for hoje, só permite se for após o horário atual
+      if (appointmentDay.getTime() === todayStart.getTime() && startDate < now) {
+        throw new Error('Não é possível agendar em horários passados.');
+      }
     }
 
     // Check for overlapping appointments (excluding the current appointment if editing)

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { format, parse, isAfter, addMinutes } from "date-fns";
+import { format, parse, isAfter, addMinutes, isSameDay } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -87,20 +88,22 @@ export default function AppointmentDialog({
     }
     
     const now = new Date();
-    const selectedDateStart = new Date(selectedDate);
-    selectedDateStart.setHours(0, 0, 0, 0);
+    const isToday = isSameDay(selectedDate, now);
     
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    
-    // If selected date is today, use current time rounded up to next hour
-    if (selectedDateStart.getTime() === todayStart.getTime()) {
+    if (isToday) {
+      // Se for hoje, começar com a próxima hora disponível
       const currentHour = now.getHours();
-      const nextHour = currentHour + 1;
-      return `${nextHour.toString().padStart(2, '0')}:00`;
+      const currentMinutes = now.getMinutes();
+      
+      if (currentMinutes < 30) {
+        return `${currentHour}:30`;
+      } else {
+        const nextHour = currentHour + 1;
+        return `${nextHour.toString().padStart(2, '0')}:00`;
+      }
     }
     
-    // For future dates, default to 9:00 AM
+    // Para datas futuras, começar às 9:00
     return "09:00";
   };
 
@@ -151,17 +154,20 @@ export default function AppointmentDialog({
       }
     } else if (!appointmentId) {
       // Reset form for new appointments with correct default values
+      const newDefaultStartTime = getDefaultStartTime();
+      const newDefaultEndTime = getDefaultEndTime(newDefaultStartTime);
+      
       form.reset({
         employee: selectedEmployeeId || "",
         service: "",
         client: "",
         date: format(selectedDate, "yyyy-MM-dd"),
-        startTime: defaultStartTime,
-        endTime: defaultEndTime,
+        startTime: newDefaultStartTime,
+        endTime: newDefaultEndTime,
         notes: "",
       });
     }
-  }, [appointment, isLoadingAppointment, appointmentId, form, selectedDate, selectedEmployeeId, services, defaultStartTime, defaultEndTime]);
+  }, [appointment, isLoadingAppointment, appointmentId, form, selectedDate, selectedEmployeeId, services, selectedHour]);
 
   // Update end time based on service duration
   const handleServiceChange = (serviceId: string) => {
@@ -182,19 +188,6 @@ export default function AppointmentDialog({
   };
 
   const onSubmit = (data: z.infer<typeof appointmentSchema>) => {
-    // Validate that the appointment is not in the past
-    const appointmentDateTime = new Date(`${data.date}T${data.startTime}`);
-    const now = new Date();
-    
-    // Only check for past appointments when creating new ones (not editing)
-    if (!appointmentId && appointmentDateTime < now) {
-      form.setError("startTime", {
-        type: "manual",
-        message: "Não é possível agendar em horários passados",
-      });
-      return;
-    }
-
     // Create appointment data with all required fields
     const appointmentData = {
       employee: data.employee,
@@ -220,6 +213,9 @@ export default function AppointmentDialog({
           <DialogTitle className="text-lg font-semibold">
             {appointmentId ? "Editar Agendamento" : "Novo Agendamento"}
           </DialogTitle>
+          <DialogDescription>
+            {appointmentId ? "Edite as informações do agendamento." : "Preencha as informações para criar um novo agendamento."}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
