@@ -83,7 +83,7 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange, showInl
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <Label htmlFor="day">Dia da Semana</Label>
             <Select value={newDay} onValueChange={setNewDay}>
@@ -107,6 +107,7 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange, showInl
               type="time"
               value={newStart}
               onChange={(e) => setNewStart(e.target.value)}
+              className="w-full"
             />
           </div>
 
@@ -117,6 +118,7 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange, showInl
               type="time"
               value={newEnd}
               onChange={(e) => setNewEnd(e.target.value)}
+              className="w-full"
             />
           </div>
         </div>
@@ -136,8 +138,8 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange, showInl
         {shifts.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhum turno adicionado</p>
         ) : (
-          <ScrollArea className="h-[300px] max-h-[300px] overflow-y-auto pr-4">
-            <div className="space-y-4 pr-2">
+          <ScrollArea className="h-[250px] sm:h-[300px] max-h-[300px] overflow-y-auto pr-2 sm:pr-4">
+            <div className="space-y-4 pr-1 sm:pr-2">
               {Object.entries(groupedShifts).map(([day, dayShifts]) => (
                 <div key={day} className="space-y-2">
                   <h4 className="text-sm font-medium text-primary">
@@ -156,15 +158,15 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = ({ shifts, onChange, showInl
                         key={`${day}-${index}`}
                         className="flex items-center justify-between p-3 border rounded-lg"
                       >
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 text-slate-400 mr-2" />
-                          <span>{shift.startTime} - {shift.endTime}</span>
+                        <div className="flex items-center flex-1 min-w-0">
+                          <Clock className="h-4 w-4 text-slate-400 mr-2 flex-shrink-0" />
+                          <span className="text-sm truncate">{shift.startTime} - {shift.endTime}</span>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemoveShift(shiftIndex)}
-                          className="h-8 w-8 text-red-500"
+                          className="h-8 w-8 text-red-500 flex-shrink-0 ml-2"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

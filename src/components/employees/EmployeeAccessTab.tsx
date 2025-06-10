@@ -85,11 +85,11 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
   if (!employeeId) {
     return (
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="text-center space-y-4">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+            <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto" />
             <div>
-              <h3 className="text-lg font-medium">Salve o funcionário primeiro</h3>
+              <h3 className="text-base sm:text-lg font-medium">Salve o funcionário primeiro</h3>
               <p className="text-sm text-muted-foreground">
                 Para dar acesso ao painel, é necessário salvar as informações do funcionário primeiro.
               </p>
@@ -103,17 +103,17 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
   if (existingInvite && accessEnabled) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
             Acesso Configurado
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             O funcionário já possui acesso ao painel
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+        <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-green-50 rounded-lg">
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-green-600" />
               <span className="text-sm font-medium text-green-900">Acesso ao Painel</span>
@@ -124,10 +124,10 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Email</label>
-              <p className="text-sm">{existingInvite.email}</p>
+              <p className="text-sm break-all">{existingInvite.email}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Status</label>
@@ -139,7 +139,7 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
             </div>
           </div>
           
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
             <h4 className="text-sm font-medium text-blue-900 mb-2">Permissões do Funcionário:</h4>
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• Acesso apenas à agenda</li>
@@ -154,22 +154,22 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Key className="h-5 w-5" />
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Key className="h-4 w-4 sm:h-5 sm:w-5" />
           Dar Acesso ao Painel
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm">
           Configure o acesso do funcionário ao painel administrativo
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 p-4 sm:p-6 pt-0">
         {/* Switch para habilitar/desabilitar acesso */}
-        <div className="flex items-center justify-between p-4 border rounded-lg">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-medium">Habilitar Acesso ao Painel</span>
+        <div className="flex items-center justify-between p-3 sm:p-4 border rounded-lg">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Shield className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <span className="text-sm font-medium block">Habilitar Acesso ao Painel</span>
               <p className="text-xs text-muted-foreground">
                 Permite que o funcionário acesse o sistema
               </p>
@@ -178,6 +178,7 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
           <Switch 
             checked={accessEnabled} 
             onCheckedChange={setAccessEnabled}
+            className="flex-shrink-0"
           />
         </div>
 
@@ -197,7 +198,8 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
                       <Input 
                         type="email" 
                         placeholder="funcionario@exemplo.com" 
-                        {...field} 
+                        {...field}
+                        className="w-full"
                       />
                     </FormControl>
                     <FormMessage />
@@ -214,12 +216,13 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
                       <Key className="h-4 w-4" />
                       Senha Provisória
                     </FormLabel>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <FormControl>
                         <Input 
                           type="text" 
                           placeholder="Digite uma senha provisória" 
-                          {...field} 
+                          {...field}
+                          className="flex-1"
                         />
                       </FormControl>
                       <Button 
@@ -227,6 +230,7 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
                         variant="outline" 
                         onClick={generatePassword}
                         size="sm"
+                        className="w-full sm:w-auto"
                       >
                         Gerar
                       </Button>
@@ -239,7 +243,7 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
                 )}
               />
 
-              <div className="bg-amber-50 p-4 rounded-lg">
+              <div className="bg-amber-50 p-3 sm:p-4 rounded-lg">
                 <h4 className="text-sm font-medium text-amber-900 mb-2">O funcionário terá acesso a:</h4>
                 <ul className="text-sm text-amber-800 space-y-1">
                   <li>• Agenda (apenas visualização)</li>
@@ -253,7 +257,7 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
                 <Button 
                   type="submit" 
                   disabled={isCreating}
-                  className="bg-primary hover:bg-primary/90"
+                  className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
                 >
                   {isCreating && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -266,8 +270,8 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
         )}
 
         {!accessEnabled && (
-          <div className="bg-gray-50 p-4 rounded-lg text-center">
-            <Shield className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+          <div className="bg-gray-50 p-3 sm:p-4 rounded-lg text-center">
+            <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mx-auto mb-2" />
             <p className="text-sm text-gray-600">
               Habilite o acesso ao painel para configurar as credenciais do funcionário
             </p>

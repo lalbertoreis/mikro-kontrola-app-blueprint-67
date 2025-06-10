@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -181,11 +180,11 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
     <Card>
       <CardContent className="pt-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="info">Informações</TabsTrigger>
-            <TabsTrigger value="shifts">Turnos</TabsTrigger>
-            <TabsTrigger value="services">Serviços</TabsTrigger>
-            <TabsTrigger value="access">Acesso</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
+            <TabsTrigger value="info" className="text-xs sm:text-sm">Informações</TabsTrigger>
+            <TabsTrigger value="shifts" className="text-xs sm:text-sm">Turnos</TabsTrigger>
+            <TabsTrigger value="services" className="text-xs sm:text-sm">Serviços</TabsTrigger>
+            <TabsTrigger value="access" className="text-xs sm:text-sm">Acesso</TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="pt-4 pb-2">
@@ -219,11 +218,11 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
                   )}
                 />
 
-                <div className="flex justify-end space-x-4">
-                  <Button variant="outline" type="button" onClick={() => onSuccess()}>
+                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
+                  <Button variant="outline" type="button" onClick={() => onSuccess()} className="w-full sm:w-auto">
                     Cancelar
                   </Button>
-                  <Button type="button" onClick={goToNextStep}>
+                  <Button type="button" onClick={goToNextStep} className="w-full sm:w-auto">
                     Próximo
                   </Button>
                 </div>
@@ -232,45 +231,52 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
           </TabsContent>
 
           <TabsContent value="shifts" className="pt-4 pb-2">
-            <ShiftSelector shifts={shifts} onChange={setShifts} />
-            <div className="mt-6 flex justify-end space-x-4">
-              <Button variant="outline" type="button" onClick={goToPreviousStep}>
-                Voltar
-              </Button>
-              <Button type="button" onClick={goToNextStep}>
-                Próximo
-              </Button>
+            <div className="space-y-4">
+              <ShiftSelector shifts={shifts} onChange={setShifts} />
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
+                <Button variant="outline" type="button" onClick={goToPreviousStep} className="w-full sm:w-auto">
+                  Voltar
+                </Button>
+                <Button type="button" onClick={goToNextStep} className="w-full sm:w-auto">
+                  Próximo
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="services" className="pt-4 pb-2">
-            <ServiceSelector
-              selectedServiceIds={selectedServices}
-              onChange={setSelectedServices}
-            />
-            <div className="mt-6 flex justify-end space-x-4">
-              <Button variant="outline" type="button" onClick={goToPreviousStep}>
-                Voltar
-              </Button>
-              <Button type="button" onClick={goToNextStep}>
-                Próximo
-              </Button>
+            <div className="space-y-4">
+              <ServiceSelector
+                selectedServiceIds={selectedServices}
+                onChange={setSelectedServices}
+              />
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
+                <Button variant="outline" type="button" onClick={goToPreviousStep} className="w-full sm:w-auto">
+                  Voltar
+                </Button>
+                <Button type="button" onClick={goToNextStep} className="w-full sm:w-auto">
+                  Próximo
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="access" className="pt-4 pb-2">
-            <EmployeeAccessTab employeeId={employeeId} />
-            <div className="mt-6 flex justify-end space-x-4">
-              <Button variant="outline" type="button" onClick={goToPreviousStep}>
-                Voltar
-              </Button>
-              <Button 
-                type="button" 
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={isCreating || isUpdating}
-              >
-                {isCreating || isUpdating ? "Salvando..." : (isEditing ? "Atualizar" : "Adicionar")} Funcionário
-              </Button>
+            <div className="space-y-4">
+              <EmployeeAccessTab employeeId={employeeId} />
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
+                <Button variant="outline" type="button" onClick={goToPreviousStep} className="w-full sm:w-auto">
+                  Voltar
+                </Button>
+                <Button 
+                  type="button" 
+                  onClick={form.handleSubmit(onSubmit)}
+                  disabled={isCreating || isUpdating}
+                  className="w-full sm:w-auto"
+                >
+                  {isCreating || isUpdating ? "Salvando..." : (isEditing ? "Atualizar" : "Adicionar")} Funcionário
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
@@ -280,3 +286,5 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
 };
 
 export default EmployeeForm;
+
+```
