@@ -40,9 +40,9 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
   onNavigateNext,
 }) => {
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 max-w-full overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-56 flex-shrink-0 p-1 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
+      {/* Sidebar - Fixed width but responsive */}
+      <div className="w-72 lg:w-80 flex-shrink-0 p-3 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
         <CalendarSidebar
           view={view}
           onViewChange={onViewChange}
@@ -57,10 +57,10 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
         />
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Flexible and expandable */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Header */}
-        <div className="px-2 py-1 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700">
+        {/* Header - Fixed height */}
+        <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
           <CalendarMainHeader
             currentDate={currentDate}
             view={view}
@@ -70,10 +70,10 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
           />
         </div>
 
-        {/* Calendar Content */}
-        <div className="flex-1 p-1 overflow-auto">
-          <Card className="h-full max-w-none shadow-sm border-slate-200/50">
-            <CardContent className="p-0 h-full">
+        {/* Calendar Content - Expandable with full available space */}
+        <div className="flex-1 p-3 overflow-hidden">
+          <Card className="h-full shadow-sm border-slate-200/50 bg-white dark:bg-slate-800">
+            <CardContent className="p-0 h-full overflow-hidden">
               {children}
             </CardContent>
           </Card>

@@ -19,21 +19,28 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     // Verificar se a data do agendamento é no passado - só para novos agendamentos
     if (!id) {
       const now = new Date();
-      // Permite agendamentos para o mesmo dia se for após o horário atual
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
       
+      // Criar data de hoje às 00:00:00 para comparação correta
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Criar data do agendamento às 00:00:00 para comparação de dia
       const appointmentDay = new Date(startDate);
       appointmentDay.setHours(0, 0, 0, 0);
       
       // Se for um dia anterior a hoje, não permite
-      if (appointmentDay < todayStart) {
+      if (appointmentDay < today) {
         throw new Error('Não é possível agendar em datas passadas.');
       }
       
-      // Se for hoje, só permite se for após o horário atual
-      if (appointmentDay.getTime() === todayStart.getTime() && startDate < now) {
-        throw new Error('Não é possível agendar em horários passados.');
+      // Se for hoje, verificar se o horário não é no passado
+      if (appointmentDay.getTime() === today.getTime()) {
+        // Para agendamentos hoje, comparar com horário atual menos 30 minutos de tolerância
+        const nowMinus30Min = new Date(now.getTime() - (30 * 60 * 1000));
+        
+        if (startDate < nowMinus30Min) {
+          throw new Error('Não é possível agendar em horários passados. Mínimo de 30 minutos de antecedência.');
+        }
       }
     }
 

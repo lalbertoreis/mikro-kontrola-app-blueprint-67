@@ -1,134 +1,143 @@
 
 import React from "react";
-import { format, addDays, startOfWeek, getDay, isSameDay } from "date-fns";
+import { format, startOfWeek, addDays, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppointmentWithDetails } from "@/types/calendar";
 import { Employee } from "@/types/employee";
-import AppointmentCard from "./AppointmentCard";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import AppointmentChip from "./AppointmentChip";
 
 interface WeekCalendarProps {
-  date: Date;
   appointments: AppointmentWithDetails[];
+  date: Date;
   employees: Employee[];
   selectedEmployee?: string;
   onSelectAppointment: (appointment: AppointmentWithDetails) => void;
-  onSelectTimeSlot?: (date: Date, hour: number) => void;
+  onSelectTimeSlot: (date: Date, hour?: number) => void;
 }
 
-const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8:00 - 20:00
-const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6]; // Sunday - Saturday
-
-const WeekCalendar: React.FC<WeekCalendarProps> = ({ 
-  date, 
-  appointments, 
+const WeekCalendar: React.FC<WeekCalendarProps> = ({
+  appointments,
+  date,
   employees,
-  selectedEmployee, 
+  selectedEmployee,
   onSelectAppointment,
-  onSelectTimeSlot 
+  onSelectTimeSlot,
 }) => {
-  // Get the starting date of the week (Sunday)
-  const weekStart = startOfWeek(date, { weekStartsOn: 0 });
+  // Gerar horários de 6h às 22h
+  const hours = Array.from({ length: 17 }, (_, i) => i + 6);
   
-  // Generate the dates for the week
-  const weekDates = WEEKDAYS.map(day => addDays(weekStart, day));
+  // Gerar dias da semana
+  const weekStart = startOfWeek(date, { weekStartsOn: 0 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Function to get appointments for a specific day and hour
+  // Filtrar agendamentos para a semana atual
+  const weekAppointments = appointments.filter(appointment => {
+    const appointmentDate = typeof appointment.start === 'string' 
+      ? parseISO(appointment.start) 
+      : appointment.start;
+    
+    return weekDays.some(day => isSameDay(appointmentDate, day));
+  });
+
+  // Função para obter agendamentos de um dia e hora específicos
   const getAppointmentsForTimeSlot = (day: Date, hour: number) => {
-    return appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.start);
-      const appointmentHour = appointmentDate.getHours();
-      return isSameDay(appointmentDate, day) && appointmentHour === hour;
+    return weekAppointments.filter(appointment => {
+      const appointmentDate = typeof appointment.start === 'string' 
+        ? parseISO(appointment.start) 
+        : appointment.start;
+      
+      return isSameDay(appointmentDate, day) && 
+             appointmentDate.getHours() === hour;
     });
   };
 
-  // Function to get employee color based on employeeId
-  const getEmployeeColor = (employeeId: string) => {
-    // Define color palette for employees
-    const colors = [
-      "bg-blue-100 border-blue-500 text-blue-900",
-      "bg-green-100 border-green-500 text-green-900",
-      "bg-purple-100 border-purple-500 text-purple-900",
-      "bg-orange-100 border-orange-500 text-orange-900",
-      "bg-pink-100 border-pink-500 text-pink-900",
-      "bg-indigo-100 border-indigo-500 text-indigo-900"
-    ];
-    
-    // Find employee index and use modulo to cycle through colors if more employees than colors
-    const employeeIndex = employees.findIndex(emp => emp.id === employeeId);
-    return employeeIndex !== -1 ? colors[employeeIndex % colors.length] : colors[0];
-  };
-
-  // Handler for empty time slot clicks
-  const handleTimeSlotClick = (day: Date, hour: number, event: React.MouseEvent) => {
-    // Only trigger for direct clicks on the cell, not when clicking on appointment cards
-    if (event.currentTarget === event.target && onSelectTimeSlot) {
-      onSelectTimeSlot(day, hour);
-    }
+  // Função para lidar com clique em slot de tempo
+  const handleTimeSlotClick = (day: Date, hour: number) => {
+    onSelectTimeSlot(day, hour);
   };
 
   return (
-    <TooltipProvider>
-      <div className="h-full flex flex-col">
-        {/* Header with days of the week */}
-        <div className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-          <div className="p-2 lg:p-4 font-medium text-xs lg:text-sm text-center border-r border-slate-200 dark:border-slate-700">
-            <div className="text-slate-600 dark:text-slate-400">Horário</div>
+    <div className="h-full flex flex-col bg-white dark:bg-slate-900">
+      {/* Header com dias da semana - altura fixa */}
+      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-700">
+        <div className="grid grid-cols-8 bg-slate-50 dark:bg-slate-800">
+          {/* Coluna vazia para os horários */}
+          <div className="p-4 border-r border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900">
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Horário</span>
           </div>
-          {weekDates.map((day, index) => (
+          
+          {/* Colunas dos dias */}
+          {weekDays.map((day, index) => (
             <div 
-              key={index} 
-              className={`p-2 lg:p-4 font-medium text-xs lg:text-sm text-center ${
-                index < 6 ? 'border-r border-slate-200 dark:border-slate-700' : ''
-              } ${isSameDay(day, new Date()) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+              key={index}
+              className="p-4 text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0"
             >
-              <div className="text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wide">
+              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                 {format(day, "EEE", { locale: ptBR })}
               </div>
-              <div className={`text-sm lg:text-lg font-semibold mt-1 ${
-                isSameDay(day, new Date()) ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'
-              }`}>
+              <div className="text-lg font-semibold text-slate-700 dark:text-slate-300 mt-1">
                 {format(day, "dd")}
-              </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 hidden lg:block">
-                {format(day, "MMM", { locale: ptBR })}
               </div>
             </div>
           ))}
         </div>
-        
-        {/* Time slots */}
-        <div className="flex-1 overflow-auto">
-          {HOURS.map((hour) => (
-            <div key={hour} className="grid grid-cols-8 border-b border-slate-100 dark:border-slate-800 last:border-b-0 hover:bg-slate-25 dark:hover:bg-slate-800/50">
-              {/* Hour column */}
-              <div className="p-2 lg:p-3 text-xs lg:text-sm font-medium text-center border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                <div className="text-slate-700 dark:text-slate-300">{`${hour}:00`}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden lg:block">
-                  {hour < 12 ? 'AM' : 'PM'}
-                </div>
+      </div>
+
+      {/* Grid de horários - área scrollável */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="min-h-full">
+          {hours.map((hour) => (
+            <div key={hour} className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-700 min-h-[80px]">
+              {/* Coluna de horário */}
+              <div className="p-3 border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-start">
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  {hour.toString().padStart(2, '0')}:00
+                </span>
               </div>
               
-              {/* Days columns */}
-              {weekDates.map((day, dayIndex) => {
-                const appointmentsInSlot = getAppointmentsForTimeSlot(day, hour);
+              {/* Colunas dos dias */}
+              {weekDays.map((day, dayIndex) => {
+                const dayAppointments = getAppointmentsForTimeSlot(day, hour);
+                const isToday = isSameDay(day, new Date());
                 
                 return (
-                  <div 
-                    key={dayIndex} 
-                    className={`min-h-[60px] lg:min-h-[100px] p-1 lg:p-2 relative cursor-pointer transition-colors ${
-                      dayIndex < 6 ? 'border-r border-slate-200 dark:border-slate-700' : ''
-                    } ${isSameDay(day, new Date()) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''} hover:bg-slate-50 dark:hover:bg-slate-800/30`}
-                    onClick={(e) => handleTimeSlotClick(day, hour, e)}
+                  <div
+                    key={dayIndex}
+                    className={`
+                      p-2 border-r border-slate-200 dark:border-slate-700 last:border-r-0 
+                      relative cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 
+                      transition-colors duration-150 min-h-[80px]
+                      ${isToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
+                    `}
+                    onClick={() => handleTimeSlotClick(day, hour)}
                   >
-                    {appointmentsInSlot.map((appointment) => (
-                      <AppointmentCard
-                        key={appointment.id}
-                        appointment={appointment}
-                        colorClass={getEmployeeColor(appointment.employeeId)}
-                        onClick={() => onSelectAppointment(appointment)}
-                      />
-                    ))}
+                    {/* Indicador de hoje */}
+                    {isToday && (
+                      <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
+                    )}
+                    
+                    {/* Agendamentos */}
+                    <div className="space-y-1">
+                      {dayAppointments.map((appointment) => (
+                        <AppointmentChip
+                          key={appointment.id}
+                          appointment={appointment}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectAppointment(appointment);
+                          }}
+                          showTime={true}
+                          compact={false}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* Placeholder para slot vazio */}
+                    {dayAppointments.length === 0 && (
+                      <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-600 text-xs opacity-0 hover:opacity-100 transition-opacity">
+                        + Novo
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -136,7 +145,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
           ))}
         </div>
       </div>
-    </TooltipProvider>
+    </div>
   );
 };
 
