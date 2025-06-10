@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { format, parse, addMinutes, isSameDay } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +33,8 @@ import { useServices } from "@/hooks/useServices";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useClients } from "@/hooks/useClients";
 import { useAppointments, useAppointmentById } from "@/hooks/useAppointments";
+import { useServicePackages } from "@/hooks/useServicePackages";
+import { Service } from "@/types/service";
 import { toast } from "sonner";
 
 interface AppointmentDialogProps {
@@ -78,11 +79,70 @@ export default function AppointmentDialog({
   const { services } = useServices();
   const { employees } = useEmployees();
   const { clients } = useClients();
+  const { packages } = useServicePackages();
   const { createAppointment, isCreating, appointments } = useAppointments();
   const { data: appointment, isLoading: isLoadingAppointment } = useAppointmentById(appointmentId);
   const [serviceDuration, setServiceDuration] = useState(60);
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [availableServices, setAvailableServices] = useState(services);
+
+  // Create package services that can be offered by the selected employee
+  const availablePackageServices = useMemo(() => {
+    if (!packages || !selectedEmployee || !services) return [];
+
+    const employee = employees.find(emp => emp.id === selectedEmployee);
+    if (!employee || !employee.services || !Array.isArray(employee.services)) return [];
+
+    const activePackages = packages.filter(pkg => pkg.isActive && pkg.showInOnlineBooking);
+    
+    return activePackages.map(pkg => {
+      // Check if employee has ALL services in this package
+      const hasAllServices = pkg.services.every(serviceId => {
+        return employee.services.some(empService => {
+          const empServiceId = typeof empService === 'object' ? (empService as any).id : empService;
+          return empServiceId === serviceId;
+        });
+      });
+
+      // Only include packages that the employee can provide
+      if (!hasAllServices) return null;
+
+      // Create a Service object for the package
+      const packageService: Service = {
+        id: `package:${pkg.id}`,
+        name: pkg.name,
+        description: pkg.description,
+        price: pkg.price,
+        duration: pkg.totalDuration || 0,
+        multipleAttendees: false,
+        isActive: pkg.isActive,
+        createdAt: pkg.createdAt,
+        updatedAt: pkg.updatedAt,
+        hasEmployees: true
+      };
+
+      return packageService;
+    }).filter(Boolean) as Service[];
+  }, [packages, selectedEmployee, services, employees]);
+
+  // Filter individual services based on selected employee
+  const availableIndividualServices = useMemo(() => {
+    if (!selectedEmployee) return services;
+    
+    const employee = employees.find(emp => emp.id === selectedEmployee);
+    if (!employee || !employee.services || !Array.isArray(employee.services)) return [];
+    
+    return services.filter(service => {
+      return employee.services.some(empService => {
+        const empServiceId = typeof empService === 'object' ? (empService as any).id : empService;
+        return empServiceId === service.id;
+      });
+    });
+  }, [services, employees, selectedEmployee]);
+
+  // Combine individual services and package services
+  const availableServices = useMemo(() => {
+    return [...availableIndividualServices, ...availablePackageServices];
+  }, [availableIndividualServices, availablePackageServices]);
 
   // Calculate default start time based on selected hour or current time
   const getDefaultStartTime = (): string => {
@@ -129,21 +189,6 @@ export default function AppointmentDialog({
       notes: "",
     },
   });
-
-  // Filter services based on selected employee
-  useEffect(() => {
-    if (selectedEmployee) {
-      const employee = employees.find(emp => emp.id === selectedEmployee);
-      if (employee && employee.services) {
-        const filteredServices = services.filter(service => 
-          employee.services.includes(service.id)
-        );
-        setAvailableServices(filteredServices);
-      }
-    } else {
-      setAvailableServices(services);
-    }
-  }, [selectedEmployee, employees, services]);
 
   // Load appointment data when editing
   useEffect(() => {
