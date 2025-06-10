@@ -147,8 +147,8 @@ export default function CalendarView() {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 max-w-full overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-80 flex-shrink-0 p-4 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+      {/* Sidebar - Reduzida para 300px */}
+      <div className="w-72 flex-shrink-0 p-3 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
         <CalendarSidebar
           view={view}
           onViewChange={setView}
@@ -163,20 +163,22 @@ export default function CalendarView() {
         />
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Sem padding lateral excessivo */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Header */}
-        <CalendarMainHeader
-          currentDate={currentDate}
-          view={view}
-          onNavigatePrevious={navigatePrevious}
-          onNavigateNext={navigateNext}
-          onToday={goToToday}
-        />
+        {/* Header - Padding reduzido */}
+        <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700">
+          <CalendarMainHeader
+            currentDate={currentDate}
+            view={view}
+            onNavigatePrevious={navigatePrevious}
+            onNavigateNext={navigateNext}
+            onToday={goToToday}
+          />
+        </div>
 
-        {/* Calendar Content */}
-        <div className="flex-1 p-4 lg:p-6 overflow-auto">
-          <Card className="h-full max-w-none">
+        {/* Calendar Content - Padding otimizado */}
+        <div className="flex-1 p-3 overflow-auto">
+          <Card className="h-full max-w-none shadow-sm">
             <CardContent className="p-0 h-full">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">

@@ -28,27 +28,27 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
   const formattedYear = format(currentDate, "yyyy");
 
   return (
-    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700">
-      <div className="flex items-center gap-4">
+    <div className="flex items-center justify-between w-full">
+      <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <Calendar className="h-6 w-6 text-primary" />
+          <Calendar className="h-5 w-5 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold capitalize text-slate-900 dark:text-slate-100">
+            <h1 className="text-xl font-bold capitalize text-slate-900 dark:text-slate-100">
               {formattedDate}
             </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               {formattedYear}
             </p>
           </div>
         </div>
       </div>
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <Button 
           variant="outline" 
           size="sm" 
           onClick={onNavigatePrevious}
-          className="hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 p-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -57,7 +57,7 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
           variant="ghost" 
           size="sm" 
           onClick={onToday}
-          className="px-4 hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="px-3 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 text-xs"
         >
           Hoje
         </Button>
@@ -66,7 +66,7 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
           variant="outline" 
           size="sm" 
           onClick={onNavigateNext}
-          className="hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 p-0"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
