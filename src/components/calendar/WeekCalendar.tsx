@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -148,9 +147,9 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden bg-white dark:bg-slate-900">
-      {/* Header with days - Full width */}
-      <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800 border-b w-full flex-shrink-0">
-        <div className="bg-white dark:bg-slate-900 p-4 text-center font-medium">
+      {/* Header with days - Fixed layout with proper grid alignment */}
+      <div className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+        <div className="bg-white dark:bg-slate-900 p-4 text-center font-medium border-r border-slate-200 dark:border-slate-700">
           Horário
         </div>
         {weekDays.map((day, index) => {
@@ -160,7 +159,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
           return (
             <div
               key={day.toISOString()}
-              className={`bg-white dark:bg-slate-900 p-4 text-center relative ${
+              className={`bg-white dark:bg-slate-900 p-4 text-center relative border-r border-slate-200 dark:border-slate-700 ${
                 isToday(day) ? "bg-blue-50 dark:bg-blue-950" : ""
               } ${hasHoliday ? "bg-red-50 dark:bg-red-950" : ""}`}
             >
@@ -188,17 +187,17 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
         })}
       </div>
 
-      {/* Time grid - Full height expansion */}
-      <div className="flex-1 overflow-auto w-full">
-        <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800 min-h-full">
+      {/* Time grid - Fixed grid layout for proper alignment */}
+      <div className="flex-1 overflow-auto">
+        <div className="grid grid-cols-8 min-h-full">
           {hours.map((hour) => (
             <React.Fragment key={hour}>
-              {/* Hour label */}
-              <div className="bg-white dark:bg-slate-900 p-2 text-center text-sm font-medium border-r">
+              {/* Hour label - Fixed width column */}
+              <div className="bg-white dark:bg-slate-900 p-2 text-center text-sm font-medium border-r border-b border-slate-200 dark:border-slate-700 min-h-[60px] flex items-center justify-center">
                 {hour.toString().padStart(2, "0")}:00
               </div>
               
-              {/* Day columns - Full width */}
+              {/* Day columns - Aligned with header */}
               {weekDays.map((day, dayIndex) => {
                 const slotAppointments = getAppointmentsForSlot(day, hour);
                 const isBlocked = isTimeSlotBlocked(day, hour);
@@ -206,7 +205,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                 return (
                   <div
                     key={`${day.toISOString()}-${hour}`}
-                    className={`bg-white dark:bg-slate-900 p-1 min-h-[60px] border-b border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 relative w-full ${
+                    className={`bg-white dark:bg-slate-900 p-1 min-h-[60px] border-r border-b border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 relative ${
                       isBlocked ? "bg-red-50 dark:bg-red-950 cursor-not-allowed" : ""
                     }`}
                     onClick={() => handleTimeSlotClick(day, hour)}
@@ -219,7 +218,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                       </div>
                     )}
                     
-                    <div className="space-y-1 relative z-10 w-full">
+                    <div className="space-y-1 relative z-10">
                       {slotAppointments.map((appointment) => (
                         <AppointmentCard
                           key={appointment.id}

@@ -78,6 +78,14 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
             onToday={onGoToToday}
             isMaximized={isMaximized}
             onToggleMaximized={onToggleMaximized}
+            onNewAppointment={onNewAppointment}
+            onBlockTime={onBlockTime}
+            employees={employees}
+            selectedEmployeeId={selectedEmployeeId}
+            onEmployeeChange={onEmployeeChange}
+            onViewChange={onViewChange}
+            hideCanceled={hideCanceled}
+            onToggleHideCanceled={onToggleHideCanceled}
           />
         </div>
 
