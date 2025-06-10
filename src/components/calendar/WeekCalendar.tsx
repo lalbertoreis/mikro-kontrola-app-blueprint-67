@@ -52,6 +52,24 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
     return query.data || [];
   };
 
+  const getAppointmentColorClass = (appointment: AppointmentWithDetails) => {
+    // Return color class based on appointment status or employee
+    switch (appointment.status) {
+      case 'confirmed':
+        return "bg-green-100 border-green-600 text-green-800";
+      case 'canceled':
+        return "bg-red-100 border-red-600 text-red-800";
+      case 'no-show':
+        return "bg-amber-100 border-amber-600 text-amber-800";
+      case 'completed':
+        return "bg-blue-100 border-blue-600 text-blue-800";
+      case 'blocked':
+        return "bg-red-100 border-red-600 text-red-800";
+      default:
+        return "bg-slate-100 border-slate-600 text-slate-800";
+    }
+  };
+
   const handleTimeSlotClick = (day: Date, hour: number) => {
     // Check if there are blocking holidays for this time slot
     const dayIndex = weekDays.findIndex(d => isSameDay(d, day));
@@ -206,6 +224,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                         <AppointmentCard
                           key={appointment.id}
                           appointment={appointment}
+                          colorClass={getAppointmentColorClass(appointment)}
                           onClick={() => onSelectAppointment(appointment)}
                         />
                       ))}
