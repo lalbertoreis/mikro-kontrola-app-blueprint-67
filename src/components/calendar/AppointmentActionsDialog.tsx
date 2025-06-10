@@ -31,7 +31,7 @@ export default function AppointmentActionsDialog({
   onEdit
 }: AppointmentActionsDialogProps) {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const { cancelAppointment, isLoading } = useAppointments();
+  const { cancelAppointment, isCanceling } = useAppointments();
   
   if (!appointment) {
     return null;
@@ -178,14 +178,14 @@ export default function AppointmentActionsDialog({
           </div>
           
           <DialogFooter className="pt-6 border-t border-slate-200 dark:border-slate-800">
-            {/* Action buttons grid - 2 columns for main actions */}
             <div className="w-full space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              {/* Primeira linha - Editar e WhatsApp */}
+              <div className="flex flex-wrap gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={onEdit}
-                  className="w-full flex items-center justify-center gap-2"
+                  className="flex-1 min-w-[120px] flex items-center justify-center gap-2"
                 >
                   <Edit className="h-4 w-4" />
                   Editar
@@ -196,7 +196,7 @@ export default function AppointmentActionsDialog({
                     variant="outline"
                     size="sm"
                     onClick={handleSendWhatsApp}
-                    className="w-full flex items-center justify-center gap-2 border-green-600 text-green-600 dark:border-green-500 dark:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40"
+                    className="flex-1 min-w-[120px] flex items-center justify-center gap-2 border-green-600 text-green-600 dark:border-green-500 dark:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40"
                   >
                     <MessageSquare className="h-4 w-4" />
                     WhatsApp
@@ -204,7 +204,7 @@ export default function AppointmentActionsDialog({
                 )}
               </div>
               
-              {/* Payment button - full width if available */}
+              {/* Segunda linha - Pagamento (se disponível) */}
               {!isBlocked && service?.price && !isCompleted && !isCanceled && (
                 <Button 
                   onClick={() => {
@@ -219,10 +219,10 @@ export default function AppointmentActionsDialog({
                 </Button>
               )}
               
-              {/* Bottom row - Cancel and Close */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Terceira linha - Cancelar e Fechar */}
+              <div className="flex flex-wrap gap-2">
                 <DialogClose asChild>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="flex-1 min-w-[120px]">
                     Fechar
                   </Button>
                 </DialogClose>
@@ -233,8 +233,8 @@ export default function AppointmentActionsDialog({
                       <Button 
                         variant="outline" 
                         size="sm"
-                        className="w-full border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
-                        disabled={isLoading}
+                        className="flex-1 min-w-[120px] border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        disabled={isCanceling}
                       >
                         <Ban className="h-4 w-4 mr-1" />
                         Cancelar
@@ -252,9 +252,9 @@ export default function AppointmentActionsDialog({
                         <AlertDialogAction 
                           onClick={handleCancelAppointment}
                           className="bg-red-600 hover:bg-red-700"
-                          disabled={isLoading}
+                          disabled={isCanceling}
                         >
-                          {isLoading ? "Cancelando..." : "Sim, cancelar"}
+                          {isCanceling ? "Cancelando..." : "Sim, cancelar"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

@@ -9,25 +9,31 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     
     console.log('Creating appointment with data:', appointmentData);
     
-    // Parse the date and time values
-    const appointmentDate = new Date(date + 'T00:00:00');
+    // Criar timestamps corretos com timezone brasileiro (-03:00)
+    const appointmentDate = new Date(date + 'T00:00:00-03:00');
     const [startHours, startMinutes] = startTime.split(':').map(Number);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
     
-    // Create start and end datetime objects
+    // Criar datetime objects com timezone brasileiro
     const startDateTime = new Date(appointmentDate);
     startDateTime.setHours(startHours, startMinutes, 0, 0);
     
     const endDateTime = new Date(appointmentDate);
     endDateTime.setHours(endHours, endMinutes, 0, 0);
 
-    console.log('Parsed dates:', {
+    // Converter para ISO string com timezone brasileiro
+    const startTimeISO = startDateTime.toISOString().replace('Z', '-03:00');
+    const endTimeISO = endDateTime.toISOString().replace('Z', '-03:00');
+
+    console.log('Parsed dates with Brazilian timezone:', {
       appointmentDate: appointmentDate.toISOString(),
-      startDateTime: startDateTime.toISOString(),
-      endDateTime: endDateTime.toISOString()
+      startTimeISO,
+      endTimeISO,
+      localStartTime: startDateTime.toLocaleString('pt-BR'),
+      localEndTime: endDateTime.toLocaleString('pt-BR')
     });
 
-    // Enhanced date validation for new appointments
+    // Validação de data para novos agendamentos
     if (!id) {
       const now = new Date();
       const currentTime = now.getTime();
@@ -41,33 +47,60 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
         diff: appointmentTime - currentTime
       });
       
-      // For past appointments (more than 5 minutes ago), reject
+      // Para agendamentos passados (mais de 5 minutos atrás), rejeitar
       const fiveMinutesAgo = currentTime - (5 * 60 * 1000);
       if (appointmentTime < fiveMinutesAgo) {
         console.error('Tentativa de agendar em horário muito passado');
         throw new Error('Não é possível agendar em horários passados.');
       }
       
-      // For very close appointments (less than 5 minutes), show warning but allow
+      // Para agendamentos muito próximos (menos de 5 minutos), mostrar aviso mas permitir
       const fiveMinutesFromNow = currentTime + (5 * 60 * 1000);
       if (appointmentTime < fiveMinutesFromNow && appointmentTime >= fiveMinutesAgo) {
         console.warn('Agendamento muito próximo do horário atual');
       }
     }
 
-    // Check for overlapping appointments (excluding the current appointment if editing)
-    const hasOverlap = await checkOverlappingAppointments(
-      employee, 
-      startDateTime.toISOString(), 
-      endDateTime.toISOString(),
-      id // Pass appointment ID if editing
-    );
+    // Verificar conflitos de agendamento usando campos corretos
+    const { data: conflictingAppointments, error: conflictError } = await supabase
+      .from('appointments')
+      .select('id, employee_id, client_id, start_time, end_time, status')
+      .eq('employee_id', employee)
+      .neq('status', 'canceled')
+      .or(`and(start_time.lt.${endTimeISO},end_time.gt.${startTimeISO})`);
     
-    if (hasOverlap) {
+    if (conflictError) {
+      console.error('Erro ao verificar conflitos:', conflictError);
+      throw new Error('Erro ao verificar disponibilidade do horário');
+    }
+
+    // Filtrar conflitos, excluindo o agendamento atual se estivermos editando
+    const actualConflicts = conflictingAppointments?.filter(apt => apt.id !== id) || [];
+    
+    if (actualConflicts.length > 0) {
+      console.log('Conflicting appointments found:', actualConflicts);
       throw new Error('Já existe um agendamento ou bloqueio para este profissional neste horário.');
     }
+
+    // Verificar conflitos do cliente
+    const { data: clientConflicts, error: clientConflictError } = await supabase
+      .from('appointments')
+      .select('id, client_id, start_time, end_time, status')
+      .eq('client_id', client)
+      .neq('status', 'canceled')
+      .or(`and(start_time.lt.${endTimeISO},end_time.gt.${startTimeISO})`);
     
-    // If ID is provided, update existing appointment
+    if (clientConflictError) {
+      console.error('Erro ao verificar conflitos do cliente:', clientConflictError);
+    } else {
+      const actualClientConflicts = clientConflicts?.filter(apt => apt.id !== id) || [];
+      if (actualClientConflicts.length > 0) {
+        console.log('Client conflicts found:', actualClientConflicts);
+        throw new Error('Este cliente já possui um agendamento neste horário.');
+      }
+    }
+    
+    // Se ID é fornecido, atualizar agendamento existente
     if (id) {
       console.log('Updating existing appointment:', id);
       
@@ -77,9 +110,10 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
           employee_id: employee,
           service_id: service,
           client_id: client,
-          start_time: startDateTime.toISOString(),
-          end_time: endDateTime.toISOString(),
+          start_time: startTimeISO,
+          end_time: endTimeISO,
           notes: notes,
+          updated_at: new Date().toISOString()
         })
         .eq('id', id)
         .select(`
@@ -110,7 +144,7 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
       };
     }
     
-    // Create new appointment
+    // Criar novo agendamento
     console.log('Creating new appointment');
     
     const { data: userData } = await supabase.auth.getUser();
@@ -126,8 +160,8 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
         employee_id: employee,
         service_id: service,
         client_id: client,
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
+        start_time: startTimeISO,
+        end_time: endTimeISO,
         status: 'scheduled' as AppointmentStatus,
         notes: notes,
         user_id: userId
