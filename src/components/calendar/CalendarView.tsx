@@ -3,13 +3,11 @@ import React from "react";
 import { useCalendarState } from "@/hooks/useCalendarState";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useEmployees } from "@/hooks/useEmployees";
-import CalendarSidebar from "./CalendarSidebar";
-import CalendarMainHeader from "./CalendarMainHeader";
-import WeekCalendar from "./WeekCalendar";
-import MonthCalendar from "./MonthCalendar";
 import CalendarDialogs from "./CalendarDialogs";
 import MobileCalendarView from "./MobileCalendarView";
-import { Card, CardContent } from "@/components/ui/card";
+import CalendarLayout from "./CalendarLayout";
+import CalendarContent from "./CalendarContent";
+import { useFilteredAppointments } from "./CalendarFilters";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function CalendarView() {
@@ -45,46 +43,11 @@ export default function CalendarView() {
   const { employees } = useEmployees();
   const isMobile = useIsMobile();
 
-  // Filter appointments based on selected employee and canceled status
-  const filteredAppointments = appointments.filter(appointment => {
-    const matchesEmployee = !selectedEmployee || appointment.employeeId === selectedEmployee;
-    const notCanceled = !hideCanceled || appointment.status !== 'canceled';
-    return matchesEmployee && notCanceled;
+  const appointmentsWithDetails = useFilteredAppointments({
+    appointments,
+    selectedEmployee,
+    hideCanceled,
   });
-
-  // Convert Appointment[] to AppointmentWithDetails[] to match component props
-  const appointmentsWithDetails = filteredAppointments.map(appointment => ({
-    ...appointment,
-    employee: appointment.employee || {
-      id: appointment.employeeId,
-      name: 'Unknown Employee',
-      role: '',
-      shifts: [],
-      services: [],
-      createdAt: '',
-      updatedAt: ''
-    },
-    service: appointment.service || {
-      id: appointment.serviceId || '',
-      name: 'Unknown Service',
-      price: 0,
-      duration: 0,
-      multipleAttendees: false,
-      isActive: true,
-      createdAt: '',
-      updatedAt: ''
-    },
-    client: appointment.client || {
-      id: appointment.clientId || '',
-      name: 'Unknown Client',
-      email: '',
-      phone: '',
-      cep: '',
-      address: '',
-      createdAt: '',
-      updatedAt: ''
-    }
-  }));
 
   // Handler for selecting a time slot (to open new appointment)
   const handleSelectTimeSlot = (date: Date, hour?: number) => {
@@ -95,15 +58,6 @@ export default function CalendarView() {
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Mobile Header */}
-        <CalendarMainHeader
-          currentDate={currentDate}
-          view={view}
-          onNavigatePrevious={navigatePrevious}
-          onNavigateNext={navigateNext}
-          onToday={goToToday}
-        />
-
         {/* Mobile Calendar View */}
         <MobileCalendarView
           appointments={appointmentsWithDetails}
@@ -146,72 +100,32 @@ export default function CalendarView() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 max-w-full overflow-hidden">
-      {/* Sidebar - Mais compacta */}
-      <div className="w-64 flex-shrink-0 p-2 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
-        <CalendarSidebar
-          view={view}
-          onViewChange={setView}
-          employees={employees}
-          selectedEmployeeId={selectedEmployee}
-          onEmployeeChange={setSelectedEmployee}
-          hideCanceled={hideCanceled}
-          onToggleHideCanceled={toggleHideCanceled}
-          onNewAppointment={handleOpenNewAppointment}
-          onBlockTime={handleOpenBlockTime}
-          onGoToToday={goToToday}
-        />
-      </div>
-
-      {/* Main Content - Maximizado */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Header - Mais compacto */}
-        <div className="px-3 py-2 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700">
-          <CalendarMainHeader
-            currentDate={currentDate}
-            view={view}
-            onNavigatePrevious={navigatePrevious}
-            onNavigateNext={navigateNext}
-            onToday={goToToday}
-          />
-        </div>
-
-        {/* Calendar Content - Sem margens desnecessárias */}
-        <div className="flex-1 p-2 overflow-auto">
-          <Card className="h-full max-w-none shadow-sm border-slate-200/50">
-            <CardContent className="p-0 h-full">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center space-y-3">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="text-slate-600 dark:text-slate-400">Carregando agendamentos...</p>
-                  </div>
-                </div>
-              ) : view === "week" ? (
-                <WeekCalendar
-                  appointments={appointmentsWithDetails}
-                  date={currentDate}
-                  employees={employees}
-                  selectedEmployee={selectedEmployee}
-                  onSelectAppointment={handleSelectAppointment}
-                  onSelectTimeSlot={handleSelectTimeSlot}
-                />
-              ) : (
-                <MonthCalendar
-                  appointments={appointmentsWithDetails}
-                  date={currentDate}
-                  employees={employees}
-                  selectedEmployee={selectedEmployee}
-                  onSelectAppointment={handleSelectAppointment}
-                  onSelectDate={(date) => {
-                    setView("week");
-                  }}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+    <CalendarLayout
+      view={view}
+      onViewChange={setView}
+      employees={employees}
+      selectedEmployeeId={selectedEmployee}
+      onEmployeeChange={setSelectedEmployee}
+      hideCanceled={hideCanceled}
+      onToggleHideCanceled={toggleHideCanceled}
+      onNewAppointment={handleOpenNewAppointment}
+      onBlockTime={handleOpenBlockTime}
+      onGoToToday={goToToday}
+      currentDate={currentDate}
+      onNavigatePrevious={navigatePrevious}
+      onNavigateNext={navigateNext}
+    >
+      <CalendarContent
+        view={view}
+        appointments={appointmentsWithDetails}
+        currentDate={currentDate}
+        employees={employees}
+        selectedEmployee={selectedEmployee}
+        onSelectAppointment={handleSelectAppointment}
+        onSelectTimeSlot={handleSelectTimeSlot}
+        setView={setView}
+        isLoading={isLoading}
+      />
 
       {/* Dialogs */}
       <CalendarDialogs
@@ -228,10 +142,10 @@ export default function CalendarView() {
           setAppointmentDialogOpen(false);
           setSelectedTimeSlot(null);
         }}
-        onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+        onBlockTimeDialogClose={() => setBlockTimeDialogClose(false)}
         onActionsDialogOpenChange={setActionsDialogOpen}
         onEditAppointment={handleEditAppointment}
       />
-    </div>
+    </CalendarLayout>
   );
 }
