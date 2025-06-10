@@ -51,7 +51,10 @@ export default function AppointmentActionsDialog({
   };
   
   const handleSendWhatsApp = () => {
-    if (!client || !client.phone) return;
+    if (!client || !client.phone) {
+      console.error("Cliente ou telefone não encontrado");
+      return;
+    }
     
     // Format phone number (remove non-digits)
     const phone = client.phone.replace(/\D/g, '');
@@ -158,74 +161,75 @@ export default function AppointmentActionsDialog({
           </div>
           
           <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-            {/* Primary buttons - fixed layout on all screen sizes */}
-            <div className="grid grid-cols-3 gap-2 w-full">
-              <DialogClose asChild>
-                <Button variant="outline" size="sm" className="w-full border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs">
-                  Fechar
-                </Button>
-              </DialogClose>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={onEdit}
-                className="w-full flex items-center justify-center gap-1 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs"
-              >
-                <Edit className="h-3 w-3" />
-                Editar
-              </Button>
-              
-              {!isBlocked && client?.phone && !isCompleted && !isCanceled && (
-                <Button
-                  variant="outline"
+            {/* Buttons section with improved responsiveness */}
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              {/* Primary action buttons row */}
+              <div className="flex gap-2 flex-1">
+                <DialogClose asChild>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs">
+                    Fechar
+                  </Button>
+                </DialogClose>
+                
+                <Button 
+                  variant="outline" 
                   size="sm"
-                  onClick={handleSendWhatsApp}
-                  className="w-full flex items-center justify-center gap-1 border-green-600 text-green-600 dark:border-green-500 dark:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40 text-xs"
+                  onClick={onEdit}
+                  className="flex-1 flex items-center justify-center gap-1 text-xs"
                 >
-                  <MessageSquare className="h-3 w-3" />
-                  Confirmar
+                  <Edit className="h-3 w-3" />
+                  <span className="hidden sm:inline">Editar</span>
                 </Button>
-              )}
+                
+                {!isBlocked && client?.phone && !isCompleted && !isCanceled && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSendWhatsApp}
+                    className="flex-1 flex items-center justify-center gap-1 border-green-600 text-green-600 dark:border-green-500 dark:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40 text-xs"
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    <span className="hidden sm:inline">Confirmar</span>
+                  </Button>
+                )}
+              </div>
             </div>
             
-            {/* Cancel button */}
+            {/* Cancel button - full width */}
             {!isBlocked && !isCompleted && !isCanceled && (
-              <div className="w-full">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="w-full flex items-center justify-center gap-1 border-red-600 text-red-600 hover:bg-red-50 text-xs"
-                      disabled={isCanceling}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full flex items-center justify-center gap-1 border-red-600 text-red-600 hover:bg-red-50 text-xs"
+                    disabled={isCanceling}
+                  >
+                    <Ban className="h-3 w-3" />
+                    Cancelar Agendamento
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar cancelamento</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Não, manter</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleCancelAppointment}
+                      className="bg-red-600 hover:bg-red-700"
                     >
-                      <Ban className="h-3 w-3" />
-                      Cancelar
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar cancelamento</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Não, manter</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={handleCancelAppointment}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Sim, cancelar agendamento
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+                      Sim, cancelar agendamento
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
             
-            {/* Payment button - kept as full width in a separate row */}
+            {/* Payment button - full width */}
             {!isBlocked && service?.price && !isCompleted && !isCanceled && (
               <Button 
                 onClick={() => {
