@@ -48,23 +48,21 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
 
   return (
     <div className={containerClass}>
-      {/* Sidebar - Conditional rendering based on maximized state */}
-      {!isMaximized && (
-        <div className="w-72 lg:w-80 flex-shrink-0 p-3 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
-          <CalendarSidebar
-            view={view}
-            onViewChange={onViewChange}
-            employees={employees}
-            selectedEmployeeId={selectedEmployeeId}
-            onEmployeeChange={onEmployeeChange}
-            hideCanceled={hideCanceled}
-            onToggleHideCanceled={onToggleHideCanceled}
-            onNewAppointment={onNewAppointment}
-            onBlockTime={onBlockTime}
-            onGoToToday={onGoToToday}
-          />
-        </div>
-      )}
+      {/* Sidebar - Sempre visível */}
+      <div className="w-72 lg:w-80 flex-shrink-0 p-3 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+        <CalendarSidebar
+          view={view}
+          onViewChange={onViewChange}
+          employees={employees}
+          selectedEmployeeId={selectedEmployeeId}
+          onEmployeeChange={onEmployeeChange}
+          hideCanceled={hideCanceled}
+          onToggleHideCanceled={onToggleHideCanceled}
+          onNewAppointment={onNewAppointment}
+          onBlockTime={onBlockTime}
+          onGoToToday={onGoToToday}
+        />
+      </div>
 
       {/* Main Content - Full width expansion */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 w-full h-full">
