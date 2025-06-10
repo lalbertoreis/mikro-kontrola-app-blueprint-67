@@ -149,19 +149,42 @@ export async function createEmployee(employeeData: EmployeeFormData): Promise<Em
       if (shiftsError) throw shiftsError;
     }
 
-    // Add services
+    // Add services and packages
     if (services.length > 0) {
-      const servicesToInsert = services.map(serviceId => ({
-        employee_id: employee.id,
-        service_id: serviceId,
-        user_id: userId
-      }));
+      // Separate individual services from packages
+      const individualServices = services.filter(id => !id.startsWith('package:'));
+      const packageIds = services.filter(id => id.startsWith('package:')).map(id => id.replace('package:', ''));
 
-      const { error: servicesError } = await supabase
-        .from('employee_services')
-        .insert(servicesToInsert);
-      
-      if (servicesError) throw servicesError;
+      // Insert individual services
+      if (individualServices.length > 0) {
+        const servicesToInsert = individualServices.map(serviceId => ({
+          employee_id: employee.id,
+          service_id: serviceId,
+          user_id: userId
+        }));
+
+        const { error: servicesError } = await supabase
+          .from('employee_services')
+          .insert(servicesToInsert);
+        
+        if (servicesError) throw servicesError;
+      }
+
+      // For packages, we need to store them in a way that indicates they are packages
+      // Since we don't have a separate table for employee packages yet, we'll store them with a special prefix
+      if (packageIds.length > 0) {
+        const packagesToInsert = packageIds.map(packageId => ({
+          employee_id: employee.id,
+          service_id: `package:${packageId}`, // Store with package prefix
+          user_id: userId
+        }));
+
+        const { error: packagesError } = await supabase
+          .from('employee_services')
+          .insert(packagesToInsert);
+        
+        if (packagesError) throw packagesError;
+      }
     }
 
     return {
@@ -236,19 +259,41 @@ export async function updateEmployee(id: string, employeeData: EmployeeFormData)
     
     if (deleteServicesError) throw deleteServicesError;
 
-    // Add new services
+    // Add new services and packages
     if (services.length > 0) {
-      const servicesToInsert = services.map(serviceId => ({
-        employee_id: id,
-        service_id: serviceId,
-        user_id: userId
-      }));
+      // Separate individual services from packages
+      const individualServices = services.filter(id => !id.startsWith('package:'));
+      const packageIds = services.filter(id => id.startsWith('package:')).map(id => id.replace('package:', ''));
 
-      const { error: servicesError } = await supabase
-        .from('employee_services')
-        .insert(servicesToInsert);
-      
-      if (servicesError) throw servicesError;
+      // Insert individual services
+      if (individualServices.length > 0) {
+        const servicesToInsert = individualServices.map(serviceId => ({
+          employee_id: id,
+          service_id: serviceId,
+          user_id: userId
+        }));
+
+        const { error: servicesError } = await supabase
+          .from('employee_services')
+          .insert(servicesToInsert);
+        
+        if (servicesError) throw servicesError;
+      }
+
+      // Insert packages with prefix
+      if (packageIds.length > 0) {
+        const packagesToInsert = packageIds.map(packageId => ({
+          employee_id: id,
+          service_id: `package:${packageId}`,
+          user_id: userId
+        }));
+
+        const { error: packagesError } = await supabase
+          .from('employee_services')
+          .insert(packagesToInsert);
+        
+        if (packagesError) throw packagesError;
+      }
     }
 
     return {

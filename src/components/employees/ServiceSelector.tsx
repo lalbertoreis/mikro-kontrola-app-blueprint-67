@@ -46,16 +46,21 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
     }
   };
 
-  // Note: Para funcionários, vamos apenas mostrar os pacotes como informação
-  // mas não permitir seleção direta. Os funcionários devem selecionar os serviços
-  // individuais que compõem os pacotes.
+  const handlePackageToggle = (packageId: string) => {
+    const packageKey = `package:${packageId}`;
+    if (selectedServiceIds.includes(packageKey)) {
+      onChange(selectedServiceIds.filter((id) => id !== packageKey));
+    } else {
+      onChange([...selectedServiceIds, packageKey]);
+    }
+  };
 
   return (
     <div className="space-y-4">
       <div className="relative">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar serviços..."
+          placeholder="Buscar serviços e pacotes..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-9"
@@ -102,40 +107,49 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                   </div>
                 )}
 
-                {/* Packages Section - Apenas informativo */}
+                {/* Packages Section */}
                 {filteredPackages.length > 0 && (
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground mb-2 px-3 flex items-center gap-2">
                       <Package className="h-4 w-4" />
-                      Pacotes Disponíveis (informativo)
+                      Pacotes
                     </h4>
-                    <div className="text-xs text-muted-foreground mb-2 px-3">
-                      Selecione os serviços individuais acima que fazem parte dos pacotes
-                    </div>
                     {filteredPackages.map((pkg) => {
+                      const packageKey = `package:${pkg.id}`;
+                      const isSelected = selectedServiceIds.includes(packageKey);
                       return (
                         <div
                           key={pkg.id}
-                          className="p-4 bg-slate-50 border-l-4 border-blue-200"
+                          className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors ${
+                            isSelected ? "bg-primary/10" : ""
+                          }`}
+                          onClick={() => handlePackageToggle(pkg.id)}
                         >
-                          <div className="flex items-center gap-2 mb-1">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                            <h4 className="font-medium text-sm">{pkg.name}</h4>
-                            <Badge variant="secondary" className="text-xs">
-                              {pkg.services.length} serviços
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {pkg.totalDuration} min • R$ {pkg.price.toFixed(2).replace(".", ",")}
-                            <span className="text-green-600 ml-1">
-                              ({pkg.discount}% desconto)
-                            </span>
-                          </div>
-                          {pkg.description && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {pkg.description}
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <Package className="h-4 w-4 text-muted-foreground" />
+                                <h4 className="font-medium">{pkg.name}</h4>
+                                <Badge variant="secondary" className="text-xs">
+                                  {pkg.services.length} serviços
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {pkg.totalDuration} min • R$ {pkg.price.toFixed(2).replace(".", ",")}
+                                <span className="text-green-600 ml-1">
+                                  ({pkg.discount}% desconto)
+                                </span>
+                              </div>
+                              {pkg.description && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {pkg.description}
+                                </div>
+                              )}
                             </div>
-                          )}
+                            {isSelected && (
+                              <Check className="h-5 w-5 text-primary" />
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -144,7 +158,7 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
 
                 {filteredServices.length === 0 && filteredPackages.length === 0 && (
                   <div className="flex justify-center items-center h-20">
-                    <p className="text-muted-foreground">Nenhum serviço encontrado</p>
+                    <p className="text-muted-foreground">Nenhum serviço ou pacote encontrado</p>
                   </div>
                 )}
               </>
