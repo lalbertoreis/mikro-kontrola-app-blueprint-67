@@ -14,6 +14,7 @@ export function useCalendarState() {
   const [selectedEmployee, setSelectedEmployee] = useState<string | undefined>();
   const [hideCanceled, setHideCanceled] = useState<boolean>(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<SelectedTimeSlot | null>(null);
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
   
   // Dialog states
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
@@ -69,6 +70,10 @@ export function useCalendarState() {
     setHideCanceled(prev => !prev);
   };
 
+  const toggleMaximized = () => {
+    setIsMaximized(prev => !prev);
+  };
+
   // Convenience function to reset to today
   const goToToday = () => {
     setCurrentDate(startOfToday());
@@ -95,7 +100,9 @@ export function useCalendarState() {
     hideCanceled,
     selectedTimeSlot,
     setSelectedTimeSlot,
+    isMaximized,
     toggleHideCanceled,
+    toggleMaximized,
     handleSelectAppointment,
     handleEditAppointment,
     navigatePrevious,
