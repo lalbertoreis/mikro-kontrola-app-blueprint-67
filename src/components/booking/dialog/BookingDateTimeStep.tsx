@@ -10,6 +10,7 @@ import PeriodSelector from "./PeriodSelector";
 import TimeSlotSelector from "./TimeSlotSelector";
 import ServiceInfo from "./ServiceInfo";
 import BookingSummary from "./BookingSummary";
+import { useServicePackages } from "@/hooks/useServicePackages";
 
 interface BookingDateTimeStepProps {
   service: Service;
@@ -33,6 +34,8 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   const [selectedPeriod, setSelectedPeriod] = useState<"morning" | "afternoon" | "evening" | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
+  
+  const { packages } = useServicePackages();
 
   useEffect(() => {
     console.log("BookingDateTimeStep - All employees:", employees?.length || 0);
@@ -44,38 +47,70 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
       return;
     }
     
-    // Filter employees that can provide this service
-    const serviceId = typeof service.id === 'object' ? (service.id as any).id : service.id;
-    console.log("Looking for employees that can provide service ID:", serviceId);
+    // Check if this is a package service (has package: prefix in id)
+    const isPackageService = typeof service.id === 'string' && service.id.startsWith('package:');
     
-    const filtered = employees.filter((emp) => {
-      // Check if the employee has services array
-      if (!emp.services || !Array.isArray(emp.services)) {
-        console.log(`Employee ${emp.name} has no services array`);
-        return false;
-      }
+    if (isPackageService) {
+      // For package services, find employees who have ALL services in the package
+      const packageId = service.id.replace('package:', '');
+      const packageData = packages.find(pkg => pkg.id === packageId);
       
-      // Check if service ID is in employee's services
-      const canProvideService = emp.services.some((s) => {
-        const empServiceId = typeof s === 'object' ? (s as any).id : s;
-        const match = empServiceId === serviceId;
-        console.log(`Checking if ${empServiceId} === ${serviceId}: ${match}`);
-        return match;
+      if (packageData) {
+        console.log("Looking for employees that can provide package:", packageData.name, "with services:", packageData.services);
+        
+        const filtered = employees.filter((emp) => {
+          if (!emp.services || !Array.isArray(emp.services)) {
+            console.log(`Employee ${emp.name} has no services array`);
+            return false;
+          }
+          
+          // Check if employee has ALL services required for this package
+          const hasAllServices = packageData.services.every(requiredServiceId => {
+            return emp.services.some((empService) => {
+              const empServiceId = typeof empService === 'object' ? (empService as any).id : empService;
+              return empServiceId === requiredServiceId;
+            });
+          });
+          
+          console.log(`Employee ${emp.name} can provide package ${packageData.name}: ${hasAllServices}`);
+          return hasAllServices;
+        });
+        
+        console.log("BookingDateTimeStep - Employees who can provide package:", filtered);
+        setAvailableEmployees(filtered);
+      }
+    } else {
+      // For individual services, use existing logic
+      const serviceId = typeof service.id === 'object' ? (service.id as any).id : service.id;
+      console.log("Looking for employees that can provide service ID:", serviceId);
+      
+      const filtered = employees.filter((emp) => {
+        if (!emp.services || !Array.isArray(emp.services)) {
+          console.log(`Employee ${emp.name} has no services array`);
+          return false;
+        }
+        
+        const canProvideService = emp.services.some((s) => {
+          const empServiceId = typeof s === 'object' ? (s as any).id : s;
+          const match = empServiceId === serviceId;
+          console.log(`Checking if ${empServiceId} === ${serviceId}: ${match}`);
+          return match;
+        });
+        
+        console.log(`Employee ${emp.name} (${emp.id}) can provide service ${serviceId}: ${canProvideService}`);
+        return canProvideService;
       });
       
-      console.log(`Employee ${emp.name} (${emp.id}) can provide service ${serviceId}: ${canProvideService}`);
-      return canProvideService;
-    });
-    
-    console.log("BookingDateTimeStep - Filtered employees:", filtered);
-    setAvailableEmployees(filtered);
+      console.log("BookingDateTimeStep - Filtered employees:", filtered);
+      setAvailableEmployees(filtered);
+    }
     
     // Reset selections when employees or service change
     setSelectedEmployee(null);
     setSelectedDate(null);
     setSelectedPeriod(null);
     setSelectedTime(null);
-  }, [employees, service]);
+  }, [employees, service, packages]);
 
   const handleNextStep = () => {
     if (selectedEmployee && selectedDate && selectedTime) {
