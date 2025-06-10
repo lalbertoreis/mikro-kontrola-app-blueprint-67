@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,12 +41,14 @@ const formSchema = z.object({
 interface ServicePackageFormProps {
   servicePackage?: ServicePackage | null;
   onFormChange?: () => void;
+  onFormInitialized?: () => void;
   onClose?: () => void;
 }
 
 const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
   servicePackage,
   onFormChange,
+  onFormInitialized,
   onClose
 }) => {
   const { toast } = useToast();
@@ -58,6 +59,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
     servicePackage?.services || []
   );
   const [editMode, setEditMode] = useState<"discount" | "price">("discount");
+  const [initialized, setInitialized] = useState(false);
 
   // Filter out system services
   const filteredServicesList = services.filter(service => 
@@ -83,20 +85,30 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
         },
   });
 
-  // Set up form change watcher
+  // Initialize form and notify parent when ready
   useEffect(() => {
-    if (onFormChange) {
+    if (!initialized) {
+      setInitialized(true);
+      if (onFormInitialized) {
+        onFormInitialized();
+      }
+    }
+  }, [initialized, onFormInitialized]);
+
+  // Set up form change watcher only after initialization
+  useEffect(() => {
+    if (onFormChange && initialized) {
       const subscription = form.watch(() => onFormChange());
       return () => subscription.unsubscribe();
     }
-  }, [form, onFormChange]);
+  }, [form, onFormChange, initialized]);
 
-  // Notify parent when selected services change
+  // Notify parent when selected services change only after initialization
   useEffect(() => {
-    if (onFormChange) {
+    if (onFormChange && initialized) {
       onFormChange();
     }
-  }, [selectedServices, onFormChange]);
+  }, [selectedServices, onFormChange, initialized]);
 
   // Filtrar serviços com base no termo de pesquisa
   const filteredServices = filteredServicesList.filter((service) =>
@@ -405,3 +417,5 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
 };
 
 export default ServicePackageForm;
+
+}

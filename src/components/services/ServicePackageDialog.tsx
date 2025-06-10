@@ -45,17 +45,34 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   const [formDirty, setFormDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
+  const [formInitialized, setFormInitialized] = useState(false);
   
+  // Reset state when dialog opens/closes or when switching between edit/create
   useEffect(() => {
-    if (open) setFormDirty(false);
-  }, [open]);
+    if (open) {
+      setFormDirty(false);
+      setFormInitialized(false);
+      setShowUnsavedDialog(false);
+      setPendingClose(false);
+    }
+  }, [open, isEditing]);
 
   const handleFormChange = () => {
-    setFormDirty(true);
+    // Only mark as dirty if:
+    // 1. We're editing an existing package, AND
+    // 2. The form has been properly initialized
+    if (isEditing && formInitialized) {
+      setFormDirty(true);
+    }
+  };
+
+  const handleFormInitialized = () => {
+    setFormInitialized(true);
   };
 
   const handleCloseAttempt = () => {
-    if (formDirty) {
+    // Only show unsaved dialog if we're editing AND form is dirty
+    if (isEditing && formDirty) {
       setShowUnsavedDialog(true);
       setPendingClose(true);
     } else {
@@ -82,9 +99,8 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
       <Dialog 
         open={open} 
         onOpenChange={(state) => {
-          if (!state && formDirty) {
-            setShowUnsavedDialog(true);
-            setPendingClose(true);
+          if (!state) {
+            handleCloseAttempt();
           } else {
             onOpenChange(state);
           }
@@ -99,26 +115,29 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
           <ServicePackageForm 
             servicePackage={servicePackage} 
             onFormChange={handleFormChange}
+            onFormInitialized={handleFormInitialized}
             onClose={handleCloseAttempt}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Unsaved changes dialog */}
-      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
-            <AlertDialogDescription>
-              Você tem alterações não salvas. Ao sair sem salvar, essas alterações serão perdidas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleContinueEditing}>Continuar editando</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDiscardChanges}>Descartar alterações</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Unsaved changes dialog - only for editing existing packages */}
+      {isEditing && (
+        <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você tem alterações não salvas. Ao sair sem salvar, essas alterações serão perdidas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleContinueEditing}>Continuar editando</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDiscardChanges}>Descartar alterações</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </>
   );
 };
