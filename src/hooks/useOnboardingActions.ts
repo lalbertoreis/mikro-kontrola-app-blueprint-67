@@ -7,15 +7,17 @@ export const useOnboardingActions = () => {
   const navigate = useNavigate();
 
   const navigateAndHideWizard = (path: string) => {
-    console.log('Escondendo wizard e navegando para:', path);
+    console.log('=== AÇÃO: navigateAndHideWizard ===');
+    console.log('Caminho:', path);
     
-    // Esconder o wizard imediatamente
+    // Esconder wizard IMEDIATAMENTE
     hideWizard();
     
-    // Pequeno delay para garantir que o estado seja atualizado
+    // Navegar após um pequeno delay
     setTimeout(() => {
+      console.log('Navegando para:', path);
       navigate(path);
-    }, 50);
+    }, 100);
   };
 
   return {

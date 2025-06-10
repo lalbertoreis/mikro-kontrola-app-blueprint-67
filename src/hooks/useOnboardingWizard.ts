@@ -87,16 +87,26 @@ interface OnboardingState {
   isWizardVisible: boolean;
 }
 
+// Estado global simples para garantir sincronização
+let globalState: OnboardingState | null = null;
+
 export const useOnboardingWizard = () => {
-  // Estados reativos principais
+  // Estados locais que serão sincronizados
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSkipped, setIsSkipped] = useState(false);
   const [isWizardVisible, setIsWizardVisible] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Função para salvar no localStorage
-  const saveToStorage = useCallback((updates: Partial<OnboardingState>) => {
+  // Função para atualizar localStorage
+  const updateStorage = useCallback((state: OnboardingState) => {
+    console.log('Atualizando localStorage:', state);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    globalState = state;
+  }, []);
+
+  // Função para atualizar estado completo
+  const updateState = useCallback((updates: Partial<OnboardingState>) => {
     const newState = {
       currentStep,
       isCompleted,
@@ -104,106 +114,133 @@ export const useOnboardingWizard = () => {
       isWizardVisible,
       ...updates
     };
-    console.log('Salvando no localStorage:', newState);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-  }, [currentStep, isCompleted, isSkipped, isWizardVisible]);
 
-  // Carregar estado inicial apenas uma vez
+    console.log('Atualizando estado completo:', newState);
+
+    // Atualizar estados locais
+    if (updates.currentStep !== undefined) setCurrentStep(updates.currentStep);
+    if (updates.isCompleted !== undefined) setIsCompleted(updates.isCompleted);
+    if (updates.isSkipped !== undefined) setIsSkipped(updates.isSkipped);
+    if (updates.isWizardVisible !== undefined) setIsWizardVisible(updates.isWizardVisible);
+
+    // Atualizar localStorage
+    updateStorage(newState);
+  }, [currentStep, isCompleted, isSkipped, isWizardVisible, updateStorage]);
+
+  // Inicialização única
   useEffect(() => {
     if (isInitialized) return;
+
+    console.log('Inicializando onboarding...');
     
     const saved = localStorage.getItem(STORAGE_KEY);
-    console.log('Carregando estado inicial do localStorage:', saved);
     
     if (saved) {
       try {
         const state: OnboardingState = JSON.parse(saved);
+        console.log('Estado salvo encontrado:', state);
+        
+        globalState = state;
         setCurrentStep(state.currentStep || 0);
         setIsCompleted(state.isCompleted || false);
         setIsSkipped(state.isSkipped || false);
         
-        // Só mostrar se não foi completado nem pulado
+        // Lógica para mostrar wizard
         if (!state.isCompleted && !state.isSkipped) {
           setIsWizardVisible(state.isWizardVisible ?? true);
         } else {
           setIsWizardVisible(false);
         }
       } catch (error) {
-        console.error('Erro ao carregar estado do onboarding:', error);
-        // Primeira vez - mostrar onboarding
+        console.error('Erro ao carregar estado:', error);
         setIsWizardVisible(true);
       }
     } else {
-      // Primeira vez - mostrar onboarding
+      console.log('Primeira visita - mostrando onboarding');
       setIsWizardVisible(true);
     }
     
     setIsInitialized(true);
-  }, [isInitialized]);
+  }, []);
 
   const nextStep = useCallback(() => {
     const nextStepIndex = currentStep + 1;
     if (nextStepIndex < ONBOARDING_STEPS.length) {
-      setCurrentStep(nextStepIndex);
-      saveToStorage({ currentStep: nextStepIndex });
+      updateState({ currentStep: nextStepIndex });
     } else {
       completeOnboarding();
     }
-  }, [currentStep, saveToStorage]);
+  }, [currentStep, updateState]);
 
   const previousStep = useCallback(() => {
     const prevStepIndex = currentStep - 1;
     if (prevStepIndex >= 0) {
-      setCurrentStep(prevStepIndex);
-      saveToStorage({ currentStep: prevStepIndex });
+      updateState({ currentStep: prevStepIndex });
     }
-  }, [currentStep, saveToStorage]);
+  }, [currentStep, updateState]);
 
   const goToStep = useCallback((stepIndex: number) => {
     if (stepIndex >= 0 && stepIndex < ONBOARDING_STEPS.length) {
-      setCurrentStep(stepIndex);
-      saveToStorage({ currentStep: stepIndex });
+      updateState({ currentStep: stepIndex });
     }
-  }, [saveToStorage]);
+  }, [updateState]);
 
   const skipOnboarding = useCallback(() => {
     console.log('Pulando onboarding');
-    setIsSkipped(true);
-    setIsWizardVisible(false);
-    saveToStorage({ isSkipped: true, isWizardVisible: false });
-  }, [saveToStorage]);
+    updateState({ 
+      isSkipped: true, 
+      isWizardVisible: false 
+    });
+  }, [updateState]);
 
   const completeOnboarding = useCallback(() => {
     console.log('Completando onboarding');
-    setIsCompleted(true);
-    setIsWizardVisible(false);
-    saveToStorage({ isCompleted: true, isWizardVisible: false });
-  }, [saveToStorage]);
+    updateState({ 
+      isCompleted: true, 
+      isWizardVisible: false 
+    });
+  }, [updateState]);
 
   const resetOnboarding = useCallback(() => {
     console.log('Resetando onboarding');
     localStorage.removeItem(STORAGE_KEY);
+    globalState = null;
+    
     setCurrentStep(0);
     setIsCompleted(false);
     setIsSkipped(false);
     setIsWizardVisible(true);
-  }, []);
+    
+    updateStorage({
+      currentStep: 0,
+      isCompleted: false,
+      isSkipped: false,
+      isWizardVisible: true
+    });
+  }, [updateStorage]);
 
   const hideWizard = useCallback(() => {
-    console.log('Escondendo wizard');
-    setIsWizardVisible(false);
-    saveToStorage({ isWizardVisible: false });
-  }, [saveToStorage]);
+    console.log('Escondendo wizard - estado antes:', { isWizardVisible });
+    updateState({ isWizardVisible: false });
+    console.log('Escondendo wizard - estado depois será:', false);
+  }, [isWizardVisible, updateState]);
 
   const showWizard = useCallback(() => {
     console.log('Mostrando wizard');
-    setIsWizardVisible(true);
-    saveToStorage({ isWizardVisible: true });
-  }, [saveToStorage]);
+    updateState({ isWizardVisible: true });
+  }, [updateState]);
 
   const closeModal = useCallback(() => {
     hideWizard();
   }, [hideWizard]);
+
+  console.log('useOnboardingWizard render:', {
+    currentStep,
+    isCompleted,
+    isSkipped,
+    isWizardVisible,
+    globalState
+  });
 
   return {
     // Estado reativo
