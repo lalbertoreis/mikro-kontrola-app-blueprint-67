@@ -1,6 +1,6 @@
 
 import React from "react";
-import { format, startOfWeek, addDays, isSameDay, parseISO } from "date-fns";
+import { format, startOfWeek, addDays, isSameDay, parseISO, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppointmentWithDetails } from "@/types/calendar";
 import { Employee } from "@/types/employee";
@@ -23,8 +23,8 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
   onSelectAppointment,
   onSelectTimeSlot,
 }) => {
-  // Gerar horários de 6h às 22h
-  const hours = Array.from({ length: 17 }, (_, i) => i + 6);
+  // Gerar horários de 7h às 20h (horário comercial)
+  const hours = Array.from({ length: 14 }, (_, i) => i + 7);
   
   // Gerar dias da semana
   const weekStart = startOfWeek(date, { weekStartsOn: 0 });
@@ -57,29 +57,40 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-900">
-      {/* Header com dias da semana - altura fixa */}
-      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-700">
-        <div className="grid grid-cols-8 bg-slate-50 dark:bg-slate-800">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-900 overflow-hidden">
+      {/* Header com dias da semana */}
+      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+        <div className="grid grid-cols-8 min-h-[70px]">
           {/* Coluna vazia para os horários */}
-          <div className="p-4 border-r border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900">
+          <div className="p-3 border-r border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
             <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Horário</span>
           </div>
           
           {/* Colunas dos dias */}
-          {weekDays.map((day, index) => (
-            <div 
-              key={index}
-              className="p-4 text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0"
-            >
-              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                {format(day, "EEE", { locale: ptBR })}
+          {weekDays.map((day, index) => {
+            const isDayToday = isToday(day);
+            
+            return (
+              <div 
+                key={index}
+                className={`
+                  p-3 text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0 
+                  flex flex-col items-center justify-center
+                  ${isDayToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
+                `}
+              >
+                <div className={`text-sm font-medium ${isDayToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'}`}>
+                  {format(day, "EEE", { locale: ptBR })}
+                </div>
+                <div className={`
+                  text-lg font-bold mt-1
+                  ${isDayToday ? 'bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center' : 'text-slate-700 dark:text-slate-300'}
+                `}>
+                  {format(day, "dd")}
+                </div>
               </div>
-              <div className="text-lg font-semibold text-slate-700 dark:text-slate-300 mt-1">
-                {format(day, "dd")}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -89,7 +100,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
           {hours.map((hour) => (
             <div key={hour} className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-700 min-h-[80px]">
               {/* Coluna de horário */}
-              <div className="p-3 border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-start">
+              <div className="p-3 border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-start justify-center">
                 <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
                   {hour.toString().padStart(2, '0')}:00
                 </span>
@@ -98,7 +109,9 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
               {/* Colunas dos dias */}
               {weekDays.map((day, dayIndex) => {
                 const dayAppointments = getAppointmentsForTimeSlot(day, hour);
-                const isToday = isSameDay(day, new Date());
+                const isDayToday = isToday(day);
+                const now = new Date();
+                const isCurrentHour = isDayToday && now.getHours() === hour;
                 
                 return (
                   <div
@@ -107,17 +120,18 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                       p-2 border-r border-slate-200 dark:border-slate-700 last:border-r-0 
                       relative cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 
                       transition-colors duration-150 min-h-[80px]
-                      ${isToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
+                      ${isDayToday ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}
+                      ${isCurrentHour ? 'bg-blue-100 dark:bg-blue-900/30' : ''}
                     `}
                     onClick={() => handleTimeSlotClick(day, hour)}
                   >
-                    {/* Indicador de hoje */}
-                    {isToday && (
-                      <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
+                    {/* Indicador de horário atual */}
+                    {isCurrentHour && (
+                      <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                     )}
                     
                     {/* Agendamentos */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 h-full">
                       {dayAppointments.map((appointment) => (
                         <AppointmentChip
                           key={appointment.id}
@@ -126,8 +140,8 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                             e.stopPropagation();
                             onSelectAppointment(appointment);
                           }}
-                          showTime={true}
-                          compact={false}
+                          showTime={false}
+                          compact={true}
                         />
                       ))}
                     </div>
@@ -135,7 +149,9 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                     {/* Placeholder para slot vazio */}
                     {dayAppointments.length === 0 && (
                       <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-600 text-xs opacity-0 hover:opacity-100 transition-opacity">
-                        + Novo
+                        <span className="text-center">
+                          +<br/>Novo
+                        </span>
                       </div>
                     )}
                   </div>

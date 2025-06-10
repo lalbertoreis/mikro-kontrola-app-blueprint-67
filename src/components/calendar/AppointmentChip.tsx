@@ -3,8 +3,7 @@ import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppointmentWithDetails } from "@/types/calendar";
-import { Badge } from "@/components/ui/badge";
-import { Clock, User, Scissors } from "lucide-react";
+import { Clock, User } from "lucide-react";
 
 interface AppointmentChipProps {
   appointment: AppointmentWithDetails;
@@ -22,19 +21,19 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800';
+        return 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600';
       case 'confirmed':
-        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800';
+        return 'bg-green-500 hover:bg-green-600 text-white border-green-600';
       case 'completed':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800';
+        return 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600';
       case 'canceled':
-        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800';
+        return 'bg-red-500 hover:bg-red-600 text-white border-red-600';
       case 'no-show':
-        return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800';
+        return 'bg-orange-500 hover:bg-orange-600 text-white border-orange-600';
       case 'blocked':
-        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800';
+        return 'bg-gray-500 hover:bg-gray-600 text-white border-gray-600';
       default:
-        return 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-800';
+        return 'bg-slate-500 hover:bg-slate-600 text-white border-slate-600';
     }
   };
 
@@ -47,35 +46,28 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({
       <div
         className={`
           ${statusColor} 
-          rounded-lg border p-2 cursor-pointer 
+          rounded-lg border cursor-pointer 
           hover:shadow-md transition-all duration-200 
-          hover:scale-[1.02] active:scale-[0.98]
-          text-xs min-h-[60px] w-full
+          p-2 text-xs font-medium
+          transform hover:scale-[1.02] active:scale-[0.98]
         `}
         onClick={onClick}
       >
         {showTime && (
-          <div className="flex items-center gap-1 mb-1 font-medium">
+          <div className="flex items-center gap-1 mb-1 opacity-90">
             <Clock className="w-3 h-3" />
             <span>{format(startTime, "HH:mm", { locale: ptBR })}</span>
           </div>
         )}
         
-        <div className="font-semibold text-sm truncate mb-1">
+        <div className="font-semibold text-sm mb-1 leading-tight">
           {appointment.service?.name || appointment.title}
         </div>
         
-        <div className="flex items-center gap-1 text-xs opacity-80 truncate">
+        <div className="flex items-center gap-1 opacity-90 text-xs">
           <User className="w-3 h-3 flex-shrink-0" />
-          <span>{appointment.client?.name || 'Cliente'}</span>
+          <span className="truncate">{appointment.client?.name || 'Cliente'}</span>
         </div>
-        
-        {appointment.employee?.name && (
-          <div className="flex items-center gap-1 text-xs opacity-70 truncate mt-1">
-            <Scissors className="w-3 h-3 flex-shrink-0" />
-            <span>{appointment.employee.name}</span>
-          </div>
-        )}
       </div>
     );
   }
@@ -84,10 +76,10 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({
     <div
       className={`
         ${statusColor} 
-        rounded-lg border p-3 cursor-pointer 
+        rounded-lg border cursor-pointer 
         hover:shadow-lg transition-all duration-200 
-        hover:scale-[1.01] active:scale-[0.99]
-        w-full
+        p-3 font-medium
+        transform hover:scale-[1.01] active:scale-[0.99]
       `}
       onClick={onClick}
     >
@@ -98,27 +90,15 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({
             {format(startTime, "HH:mm", { locale: ptBR })} - {format(endTime, "HH:mm", { locale: ptBR })}
           </span>
         </div>
-        <Badge variant="outline" className="text-xs">
-          {appointment.status}
-        </Badge>
       </div>
       
       <div className="font-semibold text-lg mb-2">
         {appointment.service?.name || appointment.title}
       </div>
       
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 text-sm">
-          <User className="w-4 h-4" />
-          <span>{appointment.client?.name || 'Cliente'}</span>
-        </div>
-        
-        {appointment.employee?.name && (
-          <div className="flex items-center gap-2 text-sm">
-            <Scissors className="w-4 h-4" />
-            <span>{appointment.employee.name}</span>
-          </div>
-        )}
+      <div className="flex items-center gap-2 text-sm">
+        <User className="w-4 h-4" />
+        <span>{appointment.client?.name || 'Cliente'}</span>
       </div>
       
       {appointment.notes && (

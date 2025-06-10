@@ -7,39 +7,55 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
   try {
     const { employee, service, client, date, startTime, endTime, notes, id } = appointmentData;
     
-    // Calculate complete start and end times
-    const startDate = new Date(date);
-    const [startHours, startMinutes] = startTime.split(':').map(Number);
-    startDate.setHours(startHours, startMinutes, 0, 0);
+    console.log('Creating appointment with data:', appointmentData);
     
-    const endDate = new Date(date);
+    // Parse the date and time values
+    const appointmentDate = new Date(date + 'T00:00:00');
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
-    endDate.setHours(endHours, endMinutes, 0, 0);
+    
+    // Create start and end datetime objects
+    const startDateTime = new Date(appointmentDate);
+    startDateTime.setHours(startHours, startMinutes, 0, 0);
+    
+    const endDateTime = new Date(appointmentDate);
+    endDateTime.setHours(endHours, endMinutes, 0, 0);
 
-    // Verificar se a data do agendamento é no passado - só para novos agendamentos
+    console.log('Parsed dates:', {
+      appointmentDate: appointmentDate.toISOString(),
+      startDateTime: startDateTime.toISOString(),
+      endDateTime: endDateTime.toISOString()
+    });
+
+    // Validação de data apenas para novos agendamentos
     if (!id) {
       const now = new Date();
-      
-      // Criar data de hoje às 00:00:00 para comparação correta
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      // Criar data do agendamento às 00:00:00 para comparação de dia
-      const appointmentDay = new Date(startDate);
+      const appointmentDay = new Date(appointmentDate);
       appointmentDay.setHours(0, 0, 0, 0);
       
-      // Se for um dia anterior a hoje, não permite
+      console.log('Date validation:', {
+        now: now.toISOString(),
+        today: today.toISOString(),
+        appointmentDay: appointmentDay.toISOString(),
+        startDateTime: startDateTime.toISOString()
+      });
+      
+      // Verificar se é uma data passada (apenas dia, não horário)
       if (appointmentDay < today) {
+        console.error('Tentativa de agendar em data passada');
         throw new Error('Não é possível agendar em datas passadas.');
       }
       
-      // Se for hoje, verificar se o horário não é no passado
+      // Se for hoje, verificar se o horário não passou (com 15 min de tolerância)
       if (appointmentDay.getTime() === today.getTime()) {
-        // Para agendamentos hoje, comparar com horário atual menos 30 minutos de tolerância
-        const nowMinus30Min = new Date(now.getTime() - (30 * 60 * 1000));
+        const nowMinus15Min = new Date(now.getTime() - (15 * 60 * 1000));
         
-        if (startDate < nowMinus30Min) {
-          throw new Error('Não é possível agendar em horários passados. Mínimo de 30 minutos de antecedência.');
+        if (startDateTime < nowMinus15Min) {
+          console.error('Tentativa de agendar em horário passado');
+          throw new Error('Não é possível agendar em horários passados. Mínimo de 15 minutos de antecedência.');
         }
       }
     }
@@ -47,8 +63,8 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     // Check for overlapping appointments (excluding the current appointment if editing)
     const hasOverlap = await checkOverlappingAppointments(
       employee, 
-      startDate.toISOString(), 
-      endDate.toISOString(),
+      startDateTime.toISOString(), 
+      endDateTime.toISOString(),
       id // Pass appointment ID if editing
     );
     
@@ -58,14 +74,16 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     
     // If ID is provided, update existing appointment
     if (id) {
+      console.log('Updating existing appointment:', id);
+      
       const { data, error } = await supabase
         .from('appointments')
         .update({
           employee_id: employee,
           service_id: service,
           client_id: client,
-          start_time: startDate.toISOString(),
-          end_time: endDate.toISOString(),
+          start_time: startDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
           notes: notes,
         })
         .eq('id', id)
@@ -77,7 +95,10 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
         `)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating appointment:', error);
+        throw error;
+      }
       
       return {
         id: data.id,
@@ -95,17 +116,26 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
     }
     
     // Create new appointment
+    console.log('Creating new appointment');
+    
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+    
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
     const { data, error } = await supabase
       .from('appointments')
       .insert({
         employee_id: employee,
         service_id: service,
         client_id: client,
-        start_time: startDate.toISOString(),
-        end_time: endDate.toISOString(),
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
         status: 'scheduled' as AppointmentStatus,
         notes: notes,
-        user_id: (await supabase.auth.getUser()).data.user?.id
+        user_id: userId
       })
       .select(`
         *,
@@ -115,7 +145,12 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
       `)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating appointment:', error);
+      throw error;
+    }
+    
+    console.log('Appointment created successfully:', data);
     
     return {
       id: data.id,
@@ -131,7 +166,7 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
       updatedAt: data.updated_at,
     };
   } catch (error) {
-    console.error('Error creating appointment:', error);
+    console.error('Error in createAppointment:', error);
     throw error;
   }
 }
