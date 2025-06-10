@@ -46,6 +46,11 @@ const HolidayModal: React.FC<HolidayModalProps> = ({ holiday, isOpen, onClose })
     }
   };
 
+  const hasBlocking = holiday.blockingType === 'full_day' || 
+                     holiday.blockingType === 'morning' || 
+                     holiday.blockingType === 'afternoon' || 
+                     holiday.blockingType === 'custom';
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -81,7 +86,7 @@ const HolidayModal: React.FC<HolidayModalProps> = ({ holiday, isOpen, onClose })
             </div>
           </div>
 
-          {holiday.blockingType !== 'none' && (
+          {hasBlocking && (
             <div className="text-xs text-muted-foreground">
               ⚠️ Agendamentos não poderão ser criados neste período
             </div>
