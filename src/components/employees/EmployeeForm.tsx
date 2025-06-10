@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -17,7 +18,9 @@ import { EmployeeFormData, Shift } from "@/types/employee";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ShiftSelector from "./ShiftSelector";
 import ServiceSelector from "./ServiceSelector";
+import EmployeeAccessTab from "./EmployeeAccessTab";
 import { useToast } from "@/components/ui/use-toast";
+import { useEmployees, useEmployeeById } from "@/hooks/useEmployees";
 
 // Definir esquema de validação para o funcionário
 const employeeSchema = z.object({
@@ -33,6 +36,8 @@ interface EmployeeFormProps {
 
 const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFormProps) => {
   const { toast } = useToast();
+  const { createEmployee, updateEmployee, isCreating, isUpdating } = useEmployees();
+  const { data: existingEmployee, isLoading: isLoadingEmployee } = useEmployeeById(employeeId);
   const isEditing = Boolean(employeeId);
   const [activeTab, setActiveTab] = useState("info");
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -45,6 +50,26 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
       role: "",
     },
   });
+
+  // Carregar dados do funcionário quando editando
+  useEffect(() => {
+    if (existingEmployee && isEditing) {
+      form.reset({
+        name: existingEmployee.name,
+        role: existingEmployee.role,
+      });
+      setShifts(existingEmployee.shifts || []);
+      setSelectedServices(existingEmployee.services || []);
+    } else if (!isEditing) {
+      // Reset form when creating new employee
+      form.reset({
+        name: "",
+        role: "",
+      });
+      setShifts([]);
+      setSelectedServices([]);
+    }
+  }, [existingEmployee, isEditing, form]);
 
   const onSubmit = (data: z.infer<typeof employeeSchema>) => {
     if (shifts.length === 0) {
@@ -70,7 +95,7 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
     // Notificar que está enviando
     onSubmittingChange?.(true);
 
-    // Montar dados completos do funcionário - ensuring name and role are required
+    // Montar dados completos do funcionário
     const employeeData: EmployeeFormData = {
       name: data.name,
       role: data.role,
@@ -80,17 +105,27 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
 
     console.log("Form submitted:", employeeData);
     
-    // Simulando sucesso após envio
-    setTimeout(() => {
-      onSubmittingChange?.(false);
-      toast({
-        title: isEditing ? "Funcionário atualizado" : "Funcionário adicionado",
-        description: isEditing 
-          ? "As informações do funcionário foram atualizadas com sucesso." 
-          : "O funcionário foi adicionado com sucesso.",
+    if (isEditing && employeeId) {
+      updateEmployee({ id: employeeId, data: employeeData }, {
+        onSuccess: () => {
+          onSubmittingChange?.(false);
+          onSuccess();
+        },
+        onError: () => {
+          onSubmittingChange?.(false);
+        }
       });
-      onSuccess();
-    }, 1000);
+    } else {
+      createEmployee(employeeData, {
+        onSuccess: () => {
+          onSubmittingChange?.(false);
+          onSuccess();
+        },
+        onError: () => {
+          onSubmittingChange?.(false);
+        }
+      });
+    }
   };
 
   const goToNextStep = () => {
@@ -109,6 +144,16 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
         return;
       }
       setActiveTab("services");
+    } else if (activeTab === "services") {
+      if (selectedServices.length === 0) {
+        toast({
+          title: "Erro",
+          description: "Selecione pelo menos um serviço que o funcionário realiza.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setActiveTab("access");
     }
   };
 
@@ -117,17 +162,30 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
       setActiveTab("info");
     } else if (activeTab === "services") {
       setActiveTab("shifts");
+    } else if (activeTab === "access") {
+      setActiveTab("services");
     }
   };
+
+  if (isLoadingEmployee && isEditing) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center">Carregando dados do funcionário...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardContent className="pt-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="info">Informações</TabsTrigger>
             <TabsTrigger value="shifts">Turnos</TabsTrigger>
             <TabsTrigger value="services">Serviços</TabsTrigger>
+            <TabsTrigger value="access">Acesso</TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="pt-4 pb-2">
@@ -194,8 +252,24 @@ const EmployeeForm = ({ employeeId, onSuccess, onSubmittingChange }: EmployeeFor
               <Button variant="outline" type="button" onClick={goToPreviousStep}>
                 Voltar
               </Button>
-              <Button type="button" onClick={form.handleSubmit(onSubmit)}>
-                {isEditing ? "Atualizar" : "Adicionar"} Funcionário
+              <Button type="button" onClick={goToNextStep}>
+                Próximo
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="access" className="pt-4 pb-2">
+            <EmployeeAccessTab employeeId={employeeId} />
+            <div className="mt-6 flex justify-end space-x-4">
+              <Button variant="outline" type="button" onClick={goToPreviousStep}>
+                Voltar
+              </Button>
+              <Button 
+                type="button" 
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={isCreating || isUpdating}
+              >
+                {isCreating || isUpdating ? "Salvando..." : (isEditing ? "Atualizar" : "Adicionar")} Funcionário
               </Button>
             </div>
           </TabsContent>
