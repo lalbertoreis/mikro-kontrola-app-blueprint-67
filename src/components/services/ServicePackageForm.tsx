@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useServices } from "@/hooks/useServices";
+import { useServicePackages } from "@/hooks/useServicePackages";
 
 // Validação com zod
 const formSchema = z.object({
@@ -53,6 +54,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
 }) => {
   const { toast } = useToast();
   const { services } = useServices();
+  const { createPackage, updatePackage, isCreating, isUpdating } = useServicePackages();
   const isEditing = Boolean(servicePackage?.id);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedServices, setSelectedServices] = useState<string[]>(
@@ -121,6 +123,12 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
     return total + (service?.price || 0);
   }, 0);
 
+  // Calculate total duration
+  const totalDuration = selectedServices.reduce((total, serviceId) => {
+    const service = services.find((s) => s.id === serviceId);
+    return total + (service?.duration || 0);
+  }, 0);
+
   // Monitorar alterações nos campos de preço e desconto
   const watchDiscount = form.watch("discount");
   const watchPrice = form.watch("price");
@@ -152,7 +160,7 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
     }
   };
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (selectedServices.length < 2) {
       toast({
         title: "Erro",
@@ -162,28 +170,35 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
       return;
     }
 
-    // Ensure all required fields are explicitly set in the package data
-    const packageData: ServicePackageFormData = {
-      name: values.name,
-      description: values.description || "",
-      services: selectedServices,
-      price: values.price,
-      discount: values.discount,
-      showInOnlineBooking: values.showInOnlineBooking,
-    };
+    try {
+      // Ensure all required fields are explicitly set in the package data
+      const packageData: ServicePackageFormData = {
+        name: values.name,
+        description: values.description || "",
+        services: selectedServices,
+        price: values.price,
+        discount: values.discount,
+        showInOnlineBooking: values.showInOnlineBooking,
+        totalDuration,
+      };
 
-    console.log("Form submitted:", packageData);
+      console.log("Form submitted:", packageData);
 
-    // Simulando sucesso após envio
-    setTimeout(() => {
-      toast({
-        title: isEditing ? "Pacote atualizado!" : "Pacote cadastrado!",
-        description: `${values.name} foi ${
-          isEditing ? "atualizado" : "cadastrado"
-        } com sucesso.`,
-      });
+      if (isEditing && servicePackage?.id) {
+        await updatePackage({ id: servicePackage.id, data: packageData });
+      } else {
+        await createPackage(packageData);
+      }
+
       if (onClose) onClose();
-    }, 1000);
+    } catch (error) {
+      console.error("Error submitting package:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar o pacote. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Alternar entre modos de edição (desconto ou preço)
@@ -402,11 +417,15 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
                 type="button"
                 variant="outline"
                 onClick={() => onClose && onClose()}
+                disabled={isCreating || isUpdating}
               >
                 Cancelar
               </Button>
-              <Button type="submit">
-                {isEditing ? "Atualizar" : "Criar"} Pacote
+              <Button 
+                type="submit"
+                disabled={isCreating || isUpdating}
+              >
+                {isCreating || isUpdating ? "Salvando..." : (isEditing ? "Atualizar" : "Criar")} Pacote
               </Button>
             </div>
           </form>
@@ -417,3 +436,5 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
 };
 
 export default ServicePackageForm;
+
+</edits_to_apply>

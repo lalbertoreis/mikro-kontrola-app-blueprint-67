@@ -1,19 +1,23 @@
 
 import React from "react";
-import { Service } from "@/types/service";
+import { Service, ServicePackage } from "@/types/service";
 import ServiceCard from "@/components/booking/ServiceCard";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Package } from "lucide-react";
 
 interface ServicesListProps {
   services: Service[];
+  packages?: ServicePackage[];
   onServiceClick: (service: Service) => void;
+  onPackageClick?: (pkg: ServicePackage) => void;
   isLoading?: boolean;
   bookingColor?: string;
 }
 
 const ServicesList: React.FC<ServicesListProps> = ({ 
   services, 
+  packages = [],
   onServiceClick, 
+  onPackageClick,
   isLoading = false,
   bookingColor = "#9b87f5"
 }) => {
@@ -34,7 +38,9 @@ const ServicesList: React.FC<ServicesListProps> = ({
     );
   }
   
-  if (services.length === 0) {
+  const totalItems = services.length + packages.length;
+  
+  if (totalItems === 0) {
     return (
       <div className="mb-8">
         <h2 className="text-xl font-bold mb-4">Serviços</h2>
@@ -43,7 +49,7 @@ const ServicesList: React.FC<ServicesListProps> = ({
     );
   }
 
-  console.log(`ServicesList rendering ${services.length} services with availability details:`, 
+  console.log(`ServicesList rendering ${services.length} services and ${packages.length} packages with availability details:`, 
     services.map(s => `${s.name}: ${s.hasEmployees ? 'Has employees' : 'No employees'}`));
 
   return (
@@ -52,9 +58,10 @@ const ServicesList: React.FC<ServicesListProps> = ({
         className="text-xl font-bold mb-4"
         style={{ color: bookingColor }}
       >
-        Serviços ({services.length})
+        Serviços ({totalItems})
       </h2>
       <div className="space-y-3">
+        {/* Render individual services */}
         {services.map((service) => {
           // Considerar undefined como false para compatibilidade com dados existentes
           const hasEmployees = service.hasEmployees === true;
@@ -79,6 +86,47 @@ const ServicesList: React.FC<ServicesListProps> = ({
             </div>
           );
         })}
+
+        {/* Render packages */}
+        {packages.map((pkg) => (
+          <div key={`package-${pkg.id}`} className="relative">
+            <div 
+              className="p-4 border rounded-lg cursor-pointer hover:shadow-md transition-shadow bg-white"
+              onClick={() => onPackageClick && onPackageClick(pkg)}
+              style={{ borderColor: bookingColor + '20' }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="h-5 w-5" style={{ color: bookingColor }} />
+                    <h3 className="font-medium text-lg">{pkg.name}</h3>
+                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                      {pkg.discount}% OFF
+                    </span>
+                  </div>
+                  
+                  {pkg.description && (
+                    <p className="text-gray-600 text-sm mb-2">{pkg.description}</p>
+                  )}
+                  
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span>{pkg.services.length} serviços inclusos</span>
+                    <span>{pkg.totalDuration} min</span>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <div className="text-lg font-bold" style={{ color: bookingColor }}>
+                    R$ {pkg.price.toFixed(2)}
+                  </div>
+                  <div className="text-sm text-gray-500 line-through">
+                    R$ {((pkg.price * 100) / (100 - pkg.discount)).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
