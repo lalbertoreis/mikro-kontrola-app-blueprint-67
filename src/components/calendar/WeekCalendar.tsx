@@ -147,9 +147,9 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden bg-white dark:bg-slate-900">
       {/* Header with days - Full width */}
-      <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800 border-b w-full">
+      <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800 border-b w-full flex-shrink-0">
         <div className="bg-white dark:bg-slate-900 p-4 text-center font-medium">
           Horário
         </div>

@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import CalendarSidebar from "./CalendarSidebar";
 import CalendarMainHeader from "./CalendarMainHeader";
 import { Employee } from "@/types/employee";
@@ -58,7 +57,7 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
       </div>
 
       {/* Main Content - Full width expansion */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 w-full h-full">
         {/* Header - Fixed height */}
         <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
           <CalendarMainHeader
@@ -70,13 +69,9 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
           />
         </div>
 
-        {/* Calendar Content - Full expansion with no padding limitations */}
-        <div className="flex-1 p-2 overflow-hidden w-full">
-          <Card className="h-full w-full shadow-sm border-slate-200/50 bg-white dark:bg-slate-800">
-            <CardContent className="p-0 h-full w-full overflow-hidden">
-              {children}
-            </CardContent>
-          </Card>
+        {/* Calendar Content - Full expansion without any padding limitations */}
+        <div className="flex-1 overflow-hidden w-full h-full">
+          {children}
         </div>
       </div>
     </div>
