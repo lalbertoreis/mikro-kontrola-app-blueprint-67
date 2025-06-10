@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Business404 } from "@/pages/Business404";
@@ -109,11 +110,9 @@ const PublicBooking: React.FC = () => {
     >      
       <ServicesList 
         services={activeServices} 
-        packages={activePackages}
-        onServiceClick={handleServiceClick}
-        onPackageClick={handlePackageClick}
-        isLoading={isLoading}
-        bookingColor={businessProfile?.bookingColor}
+        employees={employees}
+        onSelectService={handleServiceClick}
+        themeColor={businessProfile?.bookingColor}
       />
 
       {!isLoading && activeServices.length === 0 && activePackages.length === 0 && (

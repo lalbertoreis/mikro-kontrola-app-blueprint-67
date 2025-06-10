@@ -93,9 +93,9 @@ const ServicesList: React.FC<ServicesListProps> = ({
       {allAvailableServices.map((service) => (
         <ServiceCard
           key={service.id}
-          service={service}
-          onSelect={() => onSelectService(service)}
-          themeColor={themeColor}
+          item={service}
+          onClick={() => onSelectService(service)}
+          color={themeColor}
         />
       ))}
     </div>
