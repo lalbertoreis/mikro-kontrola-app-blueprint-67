@@ -398,31 +398,25 @@ export type Database = {
         }
         Relationships: []
       }
-      onboarding_progress: {
+      onboarding_status: {
         Row: {
-          completed: boolean
-          completed_at: string | null
-          created_at: string
-          id: string
-          step_id: string
+          current_step: number
+          is_completed: boolean
+          is_skipped: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
-          completed?: boolean
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          step_id: string
+          current_step?: number
+          is_completed?: boolean
+          is_skipped?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
-          completed?: boolean
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          step_id?: string
+          current_step?: number
+          is_completed?: boolean
+          is_skipped?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -738,36 +732,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      user_onboarding_settings: {
-        Row: {
-          created_at: string
-          current_step_index: number
-          dont_show_again: boolean
-          id: string
-          is_completed: boolean
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_step_index?: number
-          dont_show_again?: boolean
-          id?: string
-          is_completed?: boolean
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_step_index?: number
-          dont_show_again?: boolean
-          id?: string
-          is_completed?: boolean
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
     }
     Views: {

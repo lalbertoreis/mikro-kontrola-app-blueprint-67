@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { RotateCcw, HelpCircle, PlayCircle } from 'lucide-react';
 import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 import { OnboardingWizard } from './OnboardingWizard';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const OnboardingManager: React.FC = () => {
+  const { user } = useAuth();
   const { 
     isCompleted, 
     isSkipped, 
@@ -18,9 +20,15 @@ export const OnboardingManager: React.FC = () => {
     isCompleted,
     isSkipped,
     isWizardVisible,
+    userLoggedIn: !!user,
     shouldShowResumeButton: !isWizardVisible && !isCompleted && !isSkipped,
     shouldShowControlButtons: (isCompleted || isSkipped) && !isWizardVisible
   });
+
+  // Não mostrar nada se o usuário não estiver logado
+  if (!user) {
+    return null;
+  }
 
   return (
     <>
