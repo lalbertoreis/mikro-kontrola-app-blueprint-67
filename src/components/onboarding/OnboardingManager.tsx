@@ -1,28 +1,35 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, HelpCircle, PlayCircle } from 'lucide-react';
+import { HelpCircle, PlayCircle } from 'lucide-react';
 import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 import { OnboardingWizard } from './OnboardingWizard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 export const OnboardingManager: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const { 
     isCompleted, 
     isSkipped, 
     isWizardVisible,
-    resetOnboarding, 
     showWizard 
   } = useOnboardingWizard();
+
+  // Páginas onde o botão Tutorial deve aparecer após conclusão
+  const allowedPagesForTutorialButton = ['/dashboard', '/dashboard/settings'];
+  const shouldShowTutorialButton = allowedPagesForTutorialButton.includes(location.pathname);
 
   console.log('OnboardingManager render:', {
     isCompleted,
     isSkipped,
     isWizardVisible,
     userLoggedIn: !!user,
+    currentPath: location.pathname,
+    shouldShowTutorialButton,
     shouldShowResumeButton: !isWizardVisible && !isCompleted && !isSkipped,
-    shouldShowControlButtons: (isCompleted || isSkipped) && !isWizardVisible
+    shouldShowTutorialButtonAfterComplete: (isCompleted || isSkipped) && !isWizardVisible && shouldShowTutorialButton
   });
 
   // Não mostrar nada se o usuário não estiver logado
@@ -49,30 +56,18 @@ export const OnboardingManager: React.FC = () => {
         </div>
       )}
 
-      {/* Botões de controle quando completado/pulado */}
-      {(isCompleted || isSkipped) && !isWizardVisible && (
+      {/* Botão Tutorial quando completado/pulado - apenas em páginas específicas */}
+      {(isCompleted || isSkipped) && !isWizardVisible && shouldShowTutorialButton && (
         <div className="fixed bottom-4 right-4 z-40">
-          <div className="flex flex-col space-y-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={showWizard}
-              className="flex items-center space-x-2 shadow-lg"
-            >
-              <HelpCircle className="w-4 h-4" />
-              <span>Tutorial</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={resetOnboarding}
-              className="flex items-center space-x-2 shadow-lg"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Resetar</span>
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={showWizard}
+            className="flex items-center space-x-2 shadow-lg"
+          >
+            <HelpCircle className="w-4 h-4" />
+            <span>Tutorial</span>
+          </Button>
         </div>
       )}
     </>
