@@ -436,5 +436,3 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
 };
 
 export default ServicePackageForm;
-
-</edits_to_apply>
