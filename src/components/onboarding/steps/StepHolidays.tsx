@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { useOnboardingActions } from '@/hooks/useOnboardingActions';
 
 export const StepHolidays: React.FC = () => {
-  const { navigateAndHideWizard } = useOnboardingActions();
+  const { navigateAndHideWizard, completeOnboarding } = useOnboardingActions();
+
+  const handleManageHolidays = () => {
+    // Marcar como completo antes de navegar para evitar re-abertura
+    completeOnboarding();
+    navigateAndHideWizard('/dashboard/holidays');
+  };
 
   return (
     <div className="space-y-6">
@@ -36,10 +42,10 @@ export const StepHolidays: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={() => navigateAndHideWizard('/dashboard/holidays')}
+            onClick={handleManageHolidays}
             className="flex items-center space-x-2"
           >
-            <CalendarOff className="w-4 h-4" />
+            <CalendarOff className="w-4 w-4" />
             <span>Gerenciar Feriados</span>
           </Button>
         </div>

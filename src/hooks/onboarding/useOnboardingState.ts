@@ -71,6 +71,12 @@ export const useOnboardingState = () => {
     const initializeOnboarding = async () => {
       console.log('=== INICIALIZANDO ONBOARDING ===');
       
+      // Evitar re-inicialização se já foi inicializado
+      if (isInitialized) {
+        console.log('Onboarding já inicializado, pulando...');
+        return;
+      }
+      
       if (user) {
         console.log('Usuário logado - buscando progresso no Supabase');
         
@@ -168,7 +174,7 @@ export const useOnboardingState = () => {
     };
 
     initializeOnboarding();
-  }, [user, fetchOnboardingStatus, saveOnboardingStatus]);
+  }, [user, fetchOnboardingStatus, saveOnboardingStatus, isInitialized]);
 
   return localState;
 };
