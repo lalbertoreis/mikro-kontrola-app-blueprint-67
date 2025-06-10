@@ -57,7 +57,7 @@ export default function CalendarView() {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
+      <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-slate-900">
         {/* Mobile Calendar View */}
         <MobileCalendarView
           appointments={appointmentsWithDetails}
@@ -100,52 +100,54 @@ export default function CalendarView() {
   }
 
   return (
-    <CalendarLayout
-      view={view}
-      onViewChange={setView}
-      employees={employees}
-      selectedEmployeeId={selectedEmployee}
-      onEmployeeChange={setSelectedEmployee}
-      hideCanceled={hideCanceled}
-      onToggleHideCanceled={toggleHideCanceled}
-      onNewAppointment={handleOpenNewAppointment}
-      onBlockTime={handleOpenBlockTime}
-      onGoToToday={goToToday}
-      currentDate={currentDate}
-      onNavigatePrevious={navigatePrevious}
-      onNavigateNext={navigateNext}
-    >
-      <CalendarContent
+    <div className="h-full w-full">
+      <CalendarLayout
         view={view}
-        appointments={appointmentsWithDetails}
-        currentDate={currentDate}
+        onViewChange={setView}
         employees={employees}
-        selectedEmployee={selectedEmployee}
-        onSelectAppointment={handleSelectAppointment}
-        onSelectTimeSlot={handleSelectTimeSlot}
-        setView={setView}
-        isLoading={isLoading}
-      />
-
-      {/* Dialogs */}
-      <CalendarDialogs
-        appointmentDialogOpen={appointmentDialogOpen}
-        blockTimeDialogOpen={blockTimeDialogOpen}
-        actionsDialogOpen={actionsDialogOpen}
-        selectedAppointment={selectedAppointment}
-        editMode={editMode}
-        currentDate={selectedTimeSlot?.date || currentDate}
         selectedEmployeeId={selectedEmployee}
-        selectedTimeSlot={selectedTimeSlot}
-        dialogKey={dialogKey}
-        onAppointmentDialogClose={() => {
-          setAppointmentDialogOpen(false);
-          setSelectedTimeSlot(null);
-        }}
-        onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
-        onActionsDialogOpenChange={setActionsDialogOpen}
-        onEditAppointment={handleEditAppointment}
-      />
-    </CalendarLayout>
+        onEmployeeChange={setSelectedEmployee}
+        hideCanceled={hideCanceled}
+        onToggleHideCanceled={toggleHideCanceled}
+        onNewAppointment={handleOpenNewAppointment}
+        onBlockTime={handleOpenBlockTime}
+        onGoToToday={goToToday}
+        currentDate={currentDate}
+        onNavigatePrevious={navigatePrevious}
+        onNavigateNext={navigateNext}
+      >
+        <CalendarContent
+          view={view}
+          appointments={appointmentsWithDetails}
+          currentDate={currentDate}
+          employees={employees}
+          selectedEmployee={selectedEmployee}
+          onSelectAppointment={handleSelectAppointment}
+          onSelectTimeSlot={handleSelectTimeSlot}
+          setView={setView}
+          isLoading={isLoading}
+        />
+
+        {/* Dialogs */}
+        <CalendarDialogs
+          appointmentDialogOpen={appointmentDialogOpen}
+          blockTimeDialogOpen={blockTimeDialogOpen}
+          actionsDialogOpen={actionsDialogOpen}
+          selectedAppointment={selectedAppointment}
+          editMode={editMode}
+          currentDate={selectedTimeSlot?.date || currentDate}
+          selectedEmployeeId={selectedEmployee}
+          selectedTimeSlot={selectedTimeSlot}
+          dialogKey={dialogKey}
+          onAppointmentDialogClose={() => {
+            setAppointmentDialogOpen(false);
+            setSelectedTimeSlot(null);
+          }}
+          onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+          onActionsDialogOpenChange={setActionsDialogOpen}
+          onEditAppointment={handleEditAppointment}
+        />
+      </CalendarLayout>
+    </div>
   );
 }

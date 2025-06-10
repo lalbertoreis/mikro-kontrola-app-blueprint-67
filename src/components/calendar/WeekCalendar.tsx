@@ -147,9 +147,9 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Header with days */}
-      <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800 border-b">
+    <div className="flex flex-col h-full w-full overflow-hidden">
+      {/* Header with days - Full width */}
+      <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800 border-b w-full">
         <div className="bg-white dark:bg-slate-900 p-4 text-center font-medium">
           Horário
         </div>
@@ -188,9 +188,9 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
         })}
       </div>
 
-      {/* Time grid */}
-      <div className="flex-1 overflow-auto">
-        <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800">
+      {/* Time grid - Full height expansion */}
+      <div className="flex-1 overflow-auto w-full">
+        <div className="grid grid-cols-8 gap-px bg-slate-200 dark:bg-slate-800 min-h-full">
           {hours.map((hour) => (
             <React.Fragment key={hour}>
               {/* Hour label */}
@@ -198,7 +198,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                 {hour.toString().padStart(2, "0")}:00
               </div>
               
-              {/* Day columns */}
+              {/* Day columns - Full width */}
               {weekDays.map((day, dayIndex) => {
                 const slotAppointments = getAppointmentsForSlot(day, hour);
                 const isBlocked = isTimeSlotBlocked(day, hour);
@@ -206,7 +206,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                 return (
                   <div
                     key={`${day.toISOString()}-${hour}`}
-                    className={`bg-white dark:bg-slate-900 p-1 min-h-[60px] border-b border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 relative ${
+                    className={`bg-white dark:bg-slate-900 p-1 min-h-[60px] border-b border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 relative w-full ${
                       isBlocked ? "bg-red-50 dark:bg-red-950 cursor-not-allowed" : ""
                     }`}
                     onClick={() => handleTimeSlotClick(day, hour)}
@@ -219,7 +219,7 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                       </div>
                     )}
                     
-                    <div className="space-y-1 relative z-10">
+                    <div className="space-y-1 relative z-10 w-full">
                       {slotAppointments.map((appointment) => (
                         <AppointmentCard
                           key={appointment.id}

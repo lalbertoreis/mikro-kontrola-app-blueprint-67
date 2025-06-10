@@ -8,7 +8,7 @@ const Calendar = () => {
   return (
     <DashboardLayout>
       <TooltipProvider>
-        <div className="h-full">
+        <div className="h-full w-full -m-4 md:-m-6">
           <CalendarView />
         </div>
       </TooltipProvider>
