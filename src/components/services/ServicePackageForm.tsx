@@ -18,7 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Service, ServicePackage, ServicePackageFormData } from "@/types/service";
 import { Search, Check, ArrowRightLeft } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useServices } from "@/hooks/useServices";
@@ -417,5 +417,3 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
 };
 
 export default ServicePackageForm;
-
-}
