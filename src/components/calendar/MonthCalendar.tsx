@@ -50,23 +50,6 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
       isSameDay(new Date(appointment.start), day)
     );
   };
-  
-  // Function to get employee color based on employeeId
-  const getEmployeeColor = (employeeId: string) => {
-    // Define color palette for employees
-    const colors = [
-      "bg-blue-600 text-white",
-      "bg-green-600 text-white",
-      "bg-purple-600 text-white",
-      "bg-orange-600 text-white",
-      "bg-pink-600 text-white",
-      "bg-indigo-600 text-white"
-    ];
-    
-    // Find employee index and use modulo to cycle through colors if more employees than colors
-    const employeeIndex = employees.findIndex(emp => emp.id === employeeId);
-    return employeeIndex !== -1 ? colors[employeeIndex % colors.length] : colors[0];
-  };
 
   // Handler for calendar day cell clicks
   const handleDayCellClick = (day: Date, event: React.MouseEvent) => {
@@ -124,11 +107,12 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
                     <AppointmentChip
                       key={appointment.id}
                       appointment={appointment}
-                      colorClass={getEmployeeColor(appointment.employeeId)}
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent day cell click
                         onSelectAppointment(appointment);
                       }}
+                      showTime={true}
+                      compact={true}
                     />
                   ))}
                   
