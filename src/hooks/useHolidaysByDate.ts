@@ -9,11 +9,15 @@ export function useHolidaysByDate(date: string) {
     queryFn: async () => {
       if (!date) return [];
       
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
       const { data, error } = await supabase
-        .rpc('get_holidays_by_date_and_slug', {
-          date_param: date,
-          slug_param: null
-        });
+        .from('holidays')
+        .select('*')
+        .eq('date', date)
+        .eq('user_id', user.id)
+        .eq('is_active', true);
       
       if (error) {
         console.error('Error fetching holidays by date:', error);
