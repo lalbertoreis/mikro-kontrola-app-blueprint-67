@@ -3,7 +3,7 @@ import { useOnboardingState } from './onboarding/useOnboardingState';
 import { useOnboardingActions } from './onboarding/useOnboardingActions';
 import { ONBOARDING_STEPS } from '@/data/onboardingSteps';
 
-export { OnboardingStep } from '@/types/onboardingTypes';
+export type { OnboardingStep } from '@/types/onboardingTypes';
 
 export const useOnboardingWizard = () => {
   const state = useOnboardingState();
