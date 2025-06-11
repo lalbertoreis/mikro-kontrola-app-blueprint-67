@@ -48,8 +48,8 @@ const Navbar = () => {
       // Clear user state immediately
       setUser(null);
       
-      // Navigate to home page
-      navigate("/");
+      // Navigate to login page
+      navigate("/login");
     } catch (error) {
       console.error("Unexpected error during logout:", error);
       toast.error("Erro ao desconectar");
