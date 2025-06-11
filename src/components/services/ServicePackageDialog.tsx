@@ -37,7 +37,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   const queryClient = useQueryClient();
   
   // Force refetch when modal opens
-  const { data: fetchedPackage, isLoading, refetch } = useQuery({
+  const { data: fetchedPackage, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["servicePackage", packageId],
     queryFn: () => packageId ? fetchServicePackageById(packageId) : null,
     enabled: !!packageId && open,
@@ -46,24 +46,48 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   });
   
   const servicePackage = externalPackage || fetchedPackage;
-  const isEditing = Boolean(servicePackage?.id);
+  const isEditing = Boolean(packageId);
   const [formDirty, setFormDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
   const [formInitialized, setFormInitialized] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   
   // Force data refresh when modal opens with packageId
   useEffect(() => {
     if (open && packageId) {
+      console.log('Modal opened with packageId:', packageId);
+      setDataLoaded(false);
       // Invalidate and refetch the data
       queryClient.invalidateQueries({ queryKey: ["servicePackage", packageId] });
       refetch();
     }
   }, [open, packageId, queryClient, refetch]);
   
+  // Mark data as loaded when we have servicePackage data
+  useEffect(() => {
+    if (isEditing && servicePackage && !isLoading && !isFetching) {
+      console.log('Package data loaded:', servicePackage);
+      setDataLoaded(true);
+    } else if (!isEditing) {
+      // For create mode, mark as loaded immediately
+      setDataLoaded(true);
+    }
+  }, [isEditing, servicePackage, isLoading, isFetching]);
+  
   // Reset state when dialog opens/closes or when switching between edit/create
   useEffect(() => {
     if (open) {
+      setFormDirty(false);
+      setFormInitialized(false);
+      setShowUnsavedDialog(false);
+      setPendingClose(false);
+      if (!isEditing) {
+        setDataLoaded(true);
+      }
+    } else {
+      // Reset all state when modal closes
+      setDataLoaded(false);
       setFormDirty(false);
       setFormInitialized(false);
       setShowUnsavedDialog(false);
@@ -79,6 +103,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   };
 
   const handleFormInitialized = () => {
+    console.log('Form initialized');
     setFormInitialized(true);
   };
 
@@ -88,6 +113,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
     queryClient.invalidateQueries({ queryKey: ["servicePackages"] });
     queryClient.invalidateQueries({ queryKey: ["servicePackage"] });
     setFormDirty(false);
+    setDataLoaded(false);
     onOpenChange(false);
   };
 
@@ -97,6 +123,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
       setShowUnsavedDialog(true);
       setPendingClose(true);
     } else {
+      setDataLoaded(false);
       onOpenChange(false);
     }
   };
@@ -104,6 +131,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   const handleDiscardChanges = () => {
     setShowUnsavedDialog(false);
     setFormDirty(false);
+    setDataLoaded(false);
     if (pendingClose) {
       setPendingClose(false);
       onOpenChange(false);
@@ -115,13 +143,25 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
     setPendingClose(false);
   };
 
-  // For editing mode, wait for data to load OR if there's no packageId
-  // For create mode, show form immediately
-  const shouldShowForm = !isEditing || (!isLoading && (servicePackage || !packageId));
+  // Show form when:
+  // 1. Create mode (not editing) - show immediately
+  // 2. Edit mode with data loaded and not loading
+  const shouldShowForm = !isEditing || (dataLoaded && !isLoading && !isFetching);
+  
+  console.log('Modal state:', {
+    isEditing,
+    dataLoaded,
+    isLoading,
+    isFetching,
+    shouldShowForm,
+    servicePackage: !!servicePackage,
+    open
+  });
   
   return (
     <>
       <Dialog 
+        key={packageId || 'new-package'} // Force new instance for each package
         open={open} 
         onOpenChange={(state) => {
           if (!state) {
