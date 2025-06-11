@@ -14,6 +14,11 @@ const Services = () => {
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
   const [packageDialogOpen, setPackageDialogOpen] = useState(false);
 
+  const handleServiceCreated = () => {
+    console.log('Service created/updated - closing dialog');
+    setServiceDialogOpen(false);
+  };
+
   return (
     <DashboardLayout>
       <TooltipProvider>
@@ -46,6 +51,7 @@ const Services = () => {
             <ServiceDialog 
               open={serviceDialogOpen}
               onOpenChange={setServiceDialogOpen}
+              onServiceCreated={handleServiceCreated}
             />
             
             <ServicePackageDialog 
