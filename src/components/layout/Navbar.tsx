@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useEffect, useState } from "react";
@@ -6,47 +5,21 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const isMobile = useIsMobile();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const handleLogout = async () => {
     try {
       console.log("Logging out user...");
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error("Error during logout:", error);
-        toast.error("Erro ao desconectar");
-        return;
-      }
-      
+      await signOut();
       console.log("User logged out successfully");
       toast.success("Desconectado com sucesso");
-      
-      // Clear user state immediately
-      setUser(null);
       
       // Navigate to login page
       navigate("/login");
