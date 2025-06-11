@@ -7,7 +7,7 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -36,6 +36,15 @@
     --ring: 221.2 83.2% 53.3%;
 
     --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
@@ -66,6 +75,15 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
+
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 216 34% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 216 34% 17%;
+    --sidebar-ring: 224.3 76.3% 48%;
   }
 }
 
@@ -76,7 +94,8 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-screen overflow-hidden;
+    @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
   /* Melhorar responsividade */
@@ -100,7 +119,7 @@
 
 @layer components {
   .kontrola-container {
-    @apply w-full px-4 sm:px-6 lg:px-8 mx-auto;
+    @apply w-full px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl;
   }
   
   .card-hover {
@@ -157,11 +176,6 @@ table {
   @apply w-full table-auto;
 }
 
-/* Cores específicas do tema Kontrola */
-.kontrola-50 {
-  @apply bg-blue-50 dark:bg-blue-900/30;
-}
-
 /* Formatação de espaços */
 .main-content {
   @apply px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8;
@@ -202,4 +216,18 @@ table {
 /* Estilo para agendamentos cancelados */
 .appointment-canceled {
   @apply opacity-60 border-dashed;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Landing page specific styles */
+.hero-gradient {
+  background: linear-gradient(135deg, hsl(var(--kontrola-50)) 0%, hsl(var(--background)) 50%, hsl(var(--kontrola-100)) 100%);
+}
+
+.dark .hero-gradient {
+  background: linear-gradient(135deg, hsl(var(--kontrola-900)) 0%, hsl(var(--background)) 50%, hsl(var(--kontrola-800)) 100%);
 }
