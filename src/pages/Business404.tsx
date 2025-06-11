@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-export const Business404: React.FC = () => {
+const Business404: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-md">
@@ -18,3 +18,5 @@ export const Business404: React.FC = () => {
     </div>
   );
 };
+
+export default Business404;
