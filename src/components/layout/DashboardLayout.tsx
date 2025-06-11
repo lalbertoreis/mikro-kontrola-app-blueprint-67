@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -16,11 +17,12 @@ import {
   Calendar,
   CreditCard,
   Menu,
-  X
+  X,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "next-themes";
+import { useThemeSettings } from "@/hooks/useThemeSettings";
 import NotificationIndicator from "@/components/notifications/NotificationIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -42,7 +44,7 @@ type MenuCategory = {
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { signOut } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme, isLoading: themeLoading } = useThemeSettings();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
@@ -86,10 +88,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   const handleLogout = () => {
     signOut();
-  };
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
   };
   
   // Close mobile menu when route changes
@@ -178,9 +176,23 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             className="justify-start w-full" 
             onClick={toggleTheme}
             size="sm"
+            disabled={themeLoading}
           >
-            {theme === "dark" ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
-            <span>{theme === "dark" ? "Modo Claro" : "Modo Escuro"}</span>
+            {themeLoading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : theme === "dark" ? (
+              <Sun className="h-4 w-4 mr-2" />
+            ) : (
+              <Moon className="h-4 w-4 mr-2" />
+            )}
+            <span>
+              {themeLoading 
+                ? "Alterando..." 
+                : theme === "dark" 
+                  ? "Modo Claro" 
+                  : "Modo Escuro"
+              }
+            </span>
           </Button>
           <Button 
             variant="outline" 
