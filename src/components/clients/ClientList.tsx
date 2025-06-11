@@ -22,7 +22,7 @@ const ClientList: React.FC = () => {
       const { data } = await supabase.auth.getUser();
       const userId = data.user?.id || null;
       setCurrentUser(userId);
-      console.log("Current user ID:", userId);
+      console.log("ClientList - Current user ID:", userId);
     };
     
     checkAuth();
@@ -30,13 +30,14 @@ const ClientList: React.FC = () => {
   
   // Log da lista de clientes quando ela mudar
   useEffect(() => {
-    console.log(`Displaying ${clients?.length || 0} clients`);
-  }, [clients]);
+    console.log(`ClientList - Displaying ${clients?.length || 0} clients for user:`, currentUser);
+    if (clients && clients.length > 0) {
+      console.log("ClientList - First client:", clients[0]);
+    }
+  }, [clients, currentUser]);
 
-  // Filter clients to exclude system clients - updated to be more comprehensive
-  const filteredClients = clients.filter(client => 
-    !client.name.includes("(Sistema)") && !client.name.includes("Bloqueio de Horário")
-  );
+  // Remove filtering of system clients since RLS should handle user separation
+  const filteredClients = clients;
 
   const handleDelete = async () => {
     if (clientToDelete) {
@@ -62,9 +63,19 @@ const ClientList: React.FC = () => {
   };
 
   if (error) {
+    console.error("ClientList - Error loading clients:", error);
     return (
       <div className="text-center py-10 text-red-500">
         Erro ao carregar clientes. Por favor, tente novamente.
+      </div>
+    );
+  }
+
+  // Show message if user is not authenticated
+  if (!currentUser) {
+    return (
+      <div className="text-center py-10 text-muted-foreground">
+        Você precisa estar logado para ver seus clientes.
       </div>
     );
   }

@@ -15,7 +15,7 @@ export async function fetchClients(): Promise<Client[]> {
     
     console.log("Authenticated user ID:", userData.user.id);
     
-    // Get all clients with their last appointment date
+    // Get clients filtered by RLS policies - only user's own clients will be returned
     const { data, error } = await supabase
       .from('clients')
       .select(`
@@ -29,7 +29,7 @@ export async function fetchClients(): Promise<Client[]> {
       throw error;
     }
     
-    console.log(`Fetched ${data?.length || 0} clients`);
+    console.log(`Fetched ${data?.length || 0} clients for user ${userData.user.id}`);
     
     return data.map(item => {
       // Get the most recent appointment date if any
@@ -105,6 +105,8 @@ export async function createClient(clientData: ClientFormData): Promise<Client> 
       throw new Error('User not authenticated');
     }
     
+    console.log("Creating client for user:", user.data.user.id);
+    
     const { data, error } = await supabase
       .from('clients')
       .insert({
@@ -114,12 +116,14 @@ export async function createClient(clientData: ClientFormData): Promise<Client> 
         cep,
         address,
         notes,
-        user_id: user.data.user.id
+        user_id: user.data.user.id // Garantir que o cliente seja vinculado ao usuário atual
       })
       .select()
       .single();
     
     if (error) throw error;
+    
+    console.log("Client created successfully:", data.id);
     
     return {
       id: data.id,

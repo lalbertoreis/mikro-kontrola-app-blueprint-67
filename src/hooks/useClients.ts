@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
@@ -20,13 +19,16 @@ export function useClients() {
   useEffect(() => {
     async function getUserId() {
       const { data } = await supabase.auth.getUser();
-      setUserId(data.user?.id || null);
+      const currentUserId = data.user?.id || null;
+      setUserId(currentUserId);
+      console.log("useClients - Current user ID:", currentUserId);
     }
     getUserId();
 
     // Configurar listener para mudanças de autenticação
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       const newUserId = session?.user?.id || null;
+      console.log("useClients - Auth state changed, new user ID:", newUserId);
       if (newUserId !== userId) {
         setUserId(newUserId);
         // Invalidar cache quando o usuário mudar
@@ -39,12 +41,22 @@ export function useClients() {
     };
   }, [queryClient, userId]);
   
-  // Verifique se o usuário está autenticado antes de buscar clientes
+  // Buscar clientes apenas se o usuário estiver autenticado
   const { data: clients = [], isLoading, error } = useQuery({
     queryKey: ["clients", userId],
-    queryFn: fetchClients,
+    queryFn: () => {
+      console.log("useClients - Fetching clients for user:", userId);
+      return fetchClients();
+    },
     enabled: !!userId, // Só busca se o usuário estiver autenticado
   });
+
+  // Log do número de clientes retornados
+  useEffect(() => {
+    if (clients) {
+      console.log(`useClients - Loaded ${clients.length} clients for user:`, userId);
+    }
+  }, [clients, userId]);
 
   const createMutation = useMutation({
     mutationFn: (newClient: ClientFormData) => createClient(newClient),
