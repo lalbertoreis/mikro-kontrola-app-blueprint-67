@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import PrivateRoute from "@/components/auth/PrivateRoute";
 
 // Import pages
 import Index from "./pages/Index";
@@ -42,23 +43,76 @@ function App() {
             <TooltipProvider>
               <Toaster />
               <Routes>
+                {/* Public routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/dashboard/calendar" element={<Calendar />} />
-                <Route path="/dashboard/clients" element={<Clients />} />
-                <Route path="/dashboard/services" element={<Services />} />
-                <Route path="/dashboard/settings" element={<Settings />} />
-                <Route path="/dashboard/employees" element={<Employees />} />
-                <Route path="/dashboard/finance" element={<Finance />} />
-                <Route path="/dashboard/holidays" element={<Holidays />} />
-                <Route path="/dashboard/notifications" element={<Notifications />} />
-                <Route path="/dashboard/payment-methods" element={<PaymentMethods />} />
-                <Route path="/dashboard/fixed-costs" element={<FixedCosts />} />
-                <Route path="/dashboard/service-packages" element={<ServicePackages />} />
                 <Route path="/booking/:slug" element={<PublicBooking />} />
                 <Route path="/booking-not-found" element={<Business404 />} />
+                
+                {/* Protected routes */}
+                <Route path="/dashboard" element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/calendar" element={
+                  <PrivateRoute>
+                    <Calendar />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/clients" element={
+                  <PrivateRoute>
+                    <Clients />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/services" element={
+                  <PrivateRoute>
+                    <Services />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/settings" element={
+                  <PrivateRoute>
+                    <Settings />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/employees" element={
+                  <PrivateRoute>
+                    <Employees />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/finance" element={
+                  <PrivateRoute>
+                    <Finance />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/holidays" element={
+                  <PrivateRoute>
+                    <Holidays />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/notifications" element={
+                  <PrivateRoute>
+                    <Notifications />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/payment-methods" element={
+                  <PrivateRoute>
+                    <PaymentMethods />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/fixed-costs" element={
+                  <PrivateRoute>
+                    <FixedCosts />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/service-packages" element={
+                  <PrivateRoute>
+                    <ServicePackages />
+                  </PrivateRoute>
+                } />
+                
+                {/* 404 route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </TooltipProvider>

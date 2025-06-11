@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useEffect, useState } from "react";
@@ -18,11 +19,10 @@ const Navbar = () => {
     try {
       console.log("Logging out user...");
       await signOut();
-      console.log("User logged out successfully");
-      toast.success("Desconectado com sucesso");
+      console.log("User logged out successfully, redirecting to login...");
       
-      // Navigate to login page
-      navigate("/login");
+      // Navigate to login page immediately after successful logout
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Unexpected error during logout:", error);
       toast.error("Erro ao desconectar");
