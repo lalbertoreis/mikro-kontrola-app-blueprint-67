@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchServicePackageById } from "@/services/packageService";
 
 interface ServicePackageDialogProps {
@@ -34,10 +34,15 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   packageId,
   servicePackage: externalPackage,
 }) => {
-  const { data: fetchedPackage, isLoading } = useQuery({
+  const queryClient = useQueryClient();
+  
+  // Force refetch when modal opens
+  const { data: fetchedPackage, isLoading, refetch } = useQuery({
     queryKey: ["servicePackage", packageId],
     queryFn: () => packageId ? fetchServicePackageById(packageId) : null,
     enabled: !!packageId && open,
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache the data
   });
   
   const servicePackage = externalPackage || fetchedPackage;
@@ -46,6 +51,15 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
   const [formInitialized, setFormInitialized] = useState(false);
+  
+  // Force data refresh when modal opens with packageId
+  useEffect(() => {
+    if (open && packageId) {
+      // Invalidate and refetch the data
+      queryClient.invalidateQueries({ queryKey: ["servicePackage", packageId] });
+      refetch();
+    }
+  }, [open, packageId, queryClient, refetch]);
   
   // Reset state when dialog opens/closes or when switching between edit/create
   useEffect(() => {
@@ -70,6 +84,9 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
 
   const handleFormSuccess = () => {
     console.log('Package form success - resetting dirty state and closing');
+    // Invalidate all package queries to ensure fresh data
+    queryClient.invalidateQueries({ queryKey: ["servicePackages"] });
+    queryClient.invalidateQueries({ queryKey: ["servicePackage"] });
     setFormDirty(false);
     onOpenChange(false);
   };
@@ -98,8 +115,9 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
     setPendingClose(false);
   };
 
-  // Don't render the form until data is loaded for editing mode
-  const shouldShowForm = !isEditing || !isLoading;
+  // For editing mode, wait for data to load OR if there's no packageId
+  // For create mode, show form immediately
+  const shouldShowForm = !isEditing || (!isLoading && (servicePackage || !packageId));
   
   return (
     <>
