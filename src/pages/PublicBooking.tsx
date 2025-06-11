@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Business404 } from "@/pages/Business404";
+import Business404 from "@/pages/Business404";
 import { usePublicBooking } from "@/hooks/booking/usePublicBooking";
 import BookingLayout from "@/components/booking/public/BookingLayout";
 import ServicesList from "@/components/booking/public/ServicesList";
