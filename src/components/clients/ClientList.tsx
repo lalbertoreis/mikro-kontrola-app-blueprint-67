@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useClients } from "@/hooks/useClients";
 import { toast } from "sonner";
 import { AlertDialog } from "@/components/ui/alert-dialog";
@@ -7,7 +7,6 @@ import ClientDialog from "./ClientDialog";
 import ClientSearchBar from "./ClientSearchBar";
 import ClientTable from "./ClientTable";
 import ClientDeleteDialog from "./ClientDeleteDialog";
-import { useAuth } from "@/contexts/AuthContext";
 
 const ClientList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,25 +14,6 @@ const ClientList: React.FC = () => {
   const [clientToDelete, setClientToDelete] = useState<{ id: string; name: string } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | undefined>(undefined);
-  const { user } = useAuth();
-
-  // Log informações sobre o usuário atual
-  useEffect(() => {
-    if (user) {
-      console.log("ClientList - Current user ID:", user.id);
-    }
-  }, [user]);
-  
-  // Log da lista de clientes quando ela mudar
-  useEffect(() => {
-    console.log(`ClientList - Displaying ${clients?.length || 0} clients for user:`, user?.id);
-    if (clients && clients.length > 0) {
-      console.log("ClientList - First client:", clients[0]);
-    }
-  }, [clients, user?.id]);
-
-  // RLS will automatically filter clients by user, no need for manual filtering
-  const filteredClients = clients;
 
   const handleDelete = async () => {
     if (clientToDelete) {
@@ -67,15 +47,6 @@ const ClientList: React.FC = () => {
     );
   }
 
-  // Show message if user is not authenticated
-  if (!user) {
-    return (
-      <div className="text-center py-10 text-muted-foreground">
-        Você precisa estar logado para ver seus clientes.
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <ClientSearchBar 
@@ -85,7 +56,7 @@ const ClientList: React.FC = () => {
       />
 
       <ClientTable 
-        clients={filteredClients} 
+        clients={clients} 
         isLoading={isLoading}
         searchTerm={searchTerm}
         onEditClient={handleEdit}

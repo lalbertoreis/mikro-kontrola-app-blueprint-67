@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
@@ -8,55 +9,14 @@ import {
   deleteClient 
 } from "@/services/clientService";
 import type { Client, ClientFormData } from "@/types/client";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
 
 export function useClients() {
   const queryClient = useQueryClient();
-  const [userId, setUserId] = useState<string | null>(null);
   
-  // Obter o ID do usuário atual
-  useEffect(() => {
-    async function getUserId() {
-      const { data } = await supabase.auth.getUser();
-      const currentUserId = data.user?.id || null;
-      setUserId(currentUserId);
-      console.log("useClients - Current user ID:", currentUserId);
-    }
-    getUserId();
-
-    // Configurar listener para mudanças de autenticação
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const newUserId = session?.user?.id || null;
-      console.log("useClients - Auth state changed, new user ID:", newUserId);
-      if (newUserId !== userId) {
-        setUserId(newUserId);
-        // Invalidar cache quando o usuário mudar
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [queryClient, userId]);
-  
-  // Buscar clientes apenas se o usuário estiver autenticado
   const { data: clients = [], isLoading, error } = useQuery({
-    queryKey: ["clients", userId],
-    queryFn: () => {
-      console.log("useClients - Fetching clients for user:", userId);
-      return fetchClients();
-    },
-    enabled: !!userId, // Só busca se o usuário estiver autenticado
+    queryKey: ["clients"],
+    queryFn: fetchClients,
   });
-
-  // Log do número de clientes retornados
-  useEffect(() => {
-    if (clients) {
-      console.log(`useClients - Loaded ${clients.length} clients for user:`, userId);
-    }
-  }, [clients, userId]);
 
   const createMutation = useMutation({
     mutationFn: (newClient: ClientFormData) => createClient(newClient),

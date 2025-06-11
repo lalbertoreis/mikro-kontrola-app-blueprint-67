@@ -49,13 +49,6 @@ export default function CalendarView() {
   const { employees } = useEmployees();
   const isMobile = useIsMobile();
 
-  // Log para verificar se os dados estão sendo filtrados corretamente
-  React.useEffect(() => {
-    if (user && appointments) {
-      console.log(`Calendar - Displaying ${appointments.length} appointments for user:`, user.id);
-    }
-  }, [user, appointments]);
-
   const appointmentsWithDetails = useFilteredAppointments({
     appointments,
     selectedEmployee,
