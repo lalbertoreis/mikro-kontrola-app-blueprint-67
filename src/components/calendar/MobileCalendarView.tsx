@@ -39,6 +39,10 @@ interface MobileCalendarViewProps {
   onToggleHideCanceled: () => void;
   onNewAppointment: () => void;
   onBlockTime: () => void;
+  onGoToToday: () => void;
+  onNavigatePrevious: () => void;
+  onNavigateNext: () => void;
+  onToggleMaximized: () => void;
   isLoading: boolean;
 }
 
