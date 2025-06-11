@@ -49,10 +49,13 @@ export async function registerAppointmentPayment(
       throw new Error('Não foi possível registrar o pagamento');
     }
     
-    // Update appointment status to completed
+    // Update appointment status to completed (blue color)
     const { error: updateError } = await supabase
       .from('appointments')
-      .update({ status: 'completed' })
+      .update({ 
+        status: 'completed',
+        updated_at: new Date().toISOString()
+      })
       .eq('id', appointmentId);
       
     if (updateError) {

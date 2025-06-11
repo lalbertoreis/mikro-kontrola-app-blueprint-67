@@ -21,11 +21,11 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600';
+        return 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600';
       case 'confirmed':
         return 'bg-green-500 hover:bg-green-600 text-white border-green-600';
       case 'completed':
-        return 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600';
+        return 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600';
       case 'canceled':
         return 'bg-red-500 hover:bg-red-600 text-white border-red-600';
       case 'no-show':
@@ -33,7 +33,7 @@ const AppointmentChip: React.FC<AppointmentChipProps> = ({
       case 'blocked':
         return 'bg-gray-500 hover:bg-gray-600 text-white border-gray-600';
       default:
-        return 'bg-slate-500 hover:bg-slate-600 text-white border-slate-600';
+        return 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600';
     }
   };
 

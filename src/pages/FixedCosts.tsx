@@ -2,6 +2,7 @@
 import React from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FixedCostList } from "@/components/finance/FixedCostList";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const FixedCosts: React.FC = () => {
   return (
@@ -14,7 +15,11 @@ const FixedCosts: React.FC = () => {
           </p>
         </div>
         
-        <FixedCostList />
+        <Card className="bg-background">
+          <CardContent className="p-6">
+            <FixedCostList />
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

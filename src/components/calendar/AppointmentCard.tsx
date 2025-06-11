@@ -25,24 +25,46 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, colorCla
   // Status colors
   const getStatusColor = () => {
     switch (appointment.status) {
+      case 'scheduled':
+        return "bg-yellow-500";
       case 'confirmed':
         return "bg-green-500";
+      case 'completed':
+        return "bg-blue-500";
       case 'canceled':
         return "bg-red-500";
       case 'no-show':
         return "bg-amber-500";
-      case 'completed':
-        return "bg-blue-500";
       case 'blocked':
         return "bg-red-500";
       default:
-        return "bg-gray-500";
+        return "bg-yellow-500";
+    }
+  };
+
+  // Get card background color based on status
+  const getCardBackgroundColor = () => {
+    switch (appointment.status) {
+      case 'scheduled':
+        return "bg-yellow-100 border-yellow-600 text-yellow-800";
+      case 'confirmed':
+        return "bg-green-100 border-green-600 text-green-800";
+      case 'completed':
+        return "bg-blue-100 border-blue-600 text-blue-800";
+      case 'canceled':
+        return "bg-red-100 border-red-600 text-red-800";
+      case 'no-show':
+        return "bg-amber-100 border-amber-600 text-amber-800";
+      case 'blocked':
+        return "bg-red-100 border-red-600 text-red-800";
+      default:
+        return "bg-yellow-100 border-yellow-600 text-yellow-800";
     }
   };
 
   // Verificar se é um bloqueio e ajustar classe CSS
   const isBlocked = appointment.status === 'blocked';
-  const cardColorClass = isBlocked ? "bg-red-100 border-red-600 text-red-800" : colorClass;
+  const cardColorClass = isBlocked ? "bg-red-100 border-red-600 text-red-800" : getCardBackgroundColor();
 
   // Access service, client and employee data safely
   const serviceName = appointment.service?.name ?? "Serviço não especificado";
