@@ -36,7 +36,7 @@ export const useThemeSettings = () => {
     };
 
     loadUserTheme();
-  }, [user, setTheme]);
+  }, [user, setTheme, theme]);
 
   // Salvar tema no banco de dados
   const saveTheme = async (newTheme: string) => {

@@ -471,6 +471,7 @@ export type Database = {
           instagram: string | null
           last_name: string | null
           slug: string | null
+          theme_preference: string | null
           updated_at: string | null
           whatsapp: string | null
         }
@@ -492,6 +493,7 @@ export type Database = {
           instagram?: string | null
           last_name?: string | null
           slug?: string | null
+          theme_preference?: string | null
           updated_at?: string | null
           whatsapp?: string | null
         }
@@ -513,6 +515,7 @@ export type Database = {
           instagram?: string | null
           last_name?: string | null
           slug?: string | null
+          theme_preference?: string | null
           updated_at?: string | null
           whatsapp?: string | null
         }
