@@ -22,6 +22,7 @@ export async function fetchAppointments(): Promise<Appointment[]> {
         service:services(id, name, duration, price),
         client:clients(id, name, phone, email)
       `)
+      .eq('user_id', userData.user.id)
       .order('start_time');
     
     if (error) {
@@ -98,6 +99,7 @@ export async function fetchAppointmentById(id: string): Promise<Appointment | nu
         client:client_id(id, name, phone, email)
       `)
       .eq('id', id)
+      .eq('user_id', userData.user.id)
       .single();
     
     if (error) throw error;
