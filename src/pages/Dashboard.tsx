@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import ProtectedDashboardOverview from "@/components/dashboard/ProtectedDashboardOverview";
+import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, CalendarRange } from "lucide-react";
@@ -11,7 +11,7 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <ProtectedDashboardOverview />
+        <DashboardOverview />
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card data-menu="clients">
