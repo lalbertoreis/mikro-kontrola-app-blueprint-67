@@ -26,11 +26,18 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
   };
 
   const handleSuccess = () => {
-    console.log('Service form success - calling onServiceCreated and closing dialog');
-    // Primeiro notificar que o serviço foi criado
-    onServiceCreated?.();
+    console.log('Service form success - calling onServiceCreated');
+    // Primeiro notificar que o serviço foi criado/atualizado
+    if (onServiceCreated) {
+      onServiceCreated();
+    }
     // Depois fechar o dialog
-    handleClose();
+    onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    console.log('Service form cancelled - closing dialog');
+    onOpenChange(false);
   };
 
   return (
@@ -45,6 +52,7 @@ const ServiceDialog: React.FC<ServiceDialogProps> = ({
           service={service}
           onSuccess={handleSuccess}
           onSubmittingChange={setIsSubmitting}
+          onCancel={handleCancel}
         />
       </DialogContent>
     </Dialog>

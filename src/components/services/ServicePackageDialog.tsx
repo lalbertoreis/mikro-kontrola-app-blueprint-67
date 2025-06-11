@@ -34,10 +34,10 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   packageId,
   servicePackage: externalPackage,
 }) => {
-  const { data: fetchedPackage } = useQuery({
+  const { data: fetchedPackage, isLoading } = useQuery({
     queryKey: ["servicePackage", packageId],
     queryFn: () => packageId ? fetchServicePackageById(packageId) : null,
-    enabled: !!packageId,
+    enabled: !!packageId && open,
   });
   
   const servicePackage = externalPackage || fetchedPackage;
@@ -58,9 +58,7 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
   }, [open, isEditing]);
 
   const handleFormChange = () => {
-    // Only mark as dirty if:
-    // 1. We're editing an existing package, AND
-    // 2. The form has been properly initialized
+    // Only mark as dirty if we're editing an existing package AND form is initialized
     if (isEditing && formInitialized) {
       setFormDirty(true);
     }
@@ -68,6 +66,12 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
 
   const handleFormInitialized = () => {
     setFormInitialized(true);
+  };
+
+  const handleFormSuccess = () => {
+    console.log('Package form success - resetting dirty state and closing');
+    setFormDirty(false);
+    onOpenChange(false);
   };
 
   const handleCloseAttempt = () => {
@@ -93,6 +97,9 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
     setShowUnsavedDialog(false);
     setPendingClose(false);
   };
+
+  // Don't render the form until data is loaded for editing mode
+  const shouldShowForm = !isEditing || !isLoading;
   
   return (
     <>
@@ -112,12 +119,23 @@ const ServicePackageDialog: React.FC<ServicePackageDialogProps> = ({
               {isEditing ? "Editar Pacote" : "Novo Pacote"}
             </DialogTitle>
           </DialogHeader>
-          <ServicePackageForm 
-            servicePackage={servicePackage} 
-            onFormChange={handleFormChange}
-            onFormInitialized={handleFormInitialized}
-            onClose={handleCloseAttempt}
-          />
+          
+          {shouldShowForm ? (
+            <ServicePackageForm 
+              servicePackage={servicePackage} 
+              onFormChange={handleFormChange}
+              onFormInitialized={handleFormInitialized}
+              onClose={handleCloseAttempt}
+              onSuccess={handleFormSuccess}
+            />
+          ) : (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Carregando dados do pacote...</p>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

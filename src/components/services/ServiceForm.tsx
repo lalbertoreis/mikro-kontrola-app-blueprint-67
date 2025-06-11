@@ -40,22 +40,22 @@ const formSchema = z.object({
 interface ServiceFormProps {
   service?: Service | null;
   onFormChange?: () => void;
-  onClose?: () => void;
   onSuccess?: () => void;
   onSubmittingChange?: (isSubmitting: boolean) => void;
+  onCancel?: () => void;
 }
 
 const ServiceForm: React.FC<ServiceFormProps> = ({
   service,
   onFormChange,
-  onClose,
   onSuccess,
-  onSubmittingChange
+  onSubmittingChange,
+  onCancel
 }) => {
   const navigate = useNavigate();
   const { createService, updateService, isCreating, isUpdating } = useServices();
   const isEditing = Boolean(service?.id);
-  const isDialogMode = Boolean(onClose);
+  const isDialogMode = Boolean(onSuccess);
   const isSubmitting = isCreating || isUpdating;
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -119,7 +119,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
         toast.success("Serviço cadastrado com sucesso!");
       }
       
-      if (isDialogMode && onSuccess) {
+      // Chamar callback de sucesso ou navegar
+      if (onSuccess) {
         onSuccess();
       } else {
         navigate("/dashboard/services");
@@ -131,6 +132,14 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
           ? "Erro ao atualizar serviço. Tente novamente."
           : "Erro ao cadastrar serviço. Tente novamente."
       );
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      navigate("/dashboard/services");
     }
   };
 
@@ -261,16 +270,16 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
           <Button 
             type="button" 
             variant="outline" 
-            onClick={isDialogMode && onClose ? onClose : () => navigate("/dashboard/services")}
-            disabled={isCreating || isUpdating}
+            onClick={handleCancel}
+            disabled={isSubmitting}
           >
             Cancelar
           </Button>
           <Button 
             type="submit"
-            disabled={isCreating || isUpdating}
+            disabled={isSubmitting}
           >
-            {(isCreating || isUpdating) && (
+            {isSubmitting && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
             {isEditing ? "Atualizar" : "Cadastrar"}

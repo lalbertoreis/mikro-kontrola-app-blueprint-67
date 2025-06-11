@@ -44,13 +44,15 @@ interface ServicePackageFormProps {
   onFormChange?: () => void;
   onFormInitialized?: () => void;
   onClose?: () => void;
+  onSuccess?: () => void;
 }
 
 const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
   servicePackage,
   onFormChange,
   onFormInitialized,
-  onClose
+  onClose,
+  onSuccess
 }) => {
   const { toast } = useToast();
   const { services } = useServices();
@@ -190,7 +192,12 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
         await createPackage(packageData);
       }
 
-      if (onClose) onClose();
+      // Call success callback or close
+      if (onSuccess) {
+        onSuccess();
+      } else if (onClose) {
+        onClose();
+      }
     } catch (error) {
       console.error("Error submitting package:", error);
       toast({
