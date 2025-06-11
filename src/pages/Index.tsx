@@ -18,6 +18,16 @@ const Index = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header/Navbar fixo */}
@@ -32,15 +42,24 @@ const Index = () => {
 
             {/* Navigation - Desktop */}
             <nav className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+              <button 
+                onClick={() => scrollToSection('features')} 
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
                 Funcionalidades
-              </a>
-              <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
+              </button>
+              <button 
+                onClick={() => scrollToSection('testimonials')} 
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
                 Depoimentos
-              </a>
-              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+              </button>
+              <button 
+                onClick={() => scrollToSection('pricing')} 
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
                 Preços
-              </a>
+              </button>
             </nav>
 
             {/* Actions */}
@@ -82,9 +101,15 @@ const Index = () => {
       {/* Conteúdo Principal */}
       <main className="pt-16 md:pt-20">
         <NewHeroSection />
-        <ModernFeaturesSection />
-        <ModernTestimonialsSection />
-        <ModernPricingSection />
+        <div id="features">
+          <ModernFeaturesSection />
+        </div>
+        <div id="testimonials">
+          <ModernTestimonialsSection />
+        </div>
+        <div id="pricing">
+          <ModernPricingSection />
+        </div>
         <ModernCTASection />
       </main>
 

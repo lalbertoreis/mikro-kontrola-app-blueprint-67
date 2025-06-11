@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, CreditCard, CheckCircle, ArrowRight, Star, Play } from "lucide-react";
+import { Calendar, Users, CreditCard, CheckCircle, ArrowRight, Star } from "lucide-react";
 
 const NewHeroSection = () => {
   return (
@@ -54,17 +54,13 @@ const NewHeroSection = () => {
             </div>
 
             {/* Call to Action */}
-            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4 justify-center lg:justify-start">
+            <div className="flex justify-center lg:justify-start pt-4">
               <Link to="/register" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto bg-kontrola-600 hover:bg-kontrola-700 dark:bg-kontrola-500 dark:hover:bg-kontrola-600 text-base md:text-lg px-6 md:px-8 py-3 md:py-4 h-auto">
                   Comece Gratuitamente
                   <ArrowRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8 py-3 md:py-4 h-auto border-kontrola-300 dark:border-kontrola-600 hover:bg-kontrola-50 dark:hover:bg-kontrola-800">
-                <Play className="mr-2 w-4 h-4 md:w-5 md:h-5" />
-                Ver Demonstração
-              </Button>
             </div>
 
             {/* Social Proof */}

@@ -46,8 +46,8 @@ const ModernCTASection = () => {
             </div>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+          {/* CTA Button */}
+          <div className="flex justify-center">
             <Link to="/register">
               <Button 
                 size="lg" 
@@ -55,15 +55,6 @@ const ModernCTASection = () => {
               >
                 Começar Gratuitamente
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="#demo">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-white text-white hover:bg-white hover:text-kontrola-700 text-lg px-8 py-4 h-auto font-semibold"
-              >
-                Ver Demonstração
               </Button>
             </Link>
           </div>
