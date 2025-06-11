@@ -160,6 +160,7 @@ export default function CalendarView() {
             onNavigatePrevious={navigatePrevious}
             onNavigateNext={navigateNext}
             onToggleMaximized={toggleMaximized}
+            isLoading={isLoading}
           />
 
           <CalendarDialogs
