@@ -10,7 +10,9 @@ import PeriodSelector from "./PeriodSelector";
 import TimeSlotSelector from "./TimeSlotSelector";
 import ServiceInfo from "./ServiceInfo";
 import BookingSummary from "./BookingSummary";
+import MobileBookingSteps from "./MobileBookingSteps";
 import { useServicePackages } from "@/hooks/useServicePackages";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BookingDateTimeStepProps {
   service: Service;
@@ -34,6 +36,7 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   const [selectedPeriod, setSelectedPeriod] = useState<"morning" | "afternoon" | "evening" | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
+  const isMobile = useIsMobile();
   
   const { packages } = useServicePackages();
 
@@ -118,6 +121,20 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
     }
   };
 
+  // Se for mobile, usar o layout de etapas
+  if (isMobile) {
+    return (
+      <MobileBookingSteps
+        service={service}
+        employees={availableEmployees}
+        onBookingConfirm={onBookingConfirm}
+        themeColor={themeColor}
+        businessSlug={businessSlug}
+      />
+    );
+  }
+
+  // Layout desktop (mantém o código existente)
   return (
     <div>
       <h2 className="text-xl font-bold mb-4" style={{ color: themeColor }}>
