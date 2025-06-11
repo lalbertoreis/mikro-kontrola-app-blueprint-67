@@ -1,11 +1,11 @@
 
-import React from "react";
-import { format, isSameDay, isToday } from "date-fns";
+import React, { useState } from "react";
+import { format, isSameDay, isToday, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Filter, Calendar, Clock } from "lucide-react";
+import { Plus, Filter, Calendar, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { AppointmentWithDetails, CalendarViewOptions } from "@/types/calendar";
 import { Employee } from "@/types/employee";
 import {
@@ -22,6 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -62,6 +68,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   onBlockTime,
   isLoading,
 }) => {
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date>(currentDate);
+
   const todayAppointments = appointments.filter(appointment =>
     isSameDay(new Date(appointment.start), currentDate)
   );
@@ -78,6 +87,30 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   };
 
   const selectedEmployee_ = employees.find(emp => emp.id === selectedEmployee);
+
+  const handlePreviousDay = () => {
+    const previousDay = subDays(currentDate, 1);
+    setSelectedCalendarDate(previousDay);
+    // Simulate the navigation by updating the date through existing props
+    // This will trigger the parent component to update currentDate
+    onSelectTimeSlot(previousDay);
+  };
+
+  const handleNextDay = () => {
+    const nextDay = addDays(currentDate, 1);
+    setSelectedCalendarDate(nextDay);
+    // Simulate the navigation by updating the date through existing props
+    onSelectTimeSlot(nextDay);
+  };
+
+  const handleCalendarDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedCalendarDate(date);
+      setCalendarOpen(false);
+      // Update the parent component's date
+      onSelectTimeSlot(date);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col p-4 space-y-4">
@@ -148,21 +181,60 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         </Sheet>
       </div>
 
-      {/* Current Day Header */}
+      {/* Date Navigation Header */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">
-                {format(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {isToday(currentDate) ? "Hoje" : format(currentDate, "yyyy")}
-              </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousDay}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" className="font-medium text-left">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {format(currentDate, "dd/MM/yyyy")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedCalendarDate}
+                    onSelect={handleCalendarDateSelect}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextDay}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
+            
             <Badge variant="outline">
               {todayAppointments.length} agendamento{todayAppointments.length !== 1 ? 's' : ''}
             </Badge>
+          </div>
+          
+          <div className="mt-2">
+            <h3 className="text-lg font-semibold">
+              {format(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {isToday(currentDate) ? "Hoje" : format(currentDate, "yyyy")}
+            </p>
           </div>
         </CardHeader>
       </Card>
@@ -180,7 +252,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
           <Card>
             <CardContent className="py-8 text-center">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nenhum agendamento para hoje</p>
+              <p className="text-muted-foreground">Nenhum agendamento para esta data</p>
               <Button 
                 onClick={() => onSelectTimeSlot(currentDate)} 
                 variant="outline" 

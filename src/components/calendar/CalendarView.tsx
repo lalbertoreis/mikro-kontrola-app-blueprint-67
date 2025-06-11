@@ -19,6 +19,7 @@ export default function CalendarView() {
     view,
     setView,
     currentDate,
+    setCurrentDate,
     selectedEmployee,
     setSelectedEmployee,
     appointmentDialogOpen,
@@ -55,8 +56,15 @@ export default function CalendarView() {
     hideCanceled,
   });
 
-  // Handler for selecting a time slot (to open new appointment)
+  // Handler for selecting a time slot (to open new appointment or navigate to date)
   const handleSelectTimeSlot = (date: Date, hour?: number) => {
+    // If it's just a date selection (no hour), update the current date
+    if (!hour) {
+      setCurrentDate(date);
+      return;
+    }
+    
+    // If it includes an hour, open the appointment dialog
     setSelectedTimeSlot({ date, hour });
     handleOpenNewAppointment();
   };
@@ -170,7 +178,7 @@ export default function CalendarView() {
               setAppointmentDialogOpen(false);
               setSelectedTimeSlot(null);
             }}
-            onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+            onBlockTimeDialogClose={() => setBlockTimeDialogClose(false)}
             onActionsDialogOpenChange={setActionsDialogOpen}
             onEditAppointment={handleEditAppointment}
           />
