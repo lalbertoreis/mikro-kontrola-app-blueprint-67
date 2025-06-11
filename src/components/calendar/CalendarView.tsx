@@ -11,8 +11,10 @@ import { useFilteredAppointments } from "./CalendarFilters";
 import { useIsMobile } from "@/hooks/use-mobile";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CalendarView() {
+  const { user } = useAuth();
   const {
     view,
     setView,
@@ -47,6 +49,13 @@ export default function CalendarView() {
   const { employees } = useEmployees();
   const isMobile = useIsMobile();
 
+  // Log para verificar se os dados estão sendo filtrados corretamente
+  React.useEffect(() => {
+    if (user && appointments) {
+      console.log(`Calendar - Displaying ${appointments.length} appointments for user:`, user.id);
+    }
+  }, [user, appointments]);
+
   const appointmentsWithDetails = useFilteredAppointments({
     appointments,
     selectedEmployee,
@@ -58,6 +67,17 @@ export default function CalendarView() {
     setSelectedTimeSlot({ date, hour });
     handleOpenNewAppointment();
   };
+
+  // Show message if user is not authenticated
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-10 text-muted-foreground">
+          Você precisa estar logado para ver a agenda.
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   // Maximized layout (fullscreen)
   if (isMaximized) {
@@ -136,7 +156,10 @@ export default function CalendarView() {
             onToggleHideCanceled={toggleHideCanceled}
             onNewAppointment={handleOpenNewAppointment}
             onBlockTime={handleOpenBlockTime}
-            isLoading={isLoading}
+            onGoToToday={goToToday}
+            onNavigatePrevious={navigatePrevious}
+            onNavigateNext={navigateNext}
+            onToggleMaximized={toggleMaximized}
           />
 
           <CalendarDialogs
@@ -162,10 +185,10 @@ export default function CalendarView() {
     );
   }
 
-  // Desktop layout with sidebar (normal mode)
+  // Desktop layout
   return (
     <DashboardLayout>
-      <div className="h-full w-full">
+      <TooltipProvider>
         <CalendarLayout
           view={view}
           onViewChange={setView}
@@ -214,7 +237,7 @@ export default function CalendarView() {
             onEditAppointment={handleEditAppointment}
           />
         </CalendarLayout>
-      </div>
+      </TooltipProvider>
     </DashboardLayout>
   );
 }

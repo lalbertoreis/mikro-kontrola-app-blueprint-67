@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Client, ClientFormData } from "@/types/client";
 
@@ -15,14 +14,13 @@ export async function fetchClients(): Promise<Client[]> {
     
     console.log("Authenticated user ID:", userData.user.id);
     
-    // Get clients filtered by user_id explicitly - RLS should also enforce this
+    // Get clients filtered by user_id - RLS will enforce this automatically
     const { data, error } = await supabase
       .from('clients')
       .select(`
         *,
         appointments:appointments(start_time)
       `)
-      .eq('user_id', userData.user.id) // Explicitly filter by user_id
       .order('name');
     
     if (error) {
@@ -74,7 +72,6 @@ export async function fetchClientById(id: string): Promise<Client | null> {
         appointments:appointments(start_time)
       `)
       .eq('id', id)
-      .eq('user_id', userData.user.id) // Ensure user can only access their own clients
       .single();
     
     if (error) throw error;

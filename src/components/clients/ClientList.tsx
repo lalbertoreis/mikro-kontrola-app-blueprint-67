@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
 import { toast } from "sonner";
@@ -6,7 +7,7 @@ import ClientDialog from "./ClientDialog";
 import ClientSearchBar from "./ClientSearchBar";
 import ClientTable from "./ClientTable";
 import ClientDeleteDialog from "./ClientDeleteDialog";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ClientList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -14,29 +15,24 @@ const ClientList: React.FC = () => {
   const [clientToDelete, setClientToDelete] = useState<{ id: string; name: string } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | undefined>(undefined);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const { user } = useAuth();
 
   // Log informações sobre o usuário atual
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id || null;
-      setCurrentUser(userId);
-      console.log("ClientList - Current user ID:", userId);
-    };
-    
-    checkAuth();
-  }, []);
+    if (user) {
+      console.log("ClientList - Current user ID:", user.id);
+    }
+  }, [user]);
   
   // Log da lista de clientes quando ela mudar
   useEffect(() => {
-    console.log(`ClientList - Displaying ${clients?.length || 0} clients for user:`, currentUser);
+    console.log(`ClientList - Displaying ${clients?.length || 0} clients for user:`, user?.id);
     if (clients && clients.length > 0) {
       console.log("ClientList - First client:", clients[0]);
     }
-  }, [clients, currentUser]);
+  }, [clients, user?.id]);
 
-  // Remove filtering of system clients since RLS should handle user separation
+  // RLS will automatically filter clients by user, no need for manual filtering
   const filteredClients = clients;
 
   const handleDelete = async () => {
@@ -72,7 +68,7 @@ const ClientList: React.FC = () => {
   }
 
   // Show message if user is not authenticated
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="text-center py-10 text-muted-foreground">
         Você precisa estar logado para ver seus clientes.

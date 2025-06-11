@@ -4,6 +4,16 @@ import { Appointment, AppointmentStatus } from "@/types/calendar";
 
 export async function fetchAppointments(): Promise<Appointment[]> {
   try {
+    // Verify if user is authenticated
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      console.log("No authenticated user, returning empty appointments list");
+      return [];
+    }
+    
+    console.log("Fetching appointments for user:", userData.user.id);
+    
+    // Get appointments filtered by user_id - RLS will enforce this automatically
     const { data, error } = await supabase
       .from('appointments')
       .select(`
@@ -14,7 +24,12 @@ export async function fetchAppointments(): Promise<Appointment[]> {
       `)
       .order('start_time');
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching appointments:", error);
+      throw error;
+    }
+    
+    console.log(`Fetched ${data?.length || 0} appointments for user ${userData.user.id}`);
     
     return data.map(item => ({
       id: item.id,
@@ -67,6 +82,13 @@ export async function fetchAppointments(): Promise<Appointment[]> {
 
 export async function fetchAppointmentById(id: string): Promise<Appointment | null> {
   try {
+    // Verify if user is authenticated
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      console.log("No authenticated user, cannot fetch appointment");
+      return null;
+    }
+
     const { data, error } = await supabase
       .from('appointments')
       .select(`
