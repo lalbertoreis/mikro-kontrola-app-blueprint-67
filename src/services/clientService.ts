@@ -15,13 +15,14 @@ export async function fetchClients(): Promise<Client[]> {
     
     console.log("Authenticated user ID:", userData.user.id);
     
-    // Get clients filtered by RLS policies - only user's own clients will be returned
+    // Get clients filtered by user_id explicitly - RLS should also enforce this
     const { data, error } = await supabase
       .from('clients')
       .select(`
         *,
         appointments:appointments(start_time)
       `)
+      .eq('user_id', userData.user.id) // Explicitly filter by user_id
       .order('name');
     
     if (error) {
@@ -59,6 +60,13 @@ export async function fetchClients(): Promise<Client[]> {
 
 export async function fetchClientById(id: string): Promise<Client | null> {
   try {
+    // Verify if user is authenticated
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      console.log("No authenticated user, cannot fetch client");
+      return null;
+    }
+
     const { data, error } = await supabase
       .from('clients')
       .select(`
@@ -66,6 +74,7 @@ export async function fetchClientById(id: string): Promise<Client | null> {
         appointments:appointments(start_time)
       `)
       .eq('id', id)
+      .eq('user_id', userData.user.id) // Ensure user can only access their own clients
       .single();
     
     if (error) throw error;

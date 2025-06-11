@@ -33,11 +33,25 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log("Logging out user...");
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Error during logout:", error);
+        toast.error("Erro ao desconectar");
+        return;
+      }
+      
+      console.log("User logged out successfully");
       toast.success("Desconectado com sucesso");
+      
+      // Clear user state immediately
+      setUser(null);
+      
+      // Navigate to home page
       navigate("/");
     } catch (error) {
-      console.error("Error logging out:", error);
+      console.error("Unexpected error during logout:", error);
       toast.error("Erro ao desconectar");
     }
   };
@@ -58,11 +72,21 @@ const Navbar = () => {
               <NavLinks />
               <div className="flex items-center space-x-4">
                 {user ? (
-                  <Link to="/dashboard">
-                    <Button variant="ghost" className="font-medium">
-                      Dashboard
+                  <div className="flex items-center space-x-4">
+                    <Link to="/dashboard">
+                      <Button variant="ghost" className="font-medium">
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleLogout}
+                      className="flex items-center space-x-2"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Sair</span>
                     </Button>
-                  </Link>
+                  </div>
                 ) : (
                   <AuthButtons />
                 )}
@@ -90,6 +114,11 @@ const Navbar = () => {
             <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200 dark:border-gray-800">
               {user ? (
                 <>
+                  <Link to="/dashboard">
+                    <Button variant="ghost" className="justify-start w-full">
+                      Dashboard
+                    </Button>
+                  </Link>
                   <Button 
                     variant="destructive" 
                     className="justify-start"
