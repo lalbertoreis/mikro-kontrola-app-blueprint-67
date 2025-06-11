@@ -184,7 +184,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
       {/* Date Navigation Header */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -222,19 +222,20 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            
-            <Badge variant="outline">
-              {todayAppointments.length} agendamento{todayAppointments.length !== 1 ? 's' : ''}
-            </Badge>
           </div>
           
-          <div className="mt-2">
+          <div className="space-y-2">
             <h3 className="text-lg font-semibold">
               {format(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </h3>
-            <p className="text-sm text-muted-foreground">
-              {isToday(currentDate) ? "Hoje" : format(currentDate, "yyyy")}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {isToday(currentDate) ? "Hoje" : format(currentDate, "yyyy")}
+              </p>
+              <Badge variant="outline" className="text-xs">
+                {todayAppointments.length} agendamento{todayAppointments.length !== 1 ? 's' : ''}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
       </Card>
