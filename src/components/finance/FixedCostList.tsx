@@ -88,12 +88,12 @@ export const FixedCostList = () => {
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Custos Fixos</h2>
+        <div></div>
         <Button 
           onClick={handleAddClick}
           className="bg-kontrola-600 hover:bg-kontrola-700"
         >
-          <Plus className="h-4 w-4 mr-2" /> Adicionar
+          <Plus className="h-4 w-4 mr-2" /> Novo Custo Fixo
         </Button>
       </div>
       
@@ -105,7 +105,7 @@ export const FixedCostList = () => {
               <TableHead>Mês/Ano</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+              <TableHead className="w-[100px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -117,13 +117,6 @@ export const FixedCostList = () => {
                     <p className="text-muted-foreground">
                       Nenhum custo fixo cadastrado
                     </p>
-                    <Button 
-                      onClick={handleAddClick}
-                      className="mt-2 bg-kontrola-600 hover:bg-kontrola-700"
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Adicionar
-                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -134,21 +127,26 @@ export const FixedCostList = () => {
                   <TableCell>{getMonthName(fixedCost.month)}/{fixedCost.year}</TableCell>
                   <TableCell>{formatCurrency(fixedCost.amount)}</TableCell>
                   <TableCell>{fixedCost.description || "-"}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditClick(fixedCost)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(fixedCost)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditClick(fixedCost)}
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Editar</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteClick(fixedCost)}
+                      >
+                        <Trash className="h-4 w-4" />
+                        <span className="sr-only">Excluir</span>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

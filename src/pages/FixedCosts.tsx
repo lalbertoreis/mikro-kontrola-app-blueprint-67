@@ -2,21 +2,35 @@
 import React from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FixedCostList } from "@/components/finance/FixedCostList";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const FixedCosts: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Custos Fixos</h1>
-          <p className="text-muted-foreground">
-            Gerencie os custos fixos do seu estabelecimento.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Custos Fixos</h1>
+            <p className="text-muted-foreground">
+              Gerencie os custos fixos do seu estabelecimento.
+            </p>
+          </div>
         </div>
-        
-        <Card className="bg-background">
-          <CardContent className="p-6">
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Custos Fixos</CardTitle>
+            <CardDescription>
+              Gerencie os custos fixos mensais do seu negócio.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <FixedCostList />
           </CardContent>
         </Card>
