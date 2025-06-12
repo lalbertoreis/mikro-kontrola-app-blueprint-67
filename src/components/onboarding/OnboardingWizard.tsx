@@ -40,10 +40,10 @@ const GenericStep: React.FC<{ title: string; description: string; content: strin
 }) => (
   <div className="space-y-4">
     <div>
-      <h3 className="text-xl font-semibold">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+      <p className="text-gray-600 dark:text-gray-300">{description}</p>
     </div>
-    <p className="text-gray-700">{content}</p>
+    <p className="text-gray-700 dark:text-gray-200">{content}</p>
   </div>
 );
 
@@ -83,13 +83,13 @@ export const OnboardingWizard: React.FC = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ type: "spring", duration: 0.5 }}
-          className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden"
+          className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-6 relative">
             <button
               onClick={closeModal}
-              className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
+              className="absolute top-4 right-4 p-2 hover:bg-white/20 dark:hover:bg-black/20 rounded-full transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -101,19 +101,19 @@ export const OnboardingWizard: React.FC = () => {
                 </span>
                 <button
                   onClick={skipOnboarding}
-                  className="flex items-center space-x-1 text-sm hover:bg-white/20 px-3 py-1 rounded-full transition-colors"
+                  className="flex items-center space-x-1 text-sm hover:bg-white/20 dark:hover:bg-black/20 px-3 py-1 rounded-full transition-colors"
                 >
                   <SkipForward className="w-4 h-4" />
                   <span>Pular Tutorial</span>
                 </button>
               </div>
               
-              <Progress value={progress} className="bg-white/20" />
+              <Progress value={progress} className="bg-white/20 dark:bg-black/20" />
             </div>
           </div>
 
           {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[60vh]">
+          <div className="p-6 overflow-y-auto max-h-[60vh] bg-white dark:bg-slate-900">
             <motion.div
               key={currentStep}
               initial={{ opacity: 0, x: 20 }}
@@ -134,12 +134,12 @@ export const OnboardingWizard: React.FC = () => {
           </div>
 
           {/* Footer */}
-          <div className="border-t bg-gray-50 p-6 flex items-center justify-between">
+          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 p-6 flex items-center justify-between">
             <Button
               variant="outline"
               onClick={previousStep}
               disabled={isFirstStep}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 bg-white dark:bg-slate-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-600"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Anterior</span>
@@ -147,7 +147,7 @@ export const OnboardingWizard: React.FC = () => {
 
             <Button
               onClick={handleNext}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 bg-primary hover:bg-primary/90 text-white"
             >
               <span>{isLastStep ? 'Finalizar' : 'Próximo'}</span>
               {!isLastStep && <ChevronRight className="w-4 h-4" />}
