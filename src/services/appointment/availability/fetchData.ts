@@ -62,33 +62,36 @@ export async function fetchServiceInfo(serviceId: string, slug?: string): Promis
 
 /**
  * Fetches existing appointments for an employee on a specific date
+ * Enhanced to properly filter out unavailable slots
  */
 export async function fetchExistingAppointments(employeeId: string, formattedDate: string, slug?: string): Promise<any[]> {
   const cacheKey = `${employeeId}_${formattedDate}_${slug || ''}`;
-  // Short expiry for appointments (1 minute)
+  // Short expiry for appointments (30 seconds for real-time accuracy)
   const cached = CACHE.appointments.get(cacheKey);
   
-  if (cached && (Date.now() - cached.timestamp < 60 * 1000)) {
+  if (cached && (Date.now() - cached.timestamp < 30 * 1000)) {
     console.log(`Using cached appointments for ${cacheKey}`);
     return cached.data;
   }
   
   await setSlugContext(slug);
   
+  // Fetch all non-canceled appointments for the employee on the specified date
   const { data: appointments, error: appointmentError } = await supabase
     .from('appointments_view')
-    .select('start_time, end_time')
+    .select('start_time, end_time, status')
     .eq('employee_id', employeeId)
     .gte('start_time', `${formattedDate}T00:00:00`)
     .lt('start_time', `${formattedDate}T23:59:59`)
-    .neq('status', 'canceled');
+    .in('status', ['scheduled', 'confirmed', 'in_progress']) // Only count active appointments
+    .order('start_time');
   
   if (appointmentError) {
     console.error('Error fetching appointments:', appointmentError);
     return [];
   }
   
-  console.log('Existing appointments:', appointments);
+  console.log(`Found ${appointments?.length || 0} existing appointments for employee ${employeeId} on ${formattedDate}:`, appointments);
   
   CACHE.appointments.set(cacheKey, {
     data: appointments || [],

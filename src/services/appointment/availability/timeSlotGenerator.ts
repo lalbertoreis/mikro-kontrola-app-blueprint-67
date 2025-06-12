@@ -1,126 +1,117 @@
 
-/**
- * Generates all possible time slots based on shift hours and time interval
- */
-export function generateTimeSlots(
-  shiftStartTime: string, 
-  shiftEndTime: string, 
-  timeInterval: number, 
-  serviceDuration: number
-): string[] {
-  const timeSlots: string[] = [];
-  
-  // Convert shift times to minutes for easier calculation
-  const [shiftStartHour, shiftStartMinute] = shiftStartTime.split(':').map(Number);
-  const [shiftEndHour, shiftEndMinute] = shiftEndTime.split(':').map(Number);
-  
-  const shiftStartInMinutes = shiftStartHour * 60 + shiftStartMinute;
-  const shiftEndInMinutes = shiftEndHour * 60 + shiftEndMinute;
-  
-  console.log(`Shift hours: ${shiftStartTime} to ${shiftEndTime}`);
-  console.log(`Service duration: ${serviceDuration} minutes`);
-  console.log(`Time interval: ${timeInterval} minutes`);
-  
-  // Generate slots based on the time interval from settings
-  for (let minutes = shiftStartInMinutes; minutes <= shiftEndInMinutes - serviceDuration; minutes += timeInterval) {
-    const hour = Math.floor(minutes / 60);
-    const minute = minutes % 60;
-    
-    const timeSlot = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-    timeSlots.push(timeSlot);
-  }
-  
-  return timeSlots;
+import { addMinutes, format, isAfter, isBefore, parseISO } from 'date-fns';
+import { Holiday } from '@/types/holiday';
+
+export interface Shift {
+  start_time: string;
+  end_time: string;
 }
 
 /**
- * Filters time slots that conflict with existing appointments or holidays
+ * Generates all possible time slots within shift hours
+ */
+export function generateTimeSlots(
+  startTime: string,
+  endTime: string,
+  interval: number,
+  serviceDuration: number
+): string[] {
+  const slots: string[] = [];
+  
+  // Parse times (assuming format HH:mm)
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTime.split(':').map(Number);
+  
+  // Create date objects for today to work with time calculations
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), startHour, startMinute);
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), endHour, endMinute);
+  
+  // Generate slots
+  let current = start;
+  
+  while (current < end) {
+    // Check if there's enough time for the service before shift ends
+    const slotEnd = addMinutes(current, serviceDuration);
+    
+    if (slotEnd <= end) {
+      slots.push(format(current, 'HH:mm'));
+    }
+    
+    // Move to next interval
+    current = addMinutes(current, interval);
+  }
+  
+  return slots;
+}
+
+/**
+ * Filters out time slots that conflict with existing appointments or holidays
  */
 export function filterAvailableSlots(
-  timeSlots: string[], 
-  appointments: any[], 
-  formattedDate: string, 
+  allSlots: string[],
+  appointments: any[],
+  date: string,
   serviceDuration: number,
-  simultaneousLimit: number,
-  holidays: any[]
+  simultaneousLimit: number = 3,
+  holidays: Holiday[] = []
 ): string[] {
-  if (!timeSlots.length) {
+  // Check if date is a holiday that blocks all appointments
+  const dateHolidays = holidays.filter(h => h.date === date && h.isActive);
+  const fullDayHolidays = dateHolidays.filter(h => h.blockingType === 'full_day');
+  
+  if (fullDayHolidays.length > 0) {
+    console.log('Full day holiday found, no slots available');
     return [];
   }
   
-  console.log(`Filtering ${timeSlots.length} time slots with simultaneous limit: ${simultaneousLimit}`);
+  // Get partial day holidays that might block specific time ranges
+  const partialHolidays = dateHolidays.filter(h => h.blockingType === 'partial_day');
   
-  // First, check if there are any full day holidays
-  const hasFullDayHoliday = holidays.some(holiday => 
-    holiday.blockingType === 'full_day' && holiday.isActive
-  );
-  
-  if (hasFullDayHoliday) {
-    console.log('Found full day holiday, no slots available');
-    return [];
-  }
-  
-  // Check for morning, afternoon or custom holidays
-  const morningHoliday = holidays.some(holiday => 
-    holiday.blockingType === 'morning' && holiday.isActive
-  );
-  
-  const afternoonHoliday = holidays.some(holiday => 
-    holiday.blockingType === 'afternoon' && holiday.isActive
-  );
-  
-  const customHolidays = holidays.filter(holiday => 
-    holiday.blockingType === 'custom' && holiday.isActive
-  );
-  
-  return timeSlots.filter(timeSlot => {
-    const slotStart = new Date(`${formattedDate}T${timeSlot}:00`);
-    const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60000);
-    const slotHour = parseInt(timeSlot.split(':')[0]);
+  return allSlots.filter(slot => {
+    // Create start and end times for this slot
+    const slotStart = `${date}T${slot}:00`;
+    const slotEnd = `${date}T${format(addMinutes(parseISO(`${date}T${slot}:00`), serviceDuration), 'HH:mm')}:00`;
     
-    // Check holiday blocks
-    if (morningHoliday && slotHour < 12) {
-      console.log(`Slot ${timeSlot} blocked by morning holiday`);
-      return false;
-    }
-    
-    if (afternoonHoliday && slotHour >= 12) {
-      console.log(`Slot ${timeSlot} blocked by afternoon holiday`);
-      return false;
-    }
-    
-    // Check custom holiday blocks
-    for (const holiday of customHolidays) {
+    // Check against partial day holidays
+    for (const holiday of partialHolidays) {
       if (holiday.customStartTime && holiday.customEndTime) {
-        const holidayStart = new Date(`${formattedDate}T${holiday.customStartTime}`);
-        const holidayEnd = new Date(`${formattedDate}T${holiday.customEndTime}`);
+        const holidayStart = `${date}T${holiday.customStartTime}`;
+        const holidayEnd = `${date}T${holiday.customEndTime}`;
         
-        if (slotStart < holidayEnd && slotEnd > holidayStart) {
-          console.log(`Slot ${timeSlot} blocked by custom holiday: ${holiday.name}`);
+        // Check if slot overlaps with holiday time
+        if (
+          (slotStart >= holidayStart && slotStart < holidayEnd) ||
+          (slotEnd > holidayStart && slotEnd <= holidayEnd) ||
+          (slotStart <= holidayStart && slotEnd >= holidayEnd)
+        ) {
+          console.log(`Slot ${slot} blocked by holiday: ${holiday.name}`);
           return false;
         }
       }
     }
     
-    // Count overlapping appointments at this time slot
-    let overlappingAppointments = 0;
+    // Count how many appointments overlap with this time slot
+    let conflictCount = 0;
     
     for (const appointment of appointments) {
-      const appointmentStart = new Date(appointment.start_time);
-      const appointmentEnd = new Date(appointment.end_time);
+      const appointmentStart = appointment.start_time;
+      const appointmentEnd = appointment.end_time;
       
-      // Check for overlap
-      if (slotStart < appointmentEnd && slotEnd > appointmentStart) {
-        overlappingAppointments++;
+      // Check if the slot would overlap with this appointment
+      // Two time ranges overlap if: (start1 < end2) AND (start2 < end1)
+      if (slotStart < appointmentEnd && appointmentStart < slotEnd) {
+        conflictCount++;
+        
+        // If we exceed the simultaneous limit, this slot is not available
+        if (conflictCount >= simultaneousLimit) {
+          console.log(`Slot ${slot} blocked - too many simultaneous appointments (${conflictCount}/${simultaneousLimit})`);
+          return false;
+        }
       }
     }
     
-    // Check if we've reached the simultaneous booking limit
-    if (overlappingAppointments >= simultaneousLimit) {
-      console.log(`Slot ${timeSlot} has reached simultaneous limit (${overlappingAppointments}/${simultaneousLimit})`);
-      return false;
-    }
-    
+    console.log(`Slot ${slot} available - conflicts: ${conflictCount}/${simultaneousLimit}`);
     return true;
   });
 }

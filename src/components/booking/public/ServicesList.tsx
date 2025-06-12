@@ -21,27 +21,50 @@ const ServicesList: React.FC<ServicesListProps> = ({
   const { packages } = useServicePackages();
 
   // Create package services that can be offered by available employees
+  // Only include packages with show_in_online_booking = true
   const availablePackageServices = useMemo(() => {
     if (!packages || !employees || !services) return [];
 
-    const activePackages = packages.filter(pkg => pkg.isActive && pkg.showInOnlineBooking);
+    console.log("ServicesList - Processing packages:", packages.length);
+    console.log("ServicesList - Available employees:", employees.length);
+    console.log("ServicesList - Available services:", services.length);
+
+    // Filter packages that are active and enabled for online booking
+    const onlineBookingPackages = packages.filter(pkg => {
+      const isEligible = pkg.isActive && pkg.showInOnlineBooking;
+      console.log(`Package ${pkg.name}: isActive=${pkg.isActive}, showInOnlineBooking=${pkg.showInOnlineBooking}, eligible=${isEligible}`);
+      return isEligible;
+    });
+
+    console.log("Packages eligible for online booking:", onlineBookingPackages.length);
     
-    return activePackages.map(pkg => {
+    return onlineBookingPackages.map(pkg => {
       // Check which employees can provide ALL services in this package
       const availableEmployees = employees.filter(emp => {
-        if (!emp.services || !Array.isArray(emp.services)) return false;
+        if (!emp.services || !Array.isArray(emp.services)) {
+          console.log(`Employee ${emp.name} has no services array`);
+          return false;
+        }
         
         // Employee must have ALL services in the package
-        return pkg.services.every(serviceId => {
+        const hasAllServices = pkg.services.every(serviceId => {
           return emp.services.some(empService => {
             const empServiceId = typeof empService === 'object' ? (empService as any).id : empService;
             return empServiceId === serviceId;
           });
         });
+
+        console.log(`Employee ${emp.name} can provide package ${pkg.name}: ${hasAllServices}`);
+        return hasAllServices;
       });
 
       // Only include packages that have at least one employee who can provide them
-      if (availableEmployees.length === 0) return null;
+      if (availableEmployees.length === 0) {
+        console.log(`Package ${pkg.name} has no available employees - excluding`);
+        return null;
+      }
+
+      console.log(`Package ${pkg.name} has ${availableEmployees.length} available employees`);
 
       // Create a Service object for the package
       const packageService: Service = {
@@ -63,6 +86,8 @@ const ServicesList: React.FC<ServicesListProps> = ({
 
   // Filter regular services to only show those with available employees
   const availableServices = useMemo(() => {
+    console.log("ServicesList - Filtering regular services:", services.length);
+    
     return services.filter(service => {
       const hasEmployees = employees.some(emp => {
         if (!emp.services || !Array.isArray(emp.services)) return false;
@@ -71,12 +96,16 @@ const ServicesList: React.FC<ServicesListProps> = ({
           return empServiceId === service.id;
         });
       });
+      
+      console.log(`Service ${service.name} has employees: ${hasEmployees}`);
       return hasEmployees;
     });
   }, [services, employees]);
 
   // Combine individual services and package services
   const allAvailableServices = [...availableServices, ...availablePackageServices];
+
+  console.log("ServicesList - Final available services:", allAvailableServices.length);
 
   if (allAvailableServices.length === 0) {
     return (
