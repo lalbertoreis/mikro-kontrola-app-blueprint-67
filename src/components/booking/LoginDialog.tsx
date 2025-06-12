@@ -36,7 +36,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     if (!open) {
       resetForm();
     }
-  }, [open]);
+  }, [open, resetForm]);
 
   const onSubmitForm = async (e: React.FormEvent) => {
     const result = await handleSubmit(e);
@@ -46,63 +46,113 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     }
   };
 
+  const getButtonText = () => {
+    if (isLoading) return "Processando...";
+    if (pinMode === 'verify') return "Entrar";
+    if (pinMode === 'create') return "Criar Conta";
+    return "Continuar";
+  };
+
+  const getDialogTitle = () => {
+    if (pinMode === 'verify') return "Acesse sua conta";
+    if (pinMode === 'create') return existingUserData ? "Crie seu PIN" : "Criar conta";
+    return "Acesse seus agendamentos";
+  };
+
+  const isFormValid = () => {
+    if (!phone || phone.replace(/\D/g, '').length !== 11) return false;
+    
+    if (pinMode === 'verify') {
+      return pin.length === 4;
+    }
+    
+    if (pinMode === 'create') {
+      const hasName = existingUserData?.name || name.trim().length >= 2;
+      const hasPins = pin.length === 4 && confirmPin.length === 4;
+      const pinsMatch = pin === confirmPin;
+      return hasName && hasPins && pinsMatch;
+    }
+    
+    return true;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md p-6">
+      <DialogContent className="sm:max-w-md p-6 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-center">Acesse seus agendamentos</DialogTitle>
+          <DialogTitle className="text-center text-lg">
+            {getDialogTitle()}
+          </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={onSubmitForm} className="space-y-4 mt-4">
+        <form onSubmit={onSubmitForm} className="space-y-6 mt-4">
           <PhoneInputField 
             phone={phone} 
             onChange={setPhone}
             isLoading={isLoading} 
           />
           
-          {/* Only show name field for new users */}
-          {!existingUserData && (
+          {/* Show name field only for new users who don't have a name */}
+          {pinMode === 'create' && !existingUserData?.name && (
             <NameInputField 
               name={name} 
               onChange={setName} 
               isLoading={isLoading}
-              disabled={existingUserData?.name ? true : false}
+              disabled={false}
             />
           )}
           
           {pinMode === 'verify' && (
-            <PinInput 
-              mode="verify"
-              pin={pin}
-              onPinChange={setPin}
-              isLoading={isLoading}
-            />
+            <>
+              <div className="text-center py-2">
+                <p className="text-sm text-gray-600">
+                  Bem-vindo de volta, {existingUserData?.name || 'usuário'}!
+                </p>
+              </div>
+              <PinInput 
+                mode="verify"
+                pin={pin}
+                onPinChange={setPin}
+                isLoading={isLoading}
+              />
+            </>
           )}
           
           {pinMode === 'create' && (
-            <PinInput 
-              mode="create"
-              pin={pin}
-              confirmPin={confirmPin}
-              onPinChange={setPin}
-              onConfirmPinChange={setConfirmPin}
-              isLoading={isLoading}
-            />
+            <>
+              <div className="text-center py-2">
+                <p className="text-sm text-gray-600">
+                  {existingUserData?.name 
+                    ? `Olá ${existingUserData.name}, crie um PIN para acessar seus agendamentos`
+                    : 'Vamos criar sua conta para gerenciar agendamentos'
+                  }
+                </p>
+              </div>
+              <PinInput 
+                mode="create"
+                pin={pin}
+                confirmPin={confirmPin}
+                onPinChange={setPin}
+                onConfirmPinChange={setConfirmPin}
+                isLoading={isLoading}
+              />
+            </>
           )}
           
           <Button
             type="submit"
-            className="w-full text-white"
+            className="w-full text-white py-3 text-lg"
             style={{ backgroundColor: themeColor, borderColor: themeColor }}
-            disabled={isLoading || 
-              !phone || 
-              (!existingUserData && !name) ||
-              (pinMode === 'verify' && pin.length !== 4) ||
-              (pinMode === 'create' && (pin.length !== 4 || pin !== confirmPin))
-            }
+            disabled={isLoading || !isFormValid()}
           >
-            {isLoading ? "Processando..." : "Entrar"}
+            {getButtonText()}
           </Button>
+          
+          {pinMode === 'create' && pin.length > 0 && confirmPin.length > 0 && pin !== confirmPin && (
+            <p className="text-sm text-red-500 text-center">
+              Os PINs não conferem
+            </p>
+          )}
         </form>
       </DialogContent>
     </Dialog>

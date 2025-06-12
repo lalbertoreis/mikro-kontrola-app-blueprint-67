@@ -12,7 +12,7 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
   onChange, 
   isLoading 
 }) => {
-  // Format phone number
+  // Format phone number for WhatsApp (Brazilian format)
   const formatPhoneNumber = (value: string) => {
     const digits = value.replace(/\D/g, '');
     let formatted = '';
@@ -30,21 +30,34 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
     return formatted;
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    // Only allow numbers and formatting characters
+    const filteredValue = inputValue.replace(/[^\d\s()-]/g, '');
+    onChange(formatPhoneNumber(filteredValue));
+  };
+
   return (
     <div>
       <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-        Telefone (WhatsApp)
+        Número do WhatsApp
       </label>
       <input
         id="phone"
-        type="text"
+        type="tel"
+        inputMode="numeric"
         value={phone}
-        onChange={(e) => onChange(formatPhoneNumber(e.target.value))}
-        className="w-full p-2 border rounded-md"
-        placeholder="(00) 00000-0000"
+        onChange={handleChange}
+        className="w-full p-3 border rounded-md text-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+        placeholder="(11) 99999-9999"
         disabled={isLoading}
+        autoComplete="tel"
         required
+        maxLength={15}
       />
+      <p className="text-xs text-gray-500 mt-1">
+        Digite seu número com DDD (apenas números)
+      </p>
     </div>
   );
 };
