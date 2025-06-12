@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, addMinutes } from 'date-fns';
 import { BookingAppointment } from "@/components/booking/MyAppointmentsDialog";
 import { setSlugForSession } from "./businessUtils";
+import { createClientSecure, checkClientExists } from "./clientCreation";
+import { checkAppointmentConflicts, validateBusinessHours } from "./appointmentConflictChecker";
 
 /**
- * Process a booking with client information
+ * Process a booking with client information and conflict validation
  */
 export async function processBooking({
   service,
@@ -27,93 +29,76 @@ export async function processBooking({
   bookingSettings?: any;
 }) {
   try {
-    // Check if client exists
-    let clientId: string;
-    let existingClient: any;
-    let newClient = false;
-    
+    console.log("Starting booking process:", {
+      service: service.name,
+      employee: employee.name,
+      date: format(date, 'yyyy-MM-dd'),
+      time,
+      clientPhone: clientInfo.phone,
+      businessSlug
+    });
+
     // Set slug context for Supabase session if provided
     if (businessSlug) {
       await setSlugForSession(businessSlug);
     }
 
-    const cleanPhone = clientInfo.phone.replace(/\D/g, '');
-
-    // Use the secure RPC function to check if client exists in this business
-    const { data: localClientData, error: localClientError } = await supabase
-      .rpc('check_client_by_phone', { phone_param: cleanPhone });
+    // Create appointment time as ISO string
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    const startTime = `${formattedDate}T${time}:00`;
+    const startDateTime = new Date(startTime);
     
-    if (localClientError) {
-      console.error('Error checking local client:', localClientError);
+    // Calculate end time based on service duration
+    const duration = service.duration || 60;
+    const endDateTime = addMinutes(startDateTime, duration);
+
+    // Validate business hours
+    const businessHoursValidation = await validateBusinessHours({
+      employeeId: employee.id,
+      startTime: startDateTime,
+      businessSlug
+    });
+
+    if (!businessHoursValidation.isValid) {
+      throw new Error(businessHoursValidation.error || 'Horário fora do funcionamento');
     }
 
-    const localClient = localClientData && localClientData.length > 0 ? localClientData[0] : null;
-    
-    // If no local client found, look for this client in ANY business
-    if (!localClient) {
-      const { data: anyClientData, error: anyClientError } = await supabase
-        .rpc('find_clients_by_phone', { phone_param: cleanPhone });
-      
-      if (anyClientError) {
-        console.error('Error finding clients:', anyClientError);
-      }
+    // Check for appointment conflicts
+    const conflictCheck = await checkAppointmentConflicts({
+      employeeId: employee.id,
+      startTime: startDateTime,
+      duration,
+      businessSlug
+    });
 
-      const anyClient = anyClientData && anyClientData.length > 0 ? anyClientData[0] : null;
+    if (conflictCheck.hasConflict) {
+      console.error("Appointment conflict detected:", conflictCheck.conflictingAppointments);
+      throw new Error('Este horário já está ocupado. Por favor, escolha outro horário.');
+    }
+
+    // Handle client creation/verification
+    let clientId: string;
+    let existingClient: any;
+    let newClient = false;
+    
+    const cleanPhone = clientInfo.phone.replace(/\D/g, '');
+
+    // Check if client exists
+    const clientCheck = await checkClientExists(cleanPhone);
+    
+    if (clientCheck.error) {
+      throw new Error(`Erro ao verificar cliente: ${clientCheck.error}`);
+    }
+
+    if (clientCheck.exists && clientCheck.client) {
+      // Use existing client
+      clientId = clientCheck.client.id;
+      existingClient = clientCheck.client;
       
-      // If client exists in another business, create it for this business using RPC
-      if (anyClient) {
-        console.log('Client found in another business, creating for this business');
-        
-        const { data: newClientData, error: createError } = await supabase
-          .rpc('create_client_for_auth', {
-            name_param: anyClient.name,
-            phone_param: cleanPhone,
-            pin_param: clientInfo.pin || null,
-            business_user_id_param: businessUserId
-          });
-        
-        if (createError || !newClientData || newClientData.length === 0) {
-          console.error('Error creating client:', createError);
-          throw new Error('Erro ao criar cliente');
-        }
-        
-        clientId = newClientData[0].id;
-        newClient = true;
-        
-        // Get the created client data
-        const { data: createdClientData } = await supabase
-          .rpc('find_clients_by_phone', { phone_param: cleanPhone });
-        existingClient = createdClientData?.find(c => c.id === clientId);
-      } else {
-        // Create completely new client using RPC function
-        const { data: newClientData, error: createError } = await supabase
-          .rpc('create_client_for_auth', {
-            name_param: clientInfo.name,
-            phone_param: cleanPhone,
-            pin_param: clientInfo.pin || null,
-            business_user_id_param: businessUserId
-          });
-        
-        if (createError || !newClientData || newClientData.length === 0) {
-          console.error('Error creating new client:', createError);
-          throw new Error('Erro ao criar novo cliente');
-        }
-        
-        clientId = newClientData[0].id;
-        newClient = true;
-        
-        // Get the created client data
-        const { data: createdClientData } = await supabase
-          .rpc('find_clients_by_phone', { phone_param: cleanPhone });
-        existingClient = createdClientData?.find(c => c.id === clientId);
-      }
-    } else {
-      // Use existing client (local to this business)
-      clientId = localClient.id;
-      existingClient = localClient;
+      console.log('Using existing client:', clientId);
       
       // Update client's pin if provided and doesn't exist already
-      if (clientInfo.pin && !localClient.has_pin) {
+      if (clientInfo.pin && !clientCheck.client.has_pin) {
         const { error: updateError } = await supabase
           .rpc('update_client_pin', {
             phone_param: cleanPhone,
@@ -124,16 +109,29 @@ export async function processBooking({
           console.error('Error updating client PIN:', updateError);
         }
       }
+    } else {
+      // Create new client
+      console.log('Creating new client for phone:', cleanPhone);
+      
+      const createResult = await createClientSecure({
+        name: clientInfo.name,
+        phone: cleanPhone,
+        pin: clientInfo.pin,
+        businessUserId
+      });
+      
+      if (!createResult.success) {
+        throw new Error(createResult.error || 'Erro ao criar cliente');
+      }
+      
+      clientId = createResult.clientId!;
+      newClient = true;
+      
+      // Get the created client data
+      const { data: createdClientData } = await supabase
+        .rpc('find_clients_by_phone', { phone_param: cleanPhone });
+      existingClient = createdClientData?.find(c => c.id === clientId);
     }
-    
-    // Create appointment time as ISO string
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    const startTime = `${formattedDate}T${time}:00`;
-    const startDateTime = new Date(startTime);
-    
-    // Calculate end time based on service duration
-    const duration = service.duration || 60; // Default to 60 minutes if duration not provided
-    const endDateTime = addMinutes(startDateTime, duration);
     
     // Create appointment directly in the appointments table
     const appointmentData = {
@@ -146,6 +144,8 @@ export async function processBooking({
       user_id: businessUserId
     };
     
+    console.log('Creating appointment with data:', appointmentData);
+    
     const { data: newAppointment, error: appointmentError } = await supabase
       .from('appointments')
       .insert(appointmentData)
@@ -154,10 +154,10 @@ export async function processBooking({
     
     if (appointmentError) {
       console.error('Error creating appointment:', appointmentError);
-      throw new Error('Erro ao criar agendamento');
+      throw new Error(`Erro ao criar agendamento: ${appointmentError.message}`);
     }
     
-    console.log('Appointment created:', newAppointment);
+    console.log('Appointment created successfully:', newAppointment);
     
     // Return information about the booking
     return {
