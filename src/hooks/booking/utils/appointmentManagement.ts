@@ -14,27 +14,13 @@ export const fetchUserAppointmentsByPhone = async (phone: string, businessSlug?:
       await setSlugForSession(businessSlug);
     }
     
-    // Obter o ID do negócio pelo slug (se fornecido)
-    let businessId = null;
-    if (businessSlug) {
-      const { data: business } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('slug', businessSlug)
-        .maybeSingle();
-      
-      businessId = business?.id;
-      console.log("Business ID found:", businessId);
-    }
-    
-    // Primeiro, buscar TODOS os clientes com este telefone (em qualquer negócio)
+    // Primeiro, buscar TODOS os clientes com este telefone usando a função RPC segura
     const cleanPhone = phone.replace(/\D/g, '');
     console.log("Clean phone for search:", cleanPhone);
     
+    // Usar a função RPC segura para buscar clientes
     const { data: allClients, error: clientsError } = await supabase
-      .from('clients')
-      .select('id, user_id, name')
-      .eq('phone', cleanPhone);
+      .rpc('find_clients_by_phone', { phone_param: cleanPhone });
     
     if (clientsError) {
       console.error("Error fetching clients:", clientsError);
@@ -51,7 +37,7 @@ export const fetchUserAppointmentsByPhone = async (phone: string, businessSlug?:
     // Extrair todos os IDs de clientes
     const clientIds = allClients.map(client => client.id);
     
-    // Buscar agendamentos usando os IDs dos clientes
+    // Buscar agendamentos usando os IDs dos clientes na view
     let appointmentsQuery = supabase
       .from('appointments_view')
       .select(`
@@ -188,7 +174,8 @@ export const cancelAppointment = async (id: string, businessSlug?: string): Prom
       await setSlugForSession(appointment.business_slug);
     }
     
-    // Update appointment status to canceled
+    // Update appointment status to canceled using direct table access
+    // (this requires the anon user to have UPDATE permissions on appointments)
     const { error: updateError } = await supabase
       .from('appointments')
       .update({ status: 'canceled' })

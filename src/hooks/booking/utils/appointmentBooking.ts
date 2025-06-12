@@ -37,89 +37,75 @@ export async function processBooking({
       await setSlugForSession(businessSlug);
     }
 
-    // Look for existing client with this phone number, scoped to this business
-    const { data: localClient, error: localClientError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('phone', clientInfo.phone)
-      .eq('user_id', businessUserId || (await supabase.auth.getUser()).data.user?.id)
-      .maybeSingle();
+    const cleanPhone = clientInfo.phone.replace(/\D/g, '');
+
+    // Use the secure RPC function to check if client exists in this business
+    const { data: localClientData, error: localClientError } = await supabase
+      .rpc('check_client_by_phone', { phone_param: cleanPhone });
+    
+    if (localClientError) {
+      console.error('Error checking local client:', localClientError);
+    }
+
+    const localClient = localClientData && localClientData.length > 0 ? localClientData[0] : null;
     
     // If no local client found, look for this client in ANY business
     if (!localClient) {
-      const { data: anyClient, error: anyClientError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('phone', clientInfo.phone)
-        .maybeSingle();
+      const { data: anyClientData, error: anyClientError } = await supabase
+        .rpc('find_clients_by_phone', { phone_param: cleanPhone });
       
-      // If client exists in another business, clone it for this business
+      if (anyClientError) {
+        console.error('Error finding clients:', anyClientError);
+      }
+
+      const anyClient = anyClientData && anyClientData.length > 0 ? anyClientData[0] : null;
+      
+      // If client exists in another business, create it for this business using RPC
       if (anyClient) {
-        console.log('Client found in another business, cloning for this business');
+        console.log('Client found in another business, creating for this business');
         
-        let insertPayload: any = {
-          name: anyClient.name,
-          phone: anyClient.phone,
-          email: anyClient.email,
-          cep: anyClient.cep,
-          address: anyClient.address,
-          notes: anyClient.notes,
-          user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
-        };
+        const { data: newClientData, error: createError } = await supabase
+          .rpc('create_client_for_auth', {
+            name_param: anyClient.name,
+            phone_param: cleanPhone,
+            pin_param: clientInfo.pin || null,
+            business_user_id_param: businessUserId
+          });
         
-        // Add hashed pin if provided in client info or from original client
-        if (clientInfo.pin) {
-          const { default: bcrypt } = await import('bcryptjs-react');
-          const saltRounds = 10;
-          insertPayload.pin = await bcrypt.hash(clientInfo.pin, saltRounds);
-        } else if (anyClient.pin) {
-          // Transfer the existing pin to the new client record
-          insertPayload.pin = anyClient.pin;
+        if (createError || !newClientData || newClientData.length === 0) {
+          console.error('Error creating client:', createError);
+          throw new Error('Erro ao criar cliente');
         }
         
-        const { data: newClientData, error: insertError } = await supabase
-          .from('clients')
-          .insert(insertPayload)
-          .select()
-          .single();
-        
-        if (insertError) {
-          console.error('Error cloning client:', insertError);
-          throw new Error('Erro ao criar novo cliente');
-        }
-        
-        clientId = newClientData.id;
-        existingClient = newClientData;
+        clientId = newClientData[0].id;
         newClient = true;
+        
+        // Get the created client data
+        const { data: createdClientData } = await supabase
+          .rpc('find_clients_by_phone', { phone_param: cleanPhone });
+        existingClient = createdClientData?.find(c => c.id === clientId);
       } else {
-        // Create completely new client
-        let insertPayload: any = {
-          name: clientInfo.name,
-          phone: clientInfo.phone,
-          user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
-        };
+        // Create completely new client using RPC function
+        const { data: newClientData, error: createError } = await supabase
+          .rpc('create_client_for_auth', {
+            name_param: clientInfo.name,
+            phone_param: cleanPhone,
+            pin_param: clientInfo.pin || null,
+            business_user_id_param: businessUserId
+          });
         
-        // Add hashed pin if provided
-        if (clientInfo.pin) {
-          const { default: bcrypt } = await import('bcryptjs-react');
-          const saltRounds = 10;
-          insertPayload.pin = await bcrypt.hash(clientInfo.pin, saltRounds);
-        }
-        
-        const { data: newClientData, error: insertError } = await supabase
-          .from('clients')
-          .insert(insertPayload)
-          .select()
-          .single();
-        
-        if (insertError) {
-          console.error('Error creating new client:', insertError);
+        if (createError || !newClientData || newClientData.length === 0) {
+          console.error('Error creating new client:', createError);
           throw new Error('Erro ao criar novo cliente');
         }
         
-        clientId = newClientData.id;
-        existingClient = newClientData;
+        clientId = newClientData[0].id;
         newClient = true;
+        
+        // Get the created client data
+        const { data: createdClientData } = await supabase
+          .rpc('find_clients_by_phone', { phone_param: cleanPhone });
+        existingClient = createdClientData?.find(c => c.id === clientId);
       }
     } else {
       // Use existing client (local to this business)
@@ -127,15 +113,12 @@ export async function processBooking({
       existingClient = localClient;
       
       // Update client's pin if provided and doesn't exist already
-      if (clientInfo.pin && !localClient.pin) {
-        const { default: bcrypt } = await import('bcryptjs-react');
-        const saltRounds = 10;
-        const hashedPin = await bcrypt.hash(clientInfo.pin, saltRounds);
-        
+      if (clientInfo.pin && !localClient.has_pin) {
         const { error: updateError } = await supabase
-          .from('clients')
-          .update({ pin: hashedPin })
-          .eq('id', clientId);
+          .rpc('update_client_pin', {
+            phone_param: cleanPhone,
+            pin_param: clientInfo.pin
+          });
           
         if (updateError) {
           console.error('Error updating client PIN:', updateError);
@@ -152,7 +135,7 @@ export async function processBooking({
     const duration = service.duration || 60; // Default to 60 minutes if duration not provided
     const endDateTime = addMinutes(startDateTime, duration);
     
-    // Create appointment
+    // Create appointment directly in the appointments table
     const appointmentData = {
       service_id: service.id,
       employee_id: employee.id,
@@ -160,7 +143,7 @@ export async function processBooking({
       status: 'scheduled',
       start_time: startDateTime.toISOString(),
       end_time: endDateTime.toISOString(),
-      user_id: businessUserId || (await supabase.auth.getUser()).data.user?.id
+      user_id: businessUserId
     };
     
     const { data: newAppointment, error: appointmentError } = await supabase

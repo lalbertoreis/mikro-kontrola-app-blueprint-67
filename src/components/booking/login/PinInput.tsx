@@ -43,10 +43,42 @@ const PinInput: React.FC<PinInputProps> = ({
                 pattern="[0-9]*"
               >
                 <InputOTPGroup>
-                  <InputOTPSlot index={0} className="w-12 h-12 text-lg border-2" />
-                  <InputOTPSlot index={1} className="w-12 h-12 text-lg border-2" />
-                  <InputOTPSlot index={2} className="w-12 h-12 text-lg border-2" />
-                  <InputOTPSlot index={3} className="w-12 h-12 text-lg border-2" />
+                  <InputOTPSlot 
+                    index={0} 
+                    className={`w-12 h-12 text-lg border-2 ${!showPin ? 'text-security-disc' : ''}`}
+                    style={!showPin ? { 
+                      WebkitTextSecurity: 'disc',
+                      textSecurity: 'disc',
+                      fontFamily: 'monospace'
+                    } : {}}
+                  />
+                  <InputOTPSlot 
+                    index={1} 
+                    className={`w-12 h-12 text-lg border-2 ${!showPin ? 'text-security-disc' : ''}`}
+                    style={!showPin ? { 
+                      WebkitTextSecurity: 'disc',
+                      textSecurity: 'disc',
+                      fontFamily: 'monospace'
+                    } : {}}
+                  />
+                  <InputOTPSlot 
+                    index={2} 
+                    className={`w-12 h-12 text-lg border-2 ${!showPin ? 'text-security-disc' : ''}`}
+                    style={!showPin ? { 
+                      WebkitTextSecurity: 'disc',
+                      textSecurity: 'disc',
+                      fontFamily: 'monospace'
+                    } : {}}
+                  />
+                  <InputOTPSlot 
+                    index={3} 
+                    className={`w-12 h-12 text-lg border-2 ${!showPin ? 'text-security-disc' : ''}`}
+                    style={!showPin ? { 
+                      WebkitTextSecurity: 'disc',
+                      textSecurity: 'disc',
+                      fontFamily: 'monospace'
+                    } : {}}
+                  />
                 </InputOTPGroup>
               </InputOTP>
             </div>
@@ -94,10 +126,42 @@ const PinInput: React.FC<PinInputProps> = ({
                   pattern="[0-9]*"
                 >
                   <InputOTPGroup>
-                    <InputOTPSlot index={0} className="w-12 h-12 text-lg border-2" />
-                    <InputOTPSlot index={1} className="w-12 h-12 text-lg border-2" />
-                    <InputOTPSlot index={2} className="w-12 h-12 text-lg border-2" />
-                    <InputOTPSlot index={3} className="w-12 h-12 text-lg border-2" />
+                    <InputOTPSlot 
+                      index={0} 
+                      className={`w-12 h-12 text-lg border-2 ${!showPin ? 'text-security-disc' : ''}`}
+                      style={!showPin ? { 
+                        WebkitTextSecurity: 'disc',
+                        textSecurity: 'disc',
+                        fontFamily: 'monospace'
+                      } : {}}
+                    />
+                    <InputOTPSlot 
+                      index={1} 
+                      className={`w-12 h-12 text-lg border-2 ${!showPin ? 'text-security-disc' : ''}`}
+                      style={!showPin ? { 
+                        WebkitTextSecurity: 'disc',
+                        textSecurity: 'disc',
+                        fontFamily: 'monospace'
+                      } : {}}
+                    />
+                    <InputOTPSlot 
+                      index={2} 
+                      className={`w-12 h-12 text-lg border-2 ${!showPin ? 'text-security-disc' : ''}`}
+                      style={!showPin ? { 
+                        WebkitTextSecurity: 'disc',
+                        textSecurity: 'disc',
+                        fontFamily: 'monospace'
+                      } : {}}
+                    />
+                    <InputOTPSlot 
+                      index={3} 
+                      className={`w-12 h-12 text-lg border-2 ${!showPin ? 'text-security-disc' : ''}`}
+                      style={!showPin ? { 
+                        WebkitTextSecurity: 'disc',
+                        textSecurity: 'disc',
+                        fontFamily: 'monospace'
+                      } : {}}
+                    />
                   </InputOTPGroup>
                 </InputOTP>
               </div>
@@ -144,10 +208,42 @@ const PinInput: React.FC<PinInputProps> = ({
                   pattern="[0-9]*"
                 >
                   <InputOTPGroup>
-                    <InputOTPSlot index={0} className="w-12 h-12 text-lg border-2" />
-                    <InputOTPSlot index={1} className="w-12 h-12 text-lg border-2" />
-                    <InputOTPSlot index={2} className="w-12 h-12 text-lg border-2" />
-                    <InputOTPSlot index={3} className="w-12 h-12 text-lg border-2" />
+                    <InputOTPSlot 
+                      index={0} 
+                      className={`w-12 h-12 text-lg border-2 ${!showConfirmPin ? 'text-security-disc' : ''}`}
+                      style={!showConfirmPin ? { 
+                        WebkitTextSecurity: 'disc',
+                        textSecurity: 'disc',
+                        fontFamily: 'monospace'
+                      } : {}}
+                    />
+                    <InputOTPSlot 
+                      index={1} 
+                      className={`w-12 h-12 text-lg border-2 ${!showConfirmPin ? 'text-security-disc' : ''}`}
+                      style={!showConfirmPin ? { 
+                        WebkitTextSecurity: 'disc',
+                        textSecurity: 'disc',
+                        fontFamily: 'monospace'
+                      } : {}}
+                    />
+                    <InputOTPSlot 
+                      index={2} 
+                      className={`w-12 h-12 text-lg border-2 ${!showConfirmPin ? 'text-security-disc' : ''}`}
+                      style={!showConfirmPin ? { 
+                        WebkitTextSecurity: 'disc',
+                        textSecurity: 'disc',
+                        fontFamily: 'monospace'
+                      } : {}}
+                    />
+                    <InputOTPSlot 
+                      index={3} 
+                      className={`w-12 h-12 text-lg border-2 ${!showConfirmPin ? 'text-security-disc' : ''}`}
+                      style={!showConfirmPin ? { 
+                        WebkitTextSecurity: 'disc',
+                        textSecurity: 'disc',
+                        fontFamily: 'monospace'
+                      } : {}}
+                    />
                   </InputOTPGroup>
                 </InputOTP>
               </div>

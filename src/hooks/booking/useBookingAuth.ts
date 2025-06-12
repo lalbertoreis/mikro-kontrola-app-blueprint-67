@@ -31,7 +31,12 @@ export function useBookingAuth() {
       
       try {
         setIsLoadingAppointments(true);
+        console.log("Loading appointments for user:", userProfile.phone);
+        
+        // Buscar agendamentos em TODOS os negócios para este telefone
         const bookingAppointments = await fetchUserAppointmentsByPhone(userProfile.phone);
+        
+        console.log("Loaded appointments:", bookingAppointments);
         setAppointments(bookingAppointments);
       } catch (error) {
         console.error('Error fetching appointments:', error);
@@ -45,6 +50,7 @@ export function useBookingAuth() {
   }, [isLoggedIn, userProfile]);
 
   const handleLogin = (userData: { name: string; phone: string }) => {
+    console.log("User logged in:", userData);
     // Store user info in local storage
     localStorage.setItem("bookingUser", JSON.stringify(userData));
     setUserProfile(userData);
@@ -52,6 +58,7 @@ export function useBookingAuth() {
   };
 
   const handleLogout = () => {
+    console.log("User logged out");
     localStorage.removeItem("bookingUser");
     setUserProfile(null);
     setIsLoggedIn(false);
