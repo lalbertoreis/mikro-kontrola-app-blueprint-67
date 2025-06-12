@@ -24,9 +24,9 @@ export const StepOnlineBooking: React.FC = () => {
           Configure sua página pública para que clientes possam agendar seus serviços online 24/7.
         </p>
 
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium mb-2">Benefícios da agenda online:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+        <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h4 className="font-medium mb-2 text-gray-900 dark:text-gray-100">Benefícios da agenda online:</h4>
+          <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
             <li>• Agendamentos automáticos</li>
             <li>• Redução de ligações</li>
             <li>• Disponibilidade 24 horas</li>

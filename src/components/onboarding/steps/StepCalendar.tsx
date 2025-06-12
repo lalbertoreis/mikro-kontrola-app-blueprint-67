@@ -24,9 +24,9 @@ export const StepCalendar: React.FC = () => {
           Gerencie horários, visualize agendamentos e organize a agenda da sua equipe de forma eficiente.
         </p>
 
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium mb-2">Funcionalidades da agenda:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+        <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700"">
+          <h4 className="font-medium mb-2 text-gray-900 dark:text-gray-100">Funcionalidades da agenda:</h4>
+          <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
             <li>• Visualização semanal e mensal</li>
             <li>• Criação rápida de agendamentos</li>
             <li>• Bloqueio de horários específicos</li>

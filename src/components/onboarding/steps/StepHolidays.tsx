@@ -30,9 +30,9 @@ export const StepHolidays: React.FC = () => {
           Defina feriados e bloqueios automáticos na agenda para evitar agendamentos em datas indisponíveis.
         </p>
 
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium mb-2">Tipos de bloqueios:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+        <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h4 className="font-medium mb-2 text-gray-900 dark:text-gray-100">Tipos de bloqueios:</h4>
+          <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
             <li>• Feriados nacionais</li>
             <li>• Feriados locais</li>
             <li>• Bloqueios personalizados</li>

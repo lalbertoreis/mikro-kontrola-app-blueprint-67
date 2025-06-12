@@ -24,9 +24,9 @@ export const StepClients: React.FC = () => {
           Cadastre e gerencie seus clientes com informações detalhadas e histórico completo de atendimentos.
         </p>
 
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium mb-2">Informações que você pode gerenciar:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+        <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h4 className="font-medium mb-2 text-gray-900 dark:text-gray-100">Informações que você pode gerenciar:</h4>
+          <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
             <li>• Dados pessoais e contatos</li>
             <li>• Endereço completo</li>
             <li>• Histórico de agendamentos</li>
