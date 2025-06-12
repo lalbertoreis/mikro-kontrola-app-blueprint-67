@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -78,12 +79,13 @@ export async function createClientSecure({
     
     const result = data[0];
     
-    // Check if the operation was successful based on the return structure
+    // Check if the operation was successful using the new return structure
     if (!result.success) {
       console.error('RPC function returned failure:', result);
+      const errorMessage = result.error_message || 'Erro desconhecido na criação do cliente';
       return {
         success: false,
-        error: 'Erro ao criar cliente: dados inválidos ou telefone já cadastrado'
+        error: errorMessage
       };
     }
     

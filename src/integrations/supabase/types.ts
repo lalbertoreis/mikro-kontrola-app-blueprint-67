@@ -875,6 +875,7 @@ export type Database = {
         Returns: {
           id: string
           success: boolean
+          error_message: string
         }[]
       }
       find_clients_by_phone: {
