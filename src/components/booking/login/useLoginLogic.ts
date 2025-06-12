@@ -2,16 +2,27 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import bcrypt from "bcryptjs-react";
 import { setSlugContext } from "@/services/appointment/availability/slugContext";
 
-interface Client {
+interface ClientCheckResult {
   id: string;
   name: string;
   phone: string;
-  pin?: string;
-  email?: string;
   user_id: string;
+  has_pin: boolean;
+}
+
+interface ClientCreateResult {
+  id: string;
+  success: boolean;
+}
+
+interface ClientVerifyResult {
+  id: string;
+  name: string;
+  phone: string;
+  user_id: string;
+  pin_valid: boolean;
 }
 
 export function useLoginLogic(businessSlug?: string) {
@@ -35,63 +46,57 @@ export function useLoginLogic(businessSlug?: string) {
             await setSlugContext(businessSlug);
           }
           
-          // First try to find a client within the current business context
-          let localClient = null;
+          // Use the secure function to check if client exists
+          const cleanPhone = phone.replace(/\D/g, '');
+          const { data: clientData, error } = await supabase
+            .rpc('check_client_by_phone', { phone_param: cleanPhone });
           
-          if (businessSlug) {
-            // First get the business user ID
-            const { data: business } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('slug', businessSlug)
-              .maybeSingle();
-              
-            if (business && business.id) {
-              // Then get the client for this specific business
-              const { data: specificClient } = await supabase
-                .from('clients')
-                .select('id, name, phone, pin')
-                .eq('phone', phone)
-                .eq('user_id', business.id) 
-                .maybeSingle();
-              
-              if (specificClient) {
-                localClient = specificClient;
-              }
-            }
+          if (error) {
+            console.error('Error checking client:', error);
+            toast.error("Erro ao verificar cadastro");
+            return;
           }
           
-          if (localClient) {
-            // Found client in current business
-            setName(localClient.name || '');
+          const client = clientData as ClientCheckResult | null;
+          
+          if (client) {
+            // Client exists
+            setName(client.name || '');
             setExistingUserData({
-              name: localClient.name,
-              hasPin: !!localClient.pin
+              name: client.name,
+              hasPin: client.has_pin
             });
             
-            if (localClient.pin) {
+            if (client.has_pin) {
               setPinMode('verify');
             } else {
               setPinMode('create');
             }
           } else {
-            // Check if client exists in any business
-            const { data: anyClientData } = await supabase
-              .from('clients')
-              .select('id, name, phone, pin, user_id')
-              .eq('phone', phone);
+            // Check if client exists in other businesses
+            const { data: allClientsData, error: findError } = await supabase
+              .rpc('find_clients_by_phone', { phone_param: cleanPhone });
             
-            const anyClient = anyClientData as Client[] | null;
+            if (findError) {
+              console.error('Error finding clients:', findError);
+              // Continue as new client
+              setExistingUserData(null);
+              setPinMode('create');
+              return;
+            }
             
-            if (anyClient && anyClient.length > 0) {
+            const allClients = allClientsData as ClientCheckResult[] | null;
+            
+            if (allClients && allClients.length > 0) {
               // Client exists in another business
-              setName(anyClient[0].name || '');
+              const firstClient = allClients[0];
+              setName(firstClient.name || '');
               setExistingUserData({
-                name: anyClient[0].name,
-                hasPin: !!anyClient[0].pin
+                name: firstClient.name,
+                hasPin: firstClient.has_pin
               });
               
-              if (anyClient[0].pin) {
+              if (firstClient.has_pin) {
                 setPinMode('verify');
               } else {
                 setPinMode('create');
@@ -125,7 +130,8 @@ export function useLoginLogic(businessSlug?: string) {
     
     try {
       // Validate inputs
-      if (!phone || phone.replace(/\D/g, '').length !== 11) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (!phone || cleanPhone.length !== 11) {
         toast.error("Por favor, insira um número de telefone válido");
         setIsLoading(false);
         return;
@@ -157,73 +163,52 @@ export function useLoginLogic(businessSlug?: string) {
           setIsLoading(false);
           return;
         }
-      } else {
-        // If no slug, try to get the current user ID
-        const { data: { user } } = await supabase.auth.getUser();
-        businessUserId = user?.id;
       }
 
       // PIN validation
       if (pinMode === 'verify') {
-        // Search the client by phone across all businesses
-        const { data: clientsData } = await supabase
-          .from('clients')
-          .select('id, name, phone, pin, user_id')
-          .eq('phone', phone);
+        // Use secure function to verify PIN
+        const { data: verifyData, error: verifyError } = await supabase
+          .rpc('verify_client_pin', { 
+            phone_param: cleanPhone, 
+            pin_param: pin 
+          });
         
-        const clientsWithTyping = clientsData as Client[] | null;
-        
-        if (!clientsWithTyping || clientsWithTyping.length === 0) {
-          toast.error("Conta não encontrada");
+        if (verifyError) {
+          console.error('Error verifying PIN:', verifyError);
+          toast.error("Erro ao verificar PIN");
           setIsLoading(false);
           return;
         }
         
-        // Find a client record with a PIN
-        const clientWithPin = clientsWithTyping.find(c => c.pin);
+        const verifyResult = verifyData as ClientVerifyResult | null;
         
-        if (!clientWithPin || !clientWithPin.pin) {
-          toast.error("PIN não encontrado, crie um novo PIN");
-          setPinMode('create');
-          setIsLoading(false);
-          return;
-        }
-        
-        // Compare PIN with stored hash
-        const pinMatch = await bcrypt.compare(pin, clientWithPin.pin);
-        if (!pinMatch) {
+        if (!verifyResult || !verifyResult.pin_valid) {
           toast.error("PIN incorreto");
           setIsLoading(false);
           return;
         }
         
         // If the client exists in another business, but not in this one, copy it
-        if (businessUserId) {
-          const { data: existingLocalClient } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('phone', phone)
-            .eq('user_id', businessUserId)
-            .maybeSingle();
+        if (businessUserId && verifyResult.user_id !== businessUserId) {
+          const { error: createError } = await supabase
+            .rpc('create_client_for_auth', {
+              name_param: verifyResult.name || name,
+              phone_param: cleanPhone,
+              pin_param: pin,
+              business_user_id_param: businessUserId
+            });
             
-          if (!existingLocalClient) {
-            // Clone the client to this business
-            await supabase
-              .from('clients')
-              .insert({
-                name: clientWithPin.name || name,
-                phone: phone,
-                pin: clientWithPin.pin,
-                user_id: businessUserId
-              });
+          if (createError) {
+            console.error('Error copying client to business:', createError);
           }
         }
         
         return { 
           success: true,
           userData: { 
-            name: clientWithPin.name || "Usuário", 
-            phone 
+            name: verifyResult.name || "Usuário", 
+            phone: phone 
           }
         };
       } else if (pinMode === 'create') {
@@ -240,66 +225,57 @@ export function useLoginLogic(businessSlug?: string) {
           return { success: false };
         }
         
-        // Hash the PIN
-        const saltRounds = 10;
-        const hashedPin = await bcrypt.hash(pin, saltRounds);
-        
-        // Check if client exists in any business
-        const { data: existingClientsData } = await supabase
-          .from('clients')
-          .select('id, name, phone, pin, user_id')
-          .eq('phone', phone);
-        
-        const existingClients = existingClientsData as Client[] | null;
+        if (existingUserData) {
+          // Update existing client with PIN
+          const { data: updateSuccess, error: updateError } = await supabase
+            .rpc('update_client_pin', {
+              phone_param: cleanPhone,
+              pin_param: pin
+            });
           
-        if (existingClients && existingClients.length > 0) {
-          // Update existing clients with PIN across all businesses
-          for (const client of existingClients) {
-            await supabase
-              .from('clients')
-              .update({ 
-                pin: hashedPin,
-                name: name || client.name || ''
-              })
-              .eq('id', client.id);
+          if (updateError || !updateSuccess) {
+            console.error('Error updating PIN:', updateError);
+            toast.error("Erro ao criar PIN");
+            return { success: false };
           }
           
           // If the client doesn't exist in this business, create it
-          if (businessUserId && !existingClients.some(c => c.user_id === businessUserId)) {
+          if (businessUserId) {
             await supabase
-              .from('clients')
-              .insert({
-                name: name || existingClients[0].name || '',
-                phone: phone,
-                pin: hashedPin,
-                user_id: businessUserId
+              .rpc('create_client_for_auth', {
+                name_param: name || existingUserData.name || '',
+                phone_param: cleanPhone,
+                pin_param: pin,
+                business_user_id_param: businessUserId
               });
           }
           
           return { 
             success: true,
             userData: { 
-              name: name || existingClients[0].name || "Usuário", 
-              phone 
+              name: name || existingUserData.name || "Usuário", 
+              phone: phone 
             }
           };
         } else if (businessUserId) {
           // Create new client with PIN
-          const { data: newClient, error } = await supabase
-            .from('clients')
-            .insert([
-              { 
-                name, 
-                phone,
-                pin: hashedPin,
-                user_id: businessUserId
-              }
-            ])
-            .select()
-            .single();
-            
-          if (error) {
-            console.error('Insert error:', error);
+          const { data: createData, error: createError } = await supabase
+            .rpc('create_client_for_auth', {
+              name_param: name,
+              phone_param: cleanPhone,
+              pin_param: pin,
+              business_user_id_param: businessUserId
+            });
+          
+          if (createError) {
+            console.error('Create error:', createError);
+            toast.error("Erro ao criar usuário");
+            return { success: false };
+          }
+          
+          const createResult = createData as ClientCreateResult | null;
+          
+          if (!createResult || !createResult.success) {
             toast.error("Erro ao criar usuário");
             return { success: false };
           }
@@ -307,8 +283,8 @@ export function useLoginLogic(businessSlug?: string) {
           return { 
             success: true,
             userData: { 
-              name: newClient.name, 
-              phone 
+              name: name, 
+              phone: phone 
             }
           };
         } else {

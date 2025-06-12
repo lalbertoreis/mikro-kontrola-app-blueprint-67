@@ -855,6 +855,38 @@ export type Database = {
       }
     }
     Functions: {
+      check_client_by_phone: {
+        Args: { phone_param: string }
+        Returns: {
+          id: string
+          name: string
+          phone: string
+          user_id: string
+          has_pin: boolean
+        }[]
+      }
+      create_client_for_auth: {
+        Args: {
+          name_param: string
+          phone_param: string
+          pin_param?: string
+          business_user_id_param?: string
+        }
+        Returns: {
+          id: string
+          success: boolean
+        }[]
+      }
+      find_clients_by_phone: {
+        Args: { phone_param: string }
+        Returns: {
+          id: string
+          name: string
+          phone: string
+          user_id: string
+          has_pin: boolean
+        }[]
+      }
       get_holidays_by_date_and_slug: {
         Args: { date_param: string; slug_param?: string }
         Returns: {
@@ -918,6 +950,20 @@ export type Database = {
       set_slug_for_session: {
         Args: { slug: string }
         Returns: undefined
+      }
+      update_client_pin: {
+        Args: { phone_param: string; pin_param: string }
+        Returns: boolean
+      }
+      verify_client_pin: {
+        Args: { phone_param: string; pin_param: string }
+        Returns: {
+          id: string
+          name: string
+          phone: string
+          user_id: string
+          pin_valid: boolean
+        }[]
       }
     }
     Enums: {
