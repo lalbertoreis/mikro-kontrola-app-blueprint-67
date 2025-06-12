@@ -7,6 +7,8 @@ import { getBusinessUserId, setSlugForSession } from "./businessUtils";
 // Fetch user appointments by phone number
 export const fetchUserAppointmentsByPhone = async (phone: string, businessSlug?: string): Promise<BookingAppointment[]> => {
   try {
+    console.log("Fetching appointments for phone:", phone, "slug:", businessSlug);
+    
     // Se temos um slug, vamos definir o contexto da sessão
     if (businessSlug) {
       await setSlugForSession(businessSlug);
@@ -22,50 +24,34 @@ export const fetchUserAppointmentsByPhone = async (phone: string, businessSlug?:
         .maybeSingle();
       
       businessId = business?.id;
+      console.log("Business ID found:", businessId);
     }
     
-    if (!businessId && businessSlug) {
-      console.error('Business ID not found for slug:', businessSlug);
-      return [];
-    }
+    // Primeiro, buscar TODOS os clientes com este telefone (em qualquer negócio)
+    const cleanPhone = phone.replace(/\D/g, '');
+    console.log("Clean phone for search:", cleanPhone);
     
-    // First get the client id by phone
-    let query = supabase
+    const { data: allClients, error: clientsError } = await supabase
       .from('clients')
-      .select('id');
+      .select('id, user_id, name')
+      .eq('phone', cleanPhone);
     
-    // Se temos o ID do negócio, vamos filtrar por ele
-    if (businessId) {
-      query = query.eq('user_id', businessId);
-    }
-      
-    // Adicionar filtro por telefone
-    query = query.eq('phone', phone);
-    
-    const { data: client, error: clientError } = await query.maybeSingle();
-    
-    if (clientError || !client) {
-      console.log("Nenhum cliente encontrado com este telefone neste estabelecimento");
-      
-      // Se não encontramos o cliente neste estabelecimento, verificamos em outros
-      if (businessId) {
-        const { data: anyClient } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('phone', phone)
-          .maybeSingle();
-          
-        if (anyClient) {
-          console.log("Cliente encontrado em outro estabelecimento, buscando agendamentos...");
-          // Cliente existe em outro estabelecimento, mas não tem agendamentos aqui
-          return [];
-        }
-      }
-      
+    if (clientsError) {
+      console.error("Error fetching clients:", clientsError);
       return [];
     }
     
-    // Then fetch appointments from the view - busca todos os agendamentos do cliente, não apenas deste negócio
+    if (!allClients || allClients.length === 0) {
+      console.log("No clients found with this phone number");
+      return [];
+    }
+    
+    console.log("Found clients:", allClients);
+    
+    // Extrair todos os IDs de clientes
+    const clientIds = allClients.map(client => client.id);
+    
+    // Buscar agendamentos usando os IDs dos clientes
     let appointmentsQuery = supabase
       .from('appointments_view')
       .select(`
@@ -74,19 +60,37 @@ export const fetchUserAppointmentsByPhone = async (phone: string, businessSlug?:
         status,
         employee_id,
         service_id,
-        business_slug
+        business_slug,
+        client_id
       `)
-      .eq('client_id', client.id)
+      .in('client_id', clientIds)
       .neq('status', 'canceled')
       .order('start_time', { ascending: true });
     
+    // Se temos um slug específico, filtrar apenas agendamentos deste negócio
+    if (businessSlug) {
+      appointmentsQuery = appointmentsQuery.eq('business_slug', businessSlug);
+    }
+    
     const { data: appointmentsData, error: appointmentsError } = await appointmentsQuery;
     
-    if (appointmentsError) throw appointmentsError;
+    if (appointmentsError) {
+      console.error("Error fetching appointments:", appointmentsError);
+      return [];
+    }
     
-    // Precisamos buscar nomes de serviços e funcionários
+    console.log("Found appointments:", appointmentsData);
+    
+    if (!appointmentsData || appointmentsData.length === 0) {
+      console.log("No appointments found");
+      return [];
+    }
+    
+    // Buscar detalhes dos serviços e funcionários
     const appointmentsWithDetails = await Promise.all(
-      (appointmentsData || []).map(async (app) => {
+      appointmentsData.map(async (app) => {
+        console.log("Processing appointment:", app);
+        
         // Buscar nome do serviço
         const { data: serviceData } = await supabase
           .from('services')
@@ -113,6 +117,7 @@ export const fetchUserAppointmentsByPhone = async (phone: string, businessSlug?:
       })
     );
     
+    console.log("Final appointments with details:", appointmentsWithDetails);
     return appointmentsWithDetails;
   } catch (error) {
     console.error('Error fetching appointments:', error);
@@ -123,6 +128,8 @@ export const fetchUserAppointmentsByPhone = async (phone: string, businessSlug?:
 // Cancel an appointment by ID
 export const cancelAppointment = async (id: string, businessSlug?: string): Promise<boolean> => {
   try {
+    console.log("Canceling appointment:", id, "business:", businessSlug);
+    
     // Se temos um slug, vamos definir o contexto da sessão
     if (businessSlug) {
       await setSlugForSession(businessSlug);
@@ -140,6 +147,8 @@ export const cancelAppointment = async (id: string, businessSlug?: string): Prom
       console.error("Error fetching appointment:", fetchError);
       throw new Error("Agendamento não encontrado");
     }
+    
+    console.log("Appointment found for cancellation:", appointment);
     
     // Obter configurações do negócio
     let cancelMinHours = 1; // valor padrão
@@ -186,9 +195,11 @@ export const cancelAppointment = async (id: string, businessSlug?: string): Prom
       .eq('id', id);
       
     if (updateError) {
+      console.error("Error updating appointment:", updateError);
       throw new Error('Erro ao cancelar o agendamento');
     }
     
+    console.log("Appointment canceled successfully");
     return true;
   } catch (error) {
     console.error('Error canceling appointment:', error);

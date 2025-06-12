@@ -40,6 +40,7 @@ export function useLoginLogic(businessSlug?: string) {
       if (phone && phone.replace(/\D/g, '').length === 11) {
         try {
           setIsLoading(true);
+          console.log("Checking user exists for phone:", phone, "business:", businessSlug);
           
           // Set slug context if available
           if (businessSlug) {
@@ -57,11 +58,14 @@ export function useLoginLogic(businessSlug?: string) {
             return;
           }
           
+          console.log("Client check result:", clientData);
+          
           const clientArray = clientData as ClientCheckResult[] | null;
           const client = clientArray && clientArray.length > 0 ? clientArray[0] : null;
           
           if (client) {
             // Client exists
+            console.log("Client found:", client);
             setName(client.name || '');
             setExistingUserData({
               name: client.name,
@@ -75,6 +79,7 @@ export function useLoginLogic(businessSlug?: string) {
             }
           } else {
             // Check if client exists in other businesses
+            console.log("Client not found, checking other businesses");
             const { data: allClientsData, error: findError } = await supabase
               .rpc('find_clients_by_phone', { phone_param: cleanPhone });
             
@@ -86,12 +91,15 @@ export function useLoginLogic(businessSlug?: string) {
               return;
             }
             
+            console.log("All clients result:", allClientsData);
+            
             const allClientsArray = allClientsData as ClientCheckResult[] | null;
             const allClients = allClientsArray || [];
             
             if (allClients.length > 0) {
               // Client exists in another business
               const firstClient = allClients[0];
+              console.log("Found client in another business:", firstClient);
               setName(firstClient.name || '');
               setExistingUserData({
                 name: firstClient.name,
@@ -105,6 +113,7 @@ export function useLoginLogic(businessSlug?: string) {
               }
             } else {
               // New client
+              console.log("No client found, creating new");
               setExistingUserData(null);
               setPinMode('create');
             }
@@ -131,6 +140,8 @@ export function useLoginLogic(businessSlug?: string) {
     setIsLoading(true);
     
     try {
+      console.log("Starting form submission with mode:", pinMode);
+      
       // Validate inputs
       const cleanPhone = phone.replace(/\D/g, '');
       if (!phone || cleanPhone.length !== 11) {
@@ -160,6 +171,8 @@ export function useLoginLogic(businessSlug?: string) {
           .maybeSingle();
         
         businessUserId = business?.id;
+        console.log("Business user ID:", businessUserId);
+        
         if (!businessUserId) {
           toast.error("Erro ao identificar o negócio");
           setIsLoading(false);
@@ -169,6 +182,7 @@ export function useLoginLogic(businessSlug?: string) {
 
       // PIN validation
       if (pinMode === 'verify') {
+        console.log("Verifying PIN");
         // Use secure function to verify PIN
         const { data: verifyData, error: verifyError } = await supabase
           .rpc('verify_client_pin', { 
@@ -183,6 +197,8 @@ export function useLoginLogic(businessSlug?: string) {
           return;
         }
         
+        console.log("PIN verification result:", verifyData);
+        
         const verifyArray = verifyData as ClientVerifyResult[] | null;
         const verifyResult = verifyArray && verifyArray.length > 0 ? verifyArray[0] : null;
         
@@ -192,8 +208,11 @@ export function useLoginLogic(businessSlug?: string) {
           return;
         }
         
+        console.log("PIN verified successfully for user:", verifyResult.name);
+        
         // If the client exists in another business, but not in this one, copy it
         if (businessUserId && verifyResult.user_id !== businessUserId) {
+          console.log("Copying client to current business");
           const { error: createError } = await supabase
             .rpc('create_client_for_auth', {
               name_param: verifyResult.name || name,
@@ -215,6 +234,7 @@ export function useLoginLogic(businessSlug?: string) {
           }
         };
       } else if (pinMode === 'create') {
+        console.log("Creating new PIN");
         // Creating new PIN
         if (pin.length !== 4) {
           toast.error("O PIN deve ter 4 dígitos");
@@ -229,6 +249,7 @@ export function useLoginLogic(businessSlug?: string) {
         }
         
         if (existingUserData) {
+          console.log("Updating existing client with PIN");
           // Update existing client with PIN
           const { data: updateSuccess, error: updateError } = await supabase
             .rpc('update_client_pin', {
@@ -244,13 +265,18 @@ export function useLoginLogic(businessSlug?: string) {
           
           // If the client doesn't exist in this business, create it
           if (businessUserId) {
-            await supabase
+            console.log("Creating client copy for current business");
+            const { error: createError } = await supabase
               .rpc('create_client_for_auth', {
                 name_param: name || existingUserData.name || '',
                 phone_param: cleanPhone,
                 pin_param: pin,
                 business_user_id_param: businessUserId
               });
+              
+            if (createError) {
+              console.error('Error creating client for business:', createError);
+            }
           }
           
           return { 
@@ -261,6 +287,7 @@ export function useLoginLogic(businessSlug?: string) {
             }
           };
         } else if (businessUserId) {
+          console.log("Creating completely new client");
           // Create new client with PIN
           const { data: createData, error: createError } = await supabase
             .rpc('create_client_for_auth', {
@@ -272,9 +299,11 @@ export function useLoginLogic(businessSlug?: string) {
           
           if (createError) {
             console.error('Create error:', createError);
-            toast.error("Erro ao criar usuário");
+            toast.error("Erro ao criar usuário: " + (createError.message || "Erro desconhecido"));
             return { success: false };
           }
+          
+          console.log("Create result:", createData);
           
           const createArray = createData as ClientCreateResult[] | null;
           const createResult = createArray && createArray.length > 0 ? createArray[0] : null;
@@ -283,6 +312,8 @@ export function useLoginLogic(businessSlug?: string) {
             toast.error("Erro ao criar usuário");
             return { success: false };
           }
+          
+          console.log("Client created successfully with ID:", createResult.id);
           
           return { 
             success: true,
@@ -300,7 +331,7 @@ export function useLoginLogic(businessSlug?: string) {
       return { success: false };
     } catch (error) {
       console.error('Error in login process:', error);
-      toast.error("Erro ao processar o login");
+      toast.error("Erro ao processar o login: " + (error instanceof Error ? error.message : "Erro desconhecido"));
       return { success: false };
     } finally {
       setIsLoading(false);
