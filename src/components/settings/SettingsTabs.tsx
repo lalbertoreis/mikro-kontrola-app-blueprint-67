@@ -1,6 +1,5 @@
-
 import React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Calendar, CreditCard } from "lucide-react";
@@ -25,10 +24,17 @@ const SettingsTabs: React.FC<SettingsTabsProps> = ({
   watchBusinessLogo
 }) => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const activeTab = (searchParams.get('tab') as ValidTabs) || 'subscription';
 
+  const handleTabChange = (newTab: string) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('tab', newTab);
+    navigate(`/dashboard/settings?${newSearchParams.toString()}`, { replace: true });
+  };
+
   return (
-    <Tabs value={activeTab} className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="subscription" className="flex items-center gap-2">
           <CreditCard className="h-4 w-4" />
