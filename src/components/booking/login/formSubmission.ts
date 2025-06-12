@@ -1,7 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LoginResult } from "./types";
+import { LoginResult, ExistingUserData } from "./types";
 import { createClientSecure, checkClientExists } from "@/hooks/booking/utils/clientCreation";
 
 export async function handleCreateNewUser(
@@ -138,6 +137,54 @@ export async function handleExistingUserLogin(
   } catch (error: any) {
     console.error("Error logging in:", error);
     toast.error(`Erro no login: ${error.message || "Falha na autenticação"}`);
+    return { success: false };
+  }
+}
+
+export async function handleFormSubmission(
+  phone: string,
+  name: string,
+  pin: string,
+  confirmPin: string,
+  pinMode: 'verify' | 'create' | null,
+  existingUserData: ExistingUserData | null,
+  businessSlug?: string
+): Promise<LoginResult> {
+  try {
+    console.log("Handling form submission:", { pinMode, hasExistingData: !!existingUserData, businessSlug });
+    
+    if (!pinMode) {
+      toast.error("Modo de PIN não definido");
+      return { success: false };
+    }
+    
+    if (pinMode === 'verify') {
+      return await handleExistingUserLogin(phone, pin);
+    } else if (pinMode === 'create') {
+      // For PIN creation mode, use existing user's name if available
+      const userName = existingUserData?.name || name;
+      
+      // Get business user ID if business slug is provided
+      let businessUserId: string | null = null;
+      if (businessSlug) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('slug', businessSlug)
+          .single();
+        
+        businessUserId = profileData?.id || null;
+      }
+      
+      return await handleCreateNewUser(userName, phone, pin, confirmPin, businessUserId);
+    }
+    
+    toast.error("Modo de operação inválido");
+    return { success: false };
+    
+  } catch (error: any) {
+    console.error("Error in handleFormSubmission:", error);
+    toast.error(`Erro no processamento: ${error.message || "Falha na operação"}`);
     return { success: false };
   }
 }
