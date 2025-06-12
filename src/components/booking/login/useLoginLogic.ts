@@ -57,7 +57,8 @@ export function useLoginLogic(businessSlug?: string) {
             return;
           }
           
-          const client = clientData as ClientCheckResult | null;
+          const clientArray = clientData as ClientCheckResult[] | null;
+          const client = clientArray && clientArray.length > 0 ? clientArray[0] : null;
           
           if (client) {
             // Client exists
@@ -85,9 +86,10 @@ export function useLoginLogic(businessSlug?: string) {
               return;
             }
             
-            const allClients = allClientsData as ClientCheckResult[] | null;
+            const allClientsArray = allClientsData as ClientCheckResult[] | null;
+            const allClients = allClientsArray || [];
             
-            if (allClients && allClients.length > 0) {
+            if (allClients.length > 0) {
               // Client exists in another business
               const firstClient = allClients[0];
               setName(firstClient.name || '');
@@ -181,7 +183,8 @@ export function useLoginLogic(businessSlug?: string) {
           return;
         }
         
-        const verifyResult = verifyData as ClientVerifyResult | null;
+        const verifyArray = verifyData as ClientVerifyResult[] | null;
+        const verifyResult = verifyArray && verifyArray.length > 0 ? verifyArray[0] : null;
         
         if (!verifyResult || !verifyResult.pin_valid) {
           toast.error("PIN incorreto");
@@ -273,7 +276,8 @@ export function useLoginLogic(businessSlug?: string) {
             return { success: false };
           }
           
-          const createResult = createData as ClientCreateResult | null;
+          const createArray = createData as ClientCreateResult[] | null;
+          const createResult = createArray && createArray.length > 0 ? createArray[0] : null;
           
           if (!createResult || !createResult.success) {
             toast.error("Erro ao criar usuário");
