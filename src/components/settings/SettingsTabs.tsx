@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Calendar, CreditCard } from "lucide-react";
@@ -16,13 +17,18 @@ interface SettingsTabsProps {
   watchBusinessLogo?: string;
 }
 
+type ValidTabs = 'subscription' | 'business' | 'online-booking' | 'booking-settings';
+
 const SettingsTabs: React.FC<SettingsTabsProps> = ({
   control,
   watchEnableOnlineBooking,
   watchBusinessLogo
 }) => {
+  const [searchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') as ValidTabs) || 'subscription';
+
   return (
-    <Tabs defaultValue="subscription" className="w-full">
+    <Tabs value={activeTab} className="w-full">
       <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="subscription" className="flex items-center gap-2">
           <CreditCard className="h-4 w-4" />

@@ -36,7 +36,7 @@ export const StepBusinessInfo: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={() => navigateAndHideWizard('/dashboard/settings?tab=negocio')}
+            onClick={() => navigateAndHideWizard('/dashboard/settings?tab=business')}
             className="flex items-center space-x-2"
           >
             <Settings className="w-4 h-4" />
