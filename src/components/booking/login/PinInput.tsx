@@ -24,6 +24,13 @@ const PinInput: React.FC<PinInputProps> = ({
   const [showPin, setShowPin] = useState(false);
   const [showConfirmPin, setShowConfirmPin] = useState(false);
 
+  // Custom style for hiding characters
+  const hiddenCharStyle: React.CSSProperties = {
+    WebkitTextSecurity: 'disc',
+    textSecurity: 'disc',
+    fontFamily: 'monospace'
+  } as any;
+
   return (
     <>
       {mode === 'verify' ? (
@@ -44,19 +51,23 @@ const PinInput: React.FC<PinInputProps> = ({
                 <InputOTPGroup>
                   <InputOTPSlot 
                     index={0} 
-                    className={`w-12 h-12 text-lg border-2 ${!showPin ? 'password-char' : ''}`}
+                    className="w-12 h-12 text-lg border-2"
+                    style={!showPin ? hiddenCharStyle : {}}
                   />
                   <InputOTPSlot 
                     index={1} 
-                    className={`w-12 h-12 text-lg border-2 ${!showPin ? 'password-char' : ''}`}
+                    className="w-12 h-12 text-lg border-2"
+                    style={!showPin ? hiddenCharStyle : {}}
                   />
                   <InputOTPSlot 
                     index={2} 
-                    className={`w-12 h-12 text-lg border-2 ${!showPin ? 'password-char' : ''}`}
+                    className="w-12 h-12 text-lg border-2"
+                    style={!showPin ? hiddenCharStyle : {}}
                   />
                   <InputOTPSlot 
                     index={3} 
-                    className={`w-12 h-12 text-lg border-2 ${!showPin ? 'password-char' : ''}`}
+                    className="w-12 h-12 text-lg border-2"
+                    style={!showPin ? hiddenCharStyle : {}}
                   />
                 </InputOTPGroup>
               </InputOTP>
@@ -106,19 +117,23 @@ const PinInput: React.FC<PinInputProps> = ({
                   <InputOTPGroup>
                     <InputOTPSlot 
                       index={0} 
-                      className={`w-12 h-12 text-lg border-2 ${!showPin ? 'password-char' : ''}`}
+                      className="w-12 h-12 text-lg border-2"
+                      style={!showPin ? hiddenCharStyle : {}}
                     />
                     <InputOTPSlot 
                       index={1} 
-                      className={`w-12 h-12 text-lg border-2 ${!showPin ? 'password-char' : ''}`}
+                      className="w-12 h-12 text-lg border-2"
+                      style={!showPin ? hiddenCharStyle : {}}
                     />
                     <InputOTPSlot 
                       index={2} 
-                      className={`w-12 h-12 text-lg border-2 ${!showPin ? 'password-char' : ''}`}
+                      className="w-12 h-12 text-lg border-2"
+                      style={!showPin ? hiddenCharStyle : {}}
                     />
                     <InputOTPSlot 
                       index={3} 
-                      className={`w-12 h-12 text-lg border-2 ${!showPin ? 'password-char' : ''}`}
+                      className="w-12 h-12 text-lg border-2"
+                      style={!showPin ? hiddenCharStyle : {}}
                     />
                   </InputOTPGroup>
                 </InputOTP>
@@ -167,19 +182,23 @@ const PinInput: React.FC<PinInputProps> = ({
                   <InputOTPGroup>
                     <InputOTPSlot 
                       index={0} 
-                      className={`w-12 h-12 text-lg border-2 ${!showConfirmPin ? 'password-char' : ''}`}
+                      className="w-12 h-12 text-lg border-2"
+                      style={!showConfirmPin ? hiddenCharStyle : {}}
                     />
                     <InputOTPSlot 
                       index={1} 
-                      className={`w-12 h-12 text-lg border-2 ${!showConfirmPin ? 'password-char' : ''}`}
+                      className="w-12 h-12 text-lg border-2"
+                      style={!showConfirmPin ? hiddenCharStyle : {}}
                     />
                     <InputOTPSlot 
                       index={2} 
-                      className={`w-12 h-12 text-lg border-2 ${!showConfirmPin ? 'password-char' : ''}`}
+                      className="w-12 h-12 text-lg border-2"
+                      style={!showConfirmPin ? hiddenCharStyle : {}}
                     />
                     <InputOTPSlot 
                       index={3} 
-                      className={`w-12 h-12 text-lg border-2 ${!showConfirmPin ? 'password-char' : ''}`}
+                      className="w-12 h-12 text-lg border-2"
+                      style={!showConfirmPin ? hiddenCharStyle : {}}
                     />
                   </InputOTPGroup>
                 </InputOTP>
@@ -212,14 +231,6 @@ const PinInput: React.FC<PinInputProps> = ({
           </div>
         </>
       )}
-      
-      <style jsx>{`
-        .password-char {
-          -webkit-text-security: disc;
-          text-security: disc;
-          font-family: monospace;
-        }
-      `}</style>
     </>
   );
 };
