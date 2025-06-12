@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import PrivateRoute from "@/components/auth/PrivateRoute";
+import { OnboardingManager } from "@/components/onboarding/OnboardingManager";
 
 // Import pages
 import Index from "./pages/Index";
@@ -115,6 +116,9 @@ function App() {
                 {/* 404 route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              
+              {/* Onboarding Manager - aparece como overlay quando necessário */}
+              <OnboardingManager />
             </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>
