@@ -15,12 +15,12 @@ export const StepCalendar: React.FC = () => {
         </div>
         <div>
           <h3 className="text-xl font-semibold">Agenda e Agendamentos</h3>
-          <p className="text-gray-600">Configure sua agenda de trabalho</p>
+          <p className="text-gray-600 dark:text-gray-300">Configure sua agenda de trabalho</p>
         </div>
       </div>
 
       <div className="space-y-4">
-        <p className="text-gray-700">
+        <p className="text-gray-700 dark:text-gray-200">
           Gerencie horários, visualize agendamentos e organize a agenda da sua equipe de forma eficiente.
         </p>
 
