@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LoginResult, ExistingUserData } from "./types";
@@ -19,7 +20,8 @@ export async function handleCreateNewUser(
       return { success: false };
     }
     
-    if (!phone || phone.replace(/\D/g, '').length !== 11) {
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!phone || cleanPhone.length !== 11) {
       toast.error("Número de telefone deve ter 11 dígitos (DDD + número)");
       return { success: false };
     }
@@ -34,22 +36,24 @@ export async function handleCreateNewUser(
       return { success: false };
     }
     
-    const cleanPhone = phone.replace(/\D/g, '');
-    
-    // Check if client already exists
+    // Check if client already exists before trying to create
+    console.log("Checking if client exists before creation...");
     const clientCheck = await checkClientExists(cleanPhone);
     
     if (clientCheck.error) {
+      console.error("Error checking client existence:", clientCheck.error);
       toast.error(`Erro ao verificar cliente: ${clientCheck.error}`);
       return { success: false };
     }
     
     if (clientCheck.exists) {
+      console.log("Client already exists");
       toast.error("Este número de telefone já está cadastrado");
       return { success: false };
     }
     
     // Create new client
+    console.log("Creating new client...");
     const createResult = await createClientSecure({
       name: name.trim(),
       phone: cleanPhone,
@@ -58,10 +62,12 @@ export async function handleCreateNewUser(
     });
     
     if (!createResult.success) {
+      console.error("Client creation failed:", createResult.error);
       toast.error(createResult.error || "Erro ao criar usuário");
       return { success: false };
     }
     
+    console.log("Client created successfully:", createResult.clientId);
     toast.success("Usuário criado com sucesso!");
     
     return {

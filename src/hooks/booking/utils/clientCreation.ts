@@ -45,10 +45,10 @@ export async function createClientSecure({
     }
     
     // Validate PIN if provided
-    if (pin && pin.length !== 4) {
+    if (pin && (pin.length !== 4 || !/^\d{4}$/.test(pin))) {
       return {
         success: false,
-        error: 'PIN deve ter exatamente 4 dígitos'
+        error: 'PIN deve ter exatamente 4 dígitos numéricos'
       };
     }
     
@@ -69,20 +69,39 @@ export async function createClientSecure({
       };
     }
     
-    if (!data || data.length === 0 || !data[0].success) {
-      console.error('RPC function returned failure:', data);
+    if (!data || data.length === 0) {
+      console.error('RPC function returned no data');
       return {
         success: false,
-        error: 'Erro ao criar cliente: dados inválidos ou telefone já cadastrado'
+        error: 'Erro interno: função não retornou dados'
       };
     }
     
-    const clientId = data[0].id;
-    console.log('Client created successfully:', clientId);
+    const result = data[0];
+    
+    // Check if the operation was successful based on the new return structure
+    if (!result.success) {
+      console.error('RPC function returned failure:', result);
+      const errorMessage = result.error_message || 'Erro desconhecido na criação do cliente';
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+    
+    if (!result.id) {
+      console.error('RPC function succeeded but no ID returned:', result);
+      return {
+        success: false,
+        error: 'Erro interno: cliente criado mas ID não retornado'
+      };
+    }
+    
+    console.log('Client created successfully:', result.id);
     
     return {
       success: true,
-      clientId: clientId
+      clientId: result.id
     };
     
   } catch (error: any) {
