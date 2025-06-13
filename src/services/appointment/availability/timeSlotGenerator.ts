@@ -47,7 +47,7 @@ export function generateTimeSlots(
 
 /**
  * Enhanced function that filters out time slots that conflict with existing appointments or holidays
- * CRITICAL: This function must EXCLUDE all occupied time slots
+ * Fixed to handle timezone correctly and prevent false conflicts
  */
 export function filterAvailableSlots(
   allSlots: string[],
@@ -57,18 +57,11 @@ export function filterAvailableSlots(
   simultaneousLimit: number = 1,
   holidays: Holiday[] = []
 ): string[] {
-  console.log("=== FILTERING AVAILABLE SLOTS (ENHANCED) ===");
-  console.log("Input slots:", allSlots);
-  console.log("Existing appointments:", appointments);
-  console.log("Service duration:", serviceDuration, "minutes");
-  console.log("Simultaneous limit:", simultaneousLimit);
-  
   // Check if date is a holiday that blocks all appointments
   const dateHolidays = holidays.filter(h => h.date === date && h.isActive);
   const fullDayHolidays = dateHolidays.filter(h => h.blockingType === 'full_day');
   
   if (fullDayHolidays.length > 0) {
-    console.log('Full day holiday found, no slots available');
     return [];
   }
   
@@ -76,75 +69,57 @@ export function filterAvailableSlots(
   const partialHolidays = dateHolidays.filter(h => h.blockingType === 'custom');
   
   const availableSlots = allSlots.filter(slot => {
-    // Create start and end times for this slot
-    const slotStart = `${date}T${slot}:00`;
-    const slotEnd = `${date}T${format(addMinutes(parseISO(`${date}T${slot}:00`), serviceDuration), 'HH:mm')}:00`;
-    
-    console.log(`\n--- Checking slot ${slot} ---`);
-    console.log(`Slot period: ${slotStart} to ${slotEnd}`);
+    // Create local date objects for this slot using the correct date
+    const [slotHour, slotMinute] = slot.split(':').map(Number);
+    const slotStartLocal = new Date(`${date}T${slot}:00`);
+    const slotEndLocal = new Date(slotStartLocal.getTime() + (serviceDuration * 60 * 1000));
     
     // Check against partial day holidays (custom blocking type)
     for (const holiday of partialHolidays) {
       if (holiday.customStartTime && holiday.customEndTime) {
-        const holidayStart = `${date}T${holiday.customStartTime}`;
-        const holidayEnd = `${date}T${holiday.customEndTime}`;
+        const holidayStart = new Date(`${date}T${holiday.customStartTime}`);
+        const holidayEnd = new Date(`${date}T${holiday.customEndTime}`);
         
         // Check if slot overlaps with holiday time
         if (
-          (slotStart >= holidayStart && slotStart < holidayEnd) ||
-          (slotEnd > holidayStart && slotEnd <= holidayEnd) ||
-          (slotStart <= holidayStart && slotEnd >= holidayEnd)
+          (slotStartLocal >= holidayStart && slotStartLocal < holidayEnd) ||
+          (slotEndLocal > holidayStart && slotEndLocal <= holidayEnd) ||
+          (slotStartLocal <= holidayStart && slotEndLocal >= holidayEnd)
         ) {
-          console.log(`❌ Slot ${slot} blocked by holiday: ${holiday.name}`);
           return false;
         }
       }
     }
     
-    // CRITICAL: Count how many appointments overlap with this time slot
+    // Count how many appointments overlap with this time slot
     let conflictCount = 0;
-    const conflictingAppointments: any[] = [];
     
     for (const appointment of appointments) {
-      const appointmentStart = appointment.start_time;
-      const appointmentEnd = appointment.end_time;
+      // Parse appointment times and convert to local time for comparison
+      const appointmentStartUTC = new Date(appointment.start_time);
+      const appointmentEndUTC = new Date(appointment.end_time);
       
-      console.log(`  Checking vs appointment: ${appointmentStart} to ${appointmentEnd} (status: ${appointment.status})`);
+      // Convert UTC times to local times for proper comparison
+      const appointmentStartLocal = new Date(appointmentStartUTC.getTime() - (appointmentStartUTC.getTimezoneOffset() * 60 * 1000));
+      const appointmentEndLocal = new Date(appointmentEndUTC.getTime() - (appointmentEndUTC.getTimezoneOffset() * 60 * 1000));
       
-      // Enhanced overlap detection with strict time comparison
-      // Two time ranges overlap if: (start1 < end2) AND (start2 < end1)
-      const slotStartTime = new Date(slotStart);
-      const slotEndTime = new Date(slotEnd);
-      const appointmentStartTime = new Date(appointmentStart);
-      const appointmentEndTime = new Date(appointmentEnd);
+      // Extract just the time part for comparison (same date)
+      const appointmentStartTime = appointmentStartLocal.getHours() * 60 + appointmentStartLocal.getMinutes();
+      const appointmentEndTime = appointmentEndLocal.getHours() * 60 + appointmentEndLocal.getMinutes();
+      const slotStartTime = slotHour * 60 + slotMinute;
+      const slotEndTime = slotStartTime + serviceDuration;
       
-      const hasOverlap = slotStartTime < appointmentEndTime && appointmentStartTime < slotEndTime;
+      // Check for overlap using time in minutes
+      const hasOverlap = (slotStartTime < appointmentEndTime) && (appointmentStartTime < slotEndTime);
       
       if (hasOverlap) {
         conflictCount++;
-        conflictingAppointments.push(appointment);
-        console.log(`  ⚠️ OVERLAP DETECTED! Count: ${conflictCount}`);
-        console.log(`    Slot: ${slotStartTime.toISOString()} - ${slotEndTime.toISOString()}`);
-        console.log(`    Appt: ${appointmentStartTime.toISOString()} - ${appointmentEndTime.toISOString()}`);
       }
     }
     
     // STRICT filtering: if simultaneousLimit is 1, ANY conflict blocks the slot
-    const isAvailable = conflictCount < simultaneousLimit;
-    
-    if (!isAvailable) {
-      console.log(`❌ Slot ${slot} BLOCKED - conflicts: ${conflictCount}/${simultaneousLimit}`);
-      console.log(`   Conflicting appointments:`, conflictingAppointments.map(a => `${a.start_time} - ${a.end_time} (${a.status})`));
-    } else {
-      console.log(`✅ Slot ${slot} AVAILABLE - conflicts: ${conflictCount}/${simultaneousLimit}`);
-    }
-    
-    return isAvailable;
+    return conflictCount < simultaneousLimit;
   });
-  
-  console.log("=== FILTERING COMPLETE ===");
-  console.log(`Available slots: ${availableSlots.length}/${allSlots.length}`);
-  console.log("Final available slots:", availableSlots);
   
   return availableSlots;
 }

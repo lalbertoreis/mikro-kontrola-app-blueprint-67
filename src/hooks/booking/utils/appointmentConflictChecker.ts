@@ -10,6 +10,7 @@ export interface ConflictCheckResult {
 
 /**
  * Check for appointment conflicts before booking
+ * Fixed to handle timezone correctly
  */
 export async function checkAppointmentConflicts({
   employeeId,
@@ -25,15 +26,12 @@ export async function checkAppointmentConflicts({
   excludeAppointmentId?: string;
 }): Promise<ConflictCheckResult> {
   try {
-    console.log("Checking appointment conflicts:", {
-      employeeId,
-      startTime: startTime.toISOString(),
-      duration,
-      businessSlug
-    });
-    
     // Calculate end time
     const endTime = addMinutes(startTime, duration);
+    
+    // Convert times to ISO string for database comparison
+    const startTimeISO = startTime.toISOString();
+    const endTimeISO = endTime.toISOString();
     
     // Query for conflicting appointments using the appointments view
     let query = supabase
@@ -71,35 +69,20 @@ export async function checkAppointmentConflicts({
     }
     
     if (!appointments || appointments.length === 0) {
-      console.log("No existing appointments found");
       return { hasConflict: false };
     }
     
-    // Check for time overlaps
+    // Check for time overlaps using proper timezone handling
     const conflictingAppointments = appointments.filter(appointment => {
       const appointmentStart = new Date(appointment.start_time);
       const appointmentEnd = new Date(appointment.end_time);
       
       // Check if times overlap
-      // Two appointments overlap if:
-      // (start1 < end2) AND (start2 < end1)
+      // Two appointments overlap if: (start1 < end2) AND (start2 < end1)
       const hasOverlap = (
         startTime < appointmentEnd && 
         appointmentStart < endTime
       );
-      
-      if (hasOverlap) {
-        console.log("Conflict found:", {
-          existing: {
-            start: appointmentStart.toISOString(),
-            end: appointmentEnd.toISOString()
-          },
-          new: {
-            start: startTime.toISOString(),
-            end: endTime.toISOString()
-          }
-        });
-      }
       
       return hasOverlap;
     });

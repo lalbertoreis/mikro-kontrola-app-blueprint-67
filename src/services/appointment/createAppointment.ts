@@ -10,16 +10,13 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
       throw new Error('Usuário não autenticado');
     }
 
-    // Parse the date and times
-    const appointmentDate = new Date(`${appointmentData.date}T00:00:00`);
+    // Parse the date and times correctly with timezone handling
     const [startHours, startMinutes] = appointmentData.startTime.split(':').map(Number);
     const [endHours, endMinutes] = appointmentData.endTime.split(':').map(Number);
     
-    const startDateTime = new Date(appointmentDate);
-    startDateTime.setHours(startHours, startMinutes, 0, 0);
-    
-    const endDateTime = new Date(appointmentDate);
-    endDateTime.setHours(endHours, endMinutes, 0, 0);
+    // Create the appointment date objects in local timezone
+    const startDateTime = new Date(`${appointmentData.date}T${appointmentData.startTime}:00`);
+    const endDateTime = new Date(`${appointmentData.date}T${appointmentData.endTime}:00`);
 
     const insertData = {
       employee_id: appointmentData.employee,
@@ -27,7 +24,7 @@ export async function createAppointment(appointmentData: AppointmentFormData): P
       client_id: appointmentData.client,
       start_time: startDateTime.toISOString(),
       end_time: endDateTime.toISOString(),
-      status: 'scheduled' as const, // Status padrão é 'scheduled'
+      status: 'scheduled' as const,
       notes: appointmentData.notes || null,
       user_id: user.id
     };

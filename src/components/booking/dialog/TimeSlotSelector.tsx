@@ -37,18 +37,10 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
       setIsLoading(true);
       
       try {
-        console.log("TimeSlotSelector - Fetching available time slots:", {
-          employeeId,
-          serviceId,
-          date: format(selectedDate, 'yyyy-MM-dd'),
-          businessSlug,
-          period
-        });
-        
         // Format date as yyyy-MM-dd for the API
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         
-        // Fetch ONLY available slots from the API (this already excludes occupied times)
+        // Fetch available slots from the API (already filters out occupied times)
         const allAvailableSlots = await fetchAvailableTimeSlots(
           employeeId,
           serviceId,
@@ -56,22 +48,18 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
           businessSlug
         );
         
-        console.log("TimeSlotSelector - All available slots from API:", allAvailableSlots);
-        
         // Filter slots based on selected period
         const filteredSlots = filterSlotsByPeriod(allAvailableSlots, period);
-        console.log("TimeSlotSelector - Filtered slots for period", period, ":", filteredSlots);
         
         setAvailableSlots(filteredSlots);
         
         // Clear selected time if it's no longer available
         if (selectedTime && !filteredSlots.includes(selectedTime)) {
-          console.log("TimeSlotSelector - Selected time", selectedTime, "is no longer available, clearing selection");
           onSelectTime('');
         }
         
       } catch (error) {
-        console.error("TimeSlotSelector - Error fetching available slots:", error);
+        console.error("Error fetching available slots:", error);
         toast.error("Erro ao buscar horários disponíveis");
         setAvailableSlots([]);
       } finally {
