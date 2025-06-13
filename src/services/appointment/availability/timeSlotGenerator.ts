@@ -66,14 +66,14 @@ export function filterAvailableSlots(
   }
   
   // Get partial day holidays that might block specific time ranges
-  const partialHolidays = dateHolidays.filter(h => h.blockingType === 'partial_day');
+  const partialHolidays = dateHolidays.filter(h => h.blockingType === 'custom');
   
   return allSlots.filter(slot => {
     // Create start and end times for this slot
     const slotStart = `${date}T${slot}:00`;
     const slotEnd = `${date}T${format(addMinutes(parseISO(`${date}T${slot}:00`), serviceDuration), 'HH:mm')}:00`;
     
-    // Check against partial day holidays
+    // Check against partial day holidays (custom blocking type)
     for (const holiday of partialHolidays) {
       if (holiday.customStartTime && holiday.customEndTime) {
         const holidayStart = `${date}T${holiday.customStartTime}`;

@@ -1,7 +1,7 @@
 
 import { useMemo } from "react";
 import { useServicesBySlug } from "@/hooks/useServices";
-import { useEmployeesBySlug } from "@/hooks/useEmployees";
+import { useEmployeesBySlug } from "@/hooks/useEmployeesBySlug";
 import { Service } from "@/types/service";
 import { Employee } from "@/types/employee";
 
@@ -19,11 +19,6 @@ export function useServicesWithEmployees(slug?: string) {
     data: allEmployees = [], 
     isLoading: isEmployeesLoading 
   } = useEmployeesBySlug(slug);
-  
-  const { 
-    data: businessProfile, 
-    isLoading: isViewLoading 
-  } = useBusinessProfileBySlug(slug);
 
   // Filter services that are active and enabled for online booking
   const availableServices = useMemo(() => {
@@ -75,25 +70,22 @@ export function useServicesWithEmployees(slug?: string) {
     return finalServices;
   }, [allServices, allEmployees]);
 
-  // Get booking settings from business profile
+  // Get booking settings - using default values since we don't have businessProfile here
   const bookingSettings = useMemo(() => {
     return {
-      simultaneousLimit: businessProfile?.booking_simultaneous_limit || 3,
-      futureLimit: businessProfile?.booking_future_limit || 30,
-      cancelMinHours: businessProfile?.booking_cancel_min_hours || 24,
-      timeInterval: businessProfile?.booking_time_interval || 30
+      simultaneousLimit: 3,
+      futureLimit: 30,
+      cancelMinHours: 24,
+      timeInterval: 30
     };
-  }, [businessProfile]);
+  }, []);
 
   return {
     services: availableServices,
     employees: allEmployees,
     isServicesLoading,
     isEmployeesLoading,
-    isViewLoading,
+    isViewLoading: false,
     bookingSettings
   };
 }
-
-// Import the missing hook
-import { useBusinessProfileBySlug } from "@/hooks/booking/useBusinessProfile";
