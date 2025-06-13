@@ -12,9 +12,14 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
   onChange, 
   isLoading 
 }) => {
-  // Format phone number for WhatsApp (Brazilian format)
+  // Normalize phone number to only digits
+  const normalizePhone = (value: string): string => {
+    return value.replace(/\D/g, '');
+  };
+
+  // Format phone number for display (Brazilian format)
   const formatPhoneNumber = (value: string) => {
-    const digits = value.replace(/\D/g, '');
+    const digits = normalizePhone(value);
     let formatted = '';
     
     if (digits.length <= 2) {
@@ -30,12 +35,48 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
     return formatted;
   };
 
+  // Validate phone format in real-time
+  const validatePhone = (digits: string): string | null => {
+    if (digits.length === 0) {
+      return null; // No error for empty field
+    }
+    
+    if (digits.length < 10) {
+      return "Telefone deve ter pelo menos 10 dígitos";
+    }
+    
+    if (digits.length !== 10 && digits.length !== 11) {
+      return "Telefone deve ter 10 ou 11 dígitos";
+    }
+    
+    // Check if it starts with valid area code (11-99)
+    if (digits.length >= 2) {
+      const areaCode = parseInt(digits.slice(0, 2));
+      if (areaCode < 11 || areaCode > 99) {
+        return "Código de área inválido (11-99)";
+      }
+    }
+    
+    return null;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
+    
     // Only allow numbers and formatting characters
     const filteredValue = inputValue.replace(/[^\d\s()-]/g, '');
-    onChange(formatPhoneNumber(filteredValue));
+    const normalizedValue = normalizePhone(filteredValue);
+    
+    // Limit to 11 digits maximum
+    if (normalizedValue.length <= 11) {
+      const formattedValue = formatPhoneNumber(filteredValue);
+      onChange(formattedValue);
+    }
   };
+
+  const digits = normalizePhone(phone);
+  const phoneError = validatePhone(digits);
+  const isValid = digits.length >= 10 && digits.length <= 11 && !phoneError;
 
   return (
     <div>
@@ -48,16 +89,32 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
         inputMode="numeric"
         value={phone}
         onChange={handleChange}
-        className="w-full p-3 border rounded-md text-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+        className={`w-full p-3 border rounded-md text-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+          phoneError ? 'border-red-500' : isValid ? 'border-green-500' : 'border-gray-300'
+        }`}
         placeholder="(11) 99999-9999"
         disabled={isLoading}
         autoComplete="tel"
         required
         maxLength={15}
       />
-      <p className="text-xs text-gray-500 mt-1">
-        Digite seu número com DDD (apenas números)
-      </p>
+      
+      {/* Real-time validation feedback */}
+      <div className="mt-1 min-h-[1.25rem]">
+        {phoneError && (
+          <p className="text-xs text-red-500">{phoneError}</p>
+        )}
+        {!phoneError && digits.length > 0 && (
+          <p className="text-xs text-gray-500">
+            {isValid ? "✓ Número válido" : `${digits.length}/11 dígitos`}
+          </p>
+        )}
+        {digits.length === 0 && (
+          <p className="text-xs text-gray-500">
+            Digite seu número com DDD (apenas números)
+          </p>
+        )}
+      </div>
     </div>
   );
 };

@@ -14,21 +14,38 @@ export function useLoginLogic(businessSlug?: string) {
   const [existingUserData, setExistingUserData] = useState<ExistingUserData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check if user exists when phone number is complete
+  // Normalize phone to digits only for validation
+  const normalizePhone = (phoneValue: string): string => {
+    return phoneValue.replace(/\D/g, '');
+  };
+
+  // Validate phone format
+  const isValidPhone = (phoneValue: string): boolean => {
+    const digits = normalizePhone(phoneValue);
+    return digits.length === 10 || digits.length === 11;
+  };
+
+  // Check if user exists when phone number is complete and valid
   useEffect(() => {
     const checkUser = async () => {
-      if (phone && phone.replace(/\D/g, '').length === 11) {
+      const normalizedPhone = normalizePhone(phone);
+      
+      if (phone && isValidPhone(phone)) {
         try {
           setIsLoading(true);
-          const userData = await checkClientExists(phone, businessSlug);
+          console.log("Checking client with normalized phone:", normalizedPhone);
+          
+          const userData = await checkClientExists(normalizedPhone, businessSlug);
           
           if (userData) {
             setName(userData.name || '');
             setExistingUserData(userData);
             setPinMode(userData.hasPin ? 'verify' : 'create');
+            console.log("Client found:", userData);
           } else {
             setExistingUserData(null);
             setPinMode('create');
+            console.log("New client");
           }
         } catch (err) {
           console.error('Error checking user:', err);
@@ -46,14 +63,24 @@ export function useLoginLogic(businessSlug?: string) {
     checkUser();
   }, [phone, businessSlug]);
 
-  // Handle form submission
+  // Handle form submission with phone normalization
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate phone before submission
+    if (!isValidPhone(phone)) {
+      toast.error("Por favor, insira um número de telefone válido");
+      return null;
+    }
+    
     setIsLoading(true);
     
     try {
+      const normalizedPhone = normalizePhone(phone);
+      console.log("Submitting with normalized phone:", normalizedPhone);
+      
       const result = await handleFormSubmission(
-        phone,
+        normalizedPhone, // Use normalized phone
         name,
         pin,
         confirmPin,
@@ -91,6 +118,8 @@ export function useLoginLogic(businessSlug?: string) {
     existingUserData,
     isLoading,
     handleSubmit,
-    resetForm
+    resetForm,
+    isValidPhone: isValidPhone(phone),
+    normalizedPhone: normalizePhone(phone)
   };
 }

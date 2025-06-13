@@ -13,7 +13,7 @@ interface TimeSlotSelectorProps {
   onSelectTime: (time: string) => void;
   serviceId: string;
   employeeId: string;
-  themeColor?: string; // Theme color prop
+  themeColor?: string;
   businessSlug?: string;
 }
 
@@ -24,7 +24,7 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   onSelectTime,
   serviceId,
   employeeId,
-  themeColor = "#9b87f5", // Default color
+  themeColor = "#9b87f5",
   businessSlug
 }) => {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
@@ -47,7 +47,7 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
         // Format date as yyyy-MM-dd for the API
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         
-        // Fetch real available slots from the API
+        // Fetch real available slots from the API - this already filters occupied times
         const slots = await fetchAvailableTimeSlots(
           employeeId,
           serviceId,
@@ -55,13 +55,20 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
           businessSlug
         );
         
-        console.log("Available slots from API:", slots);
+        console.log("Available slots from API (already filtered):", slots);
         
         // Filter slots based on selected period
         const filteredSlots = filterSlotsByPeriod(slots, period);
         console.log("Filtered slots for period", period, ":", filteredSlots);
         
         setAvailableSlots(filteredSlots);
+        
+        // Clear selected time if it's no longer available
+        if (selectedTime && !filteredSlots.includes(selectedTime)) {
+          console.log("Selected time", selectedTime, "is no longer available, clearing selection");
+          onSelectTime('');
+        }
+        
       } catch (error) {
         console.error("Error fetching available slots:", error);
         toast.error("Erro ao buscar horários disponíveis");
@@ -72,7 +79,7 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
     };
     
     fetchSlots();
-  }, [selectedDate, period, serviceId, employeeId, businessSlug]);
+  }, [selectedDate, period, serviceId, employeeId, businessSlug, selectedTime, onSelectTime]);
   
   // Helper function to filter slots based on period
   const filterSlotsByPeriod = (slots: string[], period: string): string[] => {
