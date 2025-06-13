@@ -50,6 +50,8 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
   }, []);
 
   const handleBookingConfirm = (employeeId: string, date: Date, time: string) => {
+    console.log("BookingDialog - handleBookingConfirm called with:", { employeeId, date, time });
+    
     setSelectedEmployeeId(employeeId);
     setSelectedDate(date);
     setSelectedTime(time);
@@ -57,50 +59,54 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
     // Check if user is logged in
     const storedUser = localStorage.getItem("bookingUser");
     if (storedUser) {
-      // Se o usuário estiver logado, enviar diretamente para confirmação final
-      // ou processar o agendamento diretamente se não precisar de dados adicionais
       try {
         const parsedUser = JSON.parse(storedUser);
         setUserData(parsedUser);
         
-        // Se tivermos todos os dados necessários para o agendamento, podemos processar
-        // diretamente sem mostrar o formulário de cliente
+        console.log("User is logged in, proceeding with booking:", parsedUser);
+        
+        // If we have all required data, process the booking directly
         if (parsedUser && parsedUser.name && parsedUser.phone) {
-          // Finalizar o agendamento diretamente
-          if (selectedEmployeeId && selectedDate && selectedTime) {
-            onBookingConfirm(employeeId, date, time);
-          }
+          console.log("Processing booking directly...");
+          onBookingConfirm(employeeId, date, time);
           handleClose();
           return;
         }
         
-        // Se precisar de dados adicionais (como email), mostrar o formulário
+        // If we need additional data, show the form
         setCurrentStep(1);
       } catch (e) {
+        console.error("Error parsing stored user:", e);
         localStorage.removeItem("bookingUser");
         setShowLoginDialog(true);
       }
     } else {
-      // Usuário não está logado, mostrar o diálogo de login
+      console.log("User not logged in, showing login dialog");
       setShowLoginDialog(true);
     }
   };
 
   const handleClientInfoSubmit = () => {
+    console.log("Client info submitted, processing booking...");
     if (selectedEmployeeId && selectedDate && selectedTime) {
       onBookingConfirm(selectedEmployeeId, selectedDate, selectedTime);
       handleClose();
+    } else {
+      console.error("Missing booking data:", { selectedEmployeeId, selectedDate, selectedTime });
+      toast.error("Dados de agendamento incompletos");
     }
   };
 
   const handleLoginSuccess = (userData: { name: string; phone: string }) => {
+    console.log("Login successful:", userData);
     setShowLoginDialog(false);
     setUserLoggedIn(true);
     setUserData(userData);
     localStorage.setItem("bookingUser", JSON.stringify(userData));
     
-    // Se selecionou data e funcionário, processar o agendamento diretamente
+    // If we have selected date/time/employee, process the booking
     if (selectedEmployeeId && selectedDate && selectedTime) {
+      console.log("Processing booking after login...");
       onBookingConfirm(selectedEmployeeId, selectedDate, selectedTime);
       handleClose();
     } else {
@@ -112,6 +118,7 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
   };
 
   const handleClose = () => {
+    console.log("Closing booking dialog");
     setCurrentStep(0);
     setSelectedEmployeeId(null);
     setSelectedDate(null);

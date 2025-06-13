@@ -22,6 +22,26 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
   onNextStep,
   themeColor = "#9b87f5" // Default color
 }) => {
+  const handleContinue = () => {
+    console.log("BookingSummary - Continue button clicked", {
+      employee: selectedEmployee?.id,
+      date: selectedDate,
+      time: selectedTime
+    });
+    
+    if (selectedEmployee && selectedDate && selectedTime) {
+      onNextStep();
+    } else {
+      console.error("Missing required data for booking:", {
+        hasEmployee: !!selectedEmployee,
+        hasDate: !!selectedDate,
+        hasTime: !!selectedTime
+      });
+    }
+  };
+
+  const isReadyToContinue = selectedEmployee && selectedDate && selectedTime;
+
   return (
     <div className="mt-8 space-y-2 border-t pt-4">
       <h3 className="font-semibold text-lg" style={{ color: themeColor }}>
@@ -46,14 +66,29 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         </div>
       </div>
 
+      {selectedEmployee && (
+        <div className="p-2 border rounded-md mt-3">
+          <p className="text-sm text-gray-500">Profissional</p>
+          <p className="font-medium">{selectedEmployee.name}</p>
+        </div>
+      )}
+
       <Button
         className="w-full mt-4 text-white hover:opacity-90"
-        disabled={!selectedEmployee || !selectedDate || !selectedTime}
-        onClick={onNextStep}
+        disabled={!isReadyToContinue}
+        onClick={handleContinue}
         style={{ backgroundColor: themeColor }}
       >
-        Continuar
+        {isReadyToContinue ? "Continuar" : "Selecione todos os campos"}
       </Button>
+      
+      {!isReadyToContinue && (
+        <p className="text-sm text-gray-500 text-center mt-2">
+          {!selectedEmployee && "Selecione um profissional"}
+          {!selectedDate && selectedEmployee && " • Selecione uma data"}
+          {!selectedTime && selectedEmployee && selectedDate && " • Selecione um horário"}
+        </p>
+      )}
     </div>
   );
 };

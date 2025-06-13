@@ -45,6 +45,14 @@ export function useBookingHandlers(
     time: string;
     clientInfo: { name: string; phone: string; pin?: string };
   }) => {
+    console.log("useBookingHandlers - handleBookingConfirm called:", {
+      serviceName: service.name,
+      employeeName: employee.name,
+      date: date.toISOString(),
+      time,
+      clientName: clientInfo.name
+    });
+
     setIsProcessing(true);
     try {
       // Set the slug for the current session - important for RLS policies
@@ -62,9 +70,12 @@ export function useBookingHandlers(
         businessUserId
       });
 
+      console.log("Booking processed successfully:", result);
+
       // Update the appointments list with the new appointment
       if (result.success) {
         setAppointments(prev => [...prev, result.newAppointment]);
+        toast.success("Agendamento realizado com sucesso!");
       }
 
       // Close dialog and show confirmation

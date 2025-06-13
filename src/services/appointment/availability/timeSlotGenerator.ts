@@ -53,7 +53,7 @@ export function filterAvailableSlots(
   appointments: any[],
   date: string,
   serviceDuration: number,
-  simultaneousLimit: number = 3,
+  simultaneousLimit: number = 1,
   holidays: Holiday[] = []
 ): string[] {
   // Check if date is a holiday that blocks all appointments
@@ -72,6 +72,8 @@ export function filterAvailableSlots(
     // Create start and end times for this slot
     const slotStart = `${date}T${slot}:00`;
     const slotEnd = `${date}T${format(addMinutes(parseISO(`${date}T${slot}:00`), serviceDuration), 'HH:mm')}:00`;
+    
+    console.log(`Checking slot ${slot} (${slotStart} to ${slotEnd})`);
     
     // Check against partial day holidays (custom blocking type)
     for (const holiday of partialHolidays) {
@@ -98,10 +100,15 @@ export function filterAvailableSlots(
       const appointmentStart = appointment.start_time;
       const appointmentEnd = appointment.end_time;
       
+      console.log(`  Checking against appointment: ${appointmentStart} to ${appointmentEnd}`);
+      
       // Check if the slot would overlap with this appointment
       // Two time ranges overlap if: (start1 < end2) AND (start2 < end1)
-      if (slotStart < appointmentEnd && appointmentStart < slotEnd) {
+      const hasOverlap = slotStart < appointmentEnd && appointmentStart < slotEnd;
+      
+      if (hasOverlap) {
         conflictCount++;
+        console.log(`  CONFLICT DETECTED! Overlap count: ${conflictCount}`);
         
         // If we exceed the simultaneous limit, this slot is not available
         if (conflictCount >= simultaneousLimit) {
