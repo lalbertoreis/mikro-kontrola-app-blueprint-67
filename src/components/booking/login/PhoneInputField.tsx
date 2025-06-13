@@ -12,9 +12,11 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
   onChange, 
   isLoading 
 }) => {
-  // Normalize phone number to only digits
+  // Normalize phone number to only digits for validation
   const normalizePhone = (value: string): string => {
-    return value.replace(/\D/g, '');
+    const digitsOnly = value.replace(/\D/g, '');
+    console.log("PhoneInputField - normalizePhone:", value, "->", digitsOnly);
+    return digitsOnly;
   };
 
   // Format phone number for display (Brazilian format)
@@ -32,11 +34,14 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
       formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
     }
     
+    console.log("PhoneInputField - formatPhoneNumber:", digits, "->", formatted);
     return formatted;
   };
 
-  // Validate phone format in real-time
+  // Enhanced validation with detailed feedback
   const validatePhone = (digits: string): string | null => {
+    console.log("PhoneInputField - validatePhone called with:", digits, "length:", digits.length);
+    
     if (digits.length === 0) {
       return null; // No error for empty field
     }
@@ -63,13 +68,18 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     
+    console.log("PhoneInputField - handleChange called with:", inputValue);
+    
     // Only allow numbers and formatting characters
     const filteredValue = inputValue.replace(/[^\d\s()-]/g, '');
     const normalizedValue = normalizePhone(filteredValue);
     
+    console.log("PhoneInputField - Filtered:", filteredValue, "Normalized:", normalizedValue);
+    
     // Limit to 11 digits maximum
     if (normalizedValue.length <= 11) {
       const formattedValue = formatPhoneNumber(filteredValue);
+      console.log("PhoneInputField - Calling onChange with:", formattedValue);
       onChange(formattedValue);
     }
   };
@@ -77,6 +87,14 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
   const digits = normalizePhone(phone);
   const phoneError = validatePhone(digits);
   const isValid = digits.length >= 10 && digits.length <= 11 && !phoneError;
+
+  console.log("PhoneInputField - Render state:", {
+    phone,
+    digits,
+    phoneError,
+    isValid,
+    digitsLength: digits.length
+  });
 
   return (
     <div>

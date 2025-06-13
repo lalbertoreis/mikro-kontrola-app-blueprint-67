@@ -14,15 +14,19 @@ export function useLoginLogic(businessSlug?: string) {
   const [existingUserData, setExistingUserData] = useState<ExistingUserData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Normalize phone to digits only for validation
+  // Normalize phone to digits only for validation and API calls
   const normalizePhone = (phoneValue: string): string => {
-    return phoneValue.replace(/\D/g, '');
+    const digitsOnly = phoneValue.replace(/\D/g, '');
+    console.log("normalizePhone - Input:", phoneValue, "Output:", digitsOnly);
+    return digitsOnly;
   };
 
-  // Validate phone format
+  // Validate phone format (must be 10 or 11 digits)
   const isValidPhone = (phoneValue: string): boolean => {
     const digits = normalizePhone(phoneValue);
-    return digits.length === 10 || digits.length === 11;
+    const isValid = digits.length === 10 || digits.length === 11;
+    console.log("isValidPhone - Phone:", phoneValue, "Digits:", digits, "Valid:", isValid);
+    return isValid;
   };
 
   // Check if user exists when phone number is complete and valid
@@ -30,10 +34,16 @@ export function useLoginLogic(businessSlug?: string) {
     const checkUser = async () => {
       const normalizedPhone = normalizePhone(phone);
       
+      console.log("useLoginLogic - checkUser called with:", {
+        rawPhone: phone,
+        normalizedPhone,
+        isValid: isValidPhone(phone)
+      });
+      
       if (phone && isValidPhone(phone)) {
         try {
           setIsLoading(true);
-          console.log("Checking client with normalized phone:", normalizedPhone);
+          console.log("useLoginLogic - Checking client with normalized phone:", normalizedPhone);
           
           const userData = await checkClientExists(normalizedPhone, businessSlug);
           
@@ -41,14 +51,14 @@ export function useLoginLogic(businessSlug?: string) {
             setName(userData.name || '');
             setExistingUserData(userData);
             setPinMode(userData.hasPin ? 'verify' : 'create');
-            console.log("Client found:", userData);
+            console.log("useLoginLogic - Client found:", userData);
           } else {
             setExistingUserData(null);
             setPinMode('create');
-            console.log("New client");
+            console.log("useLoginLogic - New client");
           }
         } catch (err) {
-          console.error('Error checking user:', err);
+          console.error('useLoginLogic - Error checking user:', err);
           toast.error("Erro ao verificar cadastro");
         } finally {
           setIsLoading(false);
@@ -63,24 +73,37 @@ export function useLoginLogic(businessSlug?: string) {
     checkUser();
   }, [phone, businessSlug]);
 
-  // Handle form submission with phone normalization
+  // Handle form submission with enhanced phone normalization
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate phone before submission
+    const normalizedPhone = normalizePhone(phone);
+    
+    console.log("useLoginLogic - handleSubmit called with:", {
+      rawPhone: phone,
+      normalizedPhone,
+      phoneLength: normalizedPhone.length,
+      isValid: isValidPhone(phone)
+    });
+    
+    // Enhanced validation with detailed logging
     if (!isValidPhone(phone)) {
-      toast.error("Por favor, insira um número de telefone válido");
+      console.error("useLoginLogic - Invalid phone format:", {
+        phone,
+        normalizedPhone,
+        length: normalizedPhone.length
+      });
+      toast.error("Por favor, insira um número de telefone válido (10 ou 11 dígitos)");
       return null;
     }
     
     setIsLoading(true);
     
     try {
-      const normalizedPhone = normalizePhone(phone);
-      console.log("Submitting with normalized phone:", normalizedPhone);
+      console.log("useLoginLogic - Submitting with normalized phone:", normalizedPhone);
       
       const result = await handleFormSubmission(
-        normalizedPhone, // Use normalized phone
+        normalizedPhone, // Use normalized phone (digits only)
         name,
         pin,
         confirmPin,
@@ -89,7 +112,11 @@ export function useLoginLogic(businessSlug?: string) {
         businessSlug
       );
       
+      console.log("useLoginLogic - Form submission result:", result);
       return result;
+    } catch (error) {
+      console.error("useLoginLogic - Error in form submission:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }

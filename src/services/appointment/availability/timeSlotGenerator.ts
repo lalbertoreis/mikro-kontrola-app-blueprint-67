@@ -47,7 +47,7 @@ export function generateTimeSlots(
 
 /**
  * Enhanced function that filters out time slots that conflict with existing appointments or holidays
- * Now with improved conflict detection and strict filtering
+ * CRITICAL: This function must EXCLUDE all occupied time slots
  */
 export function filterAvailableSlots(
   allSlots: string[],
@@ -57,7 +57,7 @@ export function filterAvailableSlots(
   simultaneousLimit: number = 1,
   holidays: Holiday[] = []
 ): string[] {
-  console.log("=== FILTERING AVAILABLE SLOTS ===");
+  console.log("=== FILTERING AVAILABLE SLOTS (ENHANCED) ===");
   console.log("Input slots:", allSlots);
   console.log("Existing appointments:", appointments);
   console.log("Service duration:", serviceDuration, "minutes");
@@ -101,7 +101,7 @@ export function filterAvailableSlots(
       }
     }
     
-    // Count how many appointments overlap with this time slot
+    // CRITICAL: Count how many appointments overlap with this time slot
     let conflictCount = 0;
     const conflictingAppointments: any[] = [];
     
@@ -109,7 +109,7 @@ export function filterAvailableSlots(
       const appointmentStart = appointment.start_time;
       const appointmentEnd = appointment.end_time;
       
-      console.log(`  Checking vs appointment: ${appointmentStart} to ${appointmentEnd}`);
+      console.log(`  Checking vs appointment: ${appointmentStart} to ${appointmentEnd} (status: ${appointment.status})`);
       
       // Enhanced overlap detection with strict time comparison
       // Two time ranges overlap if: (start1 < end2) AND (start2 < end1)
@@ -129,12 +129,12 @@ export function filterAvailableSlots(
       }
     }
     
-    // Apply simultaneous limit (strict filtering when limit is 1)
+    // STRICT filtering: if simultaneousLimit is 1, ANY conflict blocks the slot
     const isAvailable = conflictCount < simultaneousLimit;
     
     if (!isAvailable) {
       console.log(`❌ Slot ${slot} BLOCKED - conflicts: ${conflictCount}/${simultaneousLimit}`);
-      console.log(`   Conflicting appointments:`, conflictingAppointments.map(a => `${a.start_time} - ${a.end_time}`));
+      console.log(`   Conflicting appointments:`, conflictingAppointments.map(a => `${a.start_time} - ${a.end_time} (${a.status})`));
     } else {
       console.log(`✅ Slot ${slot} AVAILABLE - conflicts: ${conflictCount}/${simultaneousLimit}`);
     }
