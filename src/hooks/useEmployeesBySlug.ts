@@ -38,8 +38,15 @@ async function fetchEmployeesBySlug(slug: string): Promise<Employee[]> {
 
   // Transform the data to match Employee interface
   return (data || []).map(emp => ({
-    ...emp,
-    services: emp.employee_services?.map(es => es.service_id) || []
+    id: emp.id,
+    name: emp.name,
+    email: emp.email || undefined,
+    phone: emp.phone || undefined,
+    role: emp.role,
+    shifts: [], // Empty shifts array since we're not fetching shifts here
+    services: emp.employee_services?.map(es => es.service_id) || [],
+    createdAt: emp.created_at,
+    updatedAt: emp.updated_at
   }));
 }
 
