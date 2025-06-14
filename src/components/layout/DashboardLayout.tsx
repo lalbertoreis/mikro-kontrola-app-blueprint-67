@@ -21,7 +21,8 @@ import {
   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth, useEmployeePermissions } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEmployeePermissions } from "@/hooks/useAuth";
 import { useThemeSettings } from "@/hooks/useThemeSettings";
 import NotificationIndicator from "@/components/notifications/NotificationIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
