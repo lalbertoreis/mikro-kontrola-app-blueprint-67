@@ -12,7 +12,7 @@ import {
   endOfWeek
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AppointmentWithDetails } from "@/types/calendar";
+import { AppointmentWithDetails, CalendarViewOptions } from "@/types/calendar";
 import { Employee } from "@/types/employee";
 import AppointmentChip from "./AppointmentChip";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,7 +23,10 @@ interface MonthCalendarProps {
   employees: Employee[];
   selectedEmployee?: string;
   onSelectAppointment: (appointment: AppointmentWithDetails) => void;
-  onSelectDate?: (date: Date) => void;
+  onSelectTimeSlot?: (date: Date) => void;
+  setView: (view: CalendarViewOptions["view"]) => void;
+  isLoading?: boolean;
+  isEmployeeView?: boolean;
 }
 
 const WEEKDAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -34,7 +37,10 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
   employees, 
   selectedEmployee, 
   onSelectAppointment,
-  onSelectDate 
+  onSelectTimeSlot,
+  setView,
+  isLoading = false,
+  isEmployeeView = false
 }) => {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
@@ -53,9 +59,12 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
 
   // Handler for calendar day cell clicks
   const handleDayCellClick = (day: Date, event: React.MouseEvent) => {
+    // Se for employee view, não permitir criar agendamentos
+    if (isEmployeeView) return;
+    
     // Only trigger for direct clicks on the cell, not when clicking on appointment chips
-    if (event.currentTarget === event.target && onSelectDate) {
-      onSelectDate(day);
+    if (event.currentTarget === event.target && onSelectTimeSlot) {
+      onSelectTimeSlot(day);
     }
   };
 
@@ -87,7 +96,11 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
             return (
               <div 
                 key={i}
-                className={`min-h-[120px] p-2 border-b border-r border-slate-200 dark:border-slate-700 last:border-r-0 cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                className={`min-h-[120px] p-2 border-b border-r border-slate-200 dark:border-slate-700 last:border-r-0 transition-all ${
+                  isEmployeeView 
+                    ? "cursor-default" 
+                    : "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                } ${
                   isCurrentMonth ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800/30'
                 } ${isCurrentDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
                 onClick={(e) => handleDayCellClick(day, e)}

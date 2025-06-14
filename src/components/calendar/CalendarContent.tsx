@@ -36,7 +36,7 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
     return (
       <WeekCalendar
         appointments={appointments}
-        currentDate={currentDate}
+        date={currentDate}
         employees={employees}
         selectedEmployee={selectedEmployee}
         onSelectAppointment={onSelectAppointment}
@@ -50,7 +50,9 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
   return (
     <MonthCalendar
       appointments={appointments}
-      currentDate={currentDate}
+      date={currentDate}
+      employees={employees}
+      selectedEmployee={selectedEmployee}
       onSelectAppointment={onSelectAppointment}
       onSelectTimeSlot={handleTimeSlotSelect}
       setView={setView}

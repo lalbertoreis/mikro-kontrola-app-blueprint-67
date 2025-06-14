@@ -103,12 +103,12 @@ export function useEmployeeInvites() {
       // Chamar a edge function para criar o usuário no Supabase Auth
       const { data: sessionData } = await supabase.auth.getSession();
       
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-employee-user`, {
+      const response = await fetch(`https://dehmfbnguglqlptbucdq.supabase.co/functions/v1/create-employee-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${sessionData.session?.access_token}`,
-          'apikey': supabase.supabaseKey,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaG1mYm5ndWdscWxwdGJ1Y2RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NjA3OTYsImV4cCI6MjA2MTQzNjc5Nn0.dxlYat64Emh-KznMm_CRtU9_k6SVuwaxwGLCf9YGSKw',
         },
         body: JSON.stringify({
           email: inviteData.email,

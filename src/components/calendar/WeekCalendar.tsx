@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -16,6 +17,8 @@ interface WeekCalendarProps {
   selectedEmployee?: string;
   onSelectAppointment: (appointment: AppointmentWithDetails) => void;
   onSelectTimeSlot: (date: Date, hour?: number) => void;
+  isLoading?: boolean;
+  isEmployeeView?: boolean;
 }
 
 const WeekCalendar: React.FC<WeekCalendarProps> = ({
@@ -25,6 +28,8 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
   selectedEmployee,
   onSelectAppointment,
   onSelectTimeSlot,
+  isLoading = false,
+  isEmployeeView = false,
 }) => {
   const weekStart = startOfWeek(date, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -103,6 +108,9 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
   };
 
   const handleTimeSlotClick = (day: Date, hour: number) => {
+    // Se for employee view, não permitir criar agendamentos
+    if (isEmployeeView) return;
+    
     // Verificar se o horário está bloqueado por feriado
     if (isTimeSlotBlocked(day, hour)) {
       const dayIndex = weekDays.findIndex(d => isSameDay(d, day));
@@ -205,8 +213,10 @@ const WeekCalendar: React.FC<WeekCalendarProps> = ({
                 return (
                   <div
                     key={`${day.toISOString()}-${hour}`}
-                    className={`bg-white dark:bg-slate-900 p-1 min-h-[60px] border-r border-b border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 relative ${
-                      isBlocked ? "bg-red-50 dark:bg-red-950 cursor-not-allowed" : ""
+                    className={`bg-white dark:bg-slate-900 p-1 min-h-[60px] border-r border-b border-slate-200 dark:border-slate-700 relative ${
+                      isBlocked || isEmployeeView 
+                        ? "bg-red-50 dark:bg-red-950 cursor-not-allowed" 
+                        : "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
                     }`}
                     onClick={() => handleTimeSlotClick(day, hour)}
                   >
