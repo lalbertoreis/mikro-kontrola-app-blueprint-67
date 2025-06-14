@@ -113,7 +113,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       label: "Agenda",
       icon: Calendar,
       items: [
-        { name: "Minha Agenda", to: "/dashboard/calendar", icon: Calendar },
+        { name: "Minha Agenda", to: "/employee/calendar", icon: Calendar },
       ]
     }
   ];
