@@ -57,11 +57,14 @@ export function useEmployeeInvites() {
 
       // Cria usuário no Auth se não existir
       if (!newAuthUserId) {
-        // Tenta buscar usuário pelo email
+        // Tenta buscar usuário pelo email usando a API correta
         let foundUser: string | null = null;
-        const result = await supabase.auth.admin.listUsers({email: inviteData.email});
-        if (result.data?.users[0]) {
-          foundUser = result.data.users[0].id;
+        const result = await supabase.auth.admin.listUsers();
+        if (result.data?.users) {
+          const existingUser = result.data.users.find(u => u.email === inviteData.email);
+          if (existingUser) {
+            foundUser = existingUser.id;
+          }
         }
 
         if (!foundUser) {
@@ -131,7 +134,7 @@ export function useEmployeeInvites() {
   return {
     invites,
     isLoading,
-    createInvite: createMutation.mutateAsync, // 🔑 use mutateAsync para await
+    createInvite: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     getInviteByEmployeeId,
   };
