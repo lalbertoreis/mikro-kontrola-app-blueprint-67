@@ -47,7 +47,7 @@ export function generateTimeSlots(
 
 /**
  * Enhanced function that filters out time slots that conflict with existing appointments or holidays
- * Fixed to handle timezone correctly and prevent false conflicts
+ * This function now properly filters out occupied slots so they are not shown to users
  */
 export function filterAvailableSlots(
   allSlots: string[],
@@ -69,22 +69,25 @@ export function filterAvailableSlots(
   const partialHolidays = dateHolidays.filter(h => h.blockingType === 'custom');
   
   const availableSlots = allSlots.filter(slot => {
-    // Create local date objects for this slot using the correct date
+    // Create local time for this slot
     const [slotHour, slotMinute] = slot.split(':').map(Number);
-    const slotStartLocal = new Date(`${date}T${slot}:00`);
-    const slotEndLocal = new Date(slotStartLocal.getTime() + (serviceDuration * 60 * 1000));
+    const slotStartTime = slotHour * 60 + slotMinute; // minutes from midnight
+    const slotEndTime = slotStartTime + serviceDuration; // end time in minutes
     
     // Check against partial day holidays (custom blocking type)
     for (const holiday of partialHolidays) {
       if (holiday.customStartTime && holiday.customEndTime) {
-        const holidayStart = new Date(`${date}T${holiday.customStartTime}`);
-        const holidayEnd = new Date(`${date}T${holiday.customEndTime}`);
+        const [holidayStartHour, holidayStartMinute] = holiday.customStartTime.split(':').map(Number);
+        const [holidayEndHour, holidayEndMinute] = holiday.customEndTime.split(':').map(Number);
+        
+        const holidayStartTime = holidayStartHour * 60 + holidayStartMinute;
+        const holidayEndTime = holidayEndHour * 60 + holidayEndMinute;
         
         // Check if slot overlaps with holiday time
         if (
-          (slotStartLocal >= holidayStart && slotStartLocal < holidayEnd) ||
-          (slotEndLocal > holidayStart && slotEndLocal <= holidayEnd) ||
-          (slotStartLocal <= holidayStart && slotEndLocal >= holidayEnd)
+          (slotStartTime >= holidayStartTime && slotStartTime < holidayEndTime) ||
+          (slotEndTime > holidayStartTime && slotEndTime <= holidayEndTime) ||
+          (slotStartTime <= holidayStartTime && slotEndTime >= holidayEndTime)
         ) {
           return false;
         }
@@ -95,21 +98,15 @@ export function filterAvailableSlots(
     let conflictCount = 0;
     
     for (const appointment of appointments) {
-      // Parse appointment times and convert to local time for comparison
-      const appointmentStartUTC = new Date(appointment.start_time);
-      const appointmentEndUTC = new Date(appointment.end_time);
+      // Parse appointment times
+      const appointmentStart = new Date(appointment.start_time);
+      const appointmentEnd = new Date(appointment.end_time);
       
-      // Convert UTC times to local times for proper comparison
-      const appointmentStartLocal = new Date(appointmentStartUTC.getTime() - (appointmentStartUTC.getTimezoneOffset() * 60 * 1000));
-      const appointmentEndLocal = new Date(appointmentEndUTC.getTime() - (appointmentEndUTC.getTimezoneOffset() * 60 * 1000));
+      // Convert appointment times to minutes from midnight (local time)
+      const appointmentStartTime = appointmentStart.getHours() * 60 + appointmentStart.getMinutes();
+      const appointmentEndTime = appointmentEnd.getHours() * 60 + appointmentEnd.getMinutes();
       
-      // Extract just the time part for comparison (same date)
-      const appointmentStartTime = appointmentStartLocal.getHours() * 60 + appointmentStartLocal.getMinutes();
-      const appointmentEndTime = appointmentEndLocal.getHours() * 60 + appointmentEndLocal.getMinutes();
-      const slotStartTime = slotHour * 60 + slotMinute;
-      const slotEndTime = slotStartTime + serviceDuration;
-      
-      // Check for overlap using time in minutes
+      // Check for overlap using time in minutes - slots that overlap are NOT available
       const hasOverlap = (slotStartTime < appointmentEndTime) && (appointmentStartTime < slotEndTime);
       
       if (hasOverlap) {
@@ -117,8 +114,9 @@ export function filterAvailableSlots(
       }
     }
     
-    // STRICT filtering: if simultaneousLimit is 1, ANY conflict blocks the slot
-    return conflictCount < simultaneousLimit;
+    // Return false if there are any conflicts (strict filtering for occupied slots)
+    // This ensures occupied time slots are completely hidden from the user
+    return conflictCount === 0;
   });
   
   return availableSlots;

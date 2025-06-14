@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Shift } from './types';
 import { CACHE, getFromCache } from './cache';
@@ -62,7 +61,7 @@ export async function fetchServiceInfo(serviceId: string, slug?: string): Promis
 
 /**
  * Fetches existing appointments for an employee on a specific date
- * Enhanced to properly filter out unavailable slots
+ * Only returns confirmed/scheduled appointments that actually occupy time slots
  */
 export async function fetchExistingAppointments(employeeId: string, formattedDate: string, slug?: string): Promise<any[]> {
   const cacheKey = `${employeeId}_${formattedDate}_${slug || ''}`;
@@ -70,20 +69,20 @@ export async function fetchExistingAppointments(employeeId: string, formattedDat
   const cached = CACHE.appointments.get(cacheKey);
   
   if (cached && (Date.now() - cached.timestamp < 30 * 1000)) {
-    console.log(`Using cached appointments for ${cacheKey}`);
     return cached.data;
   }
   
   await setSlugContext(slug);
   
   // Fetch all non-canceled appointments for the employee on the specified date
+  // Only include statuses that actually occupy the time slot
   const { data: appointments, error: appointmentError } = await supabase
     .from('appointments_view')
     .select('start_time, end_time, status')
     .eq('employee_id', employeeId)
     .gte('start_time', `${formattedDate}T00:00:00`)
     .lt('start_time', `${formattedDate}T23:59:59`)
-    .in('status', ['scheduled', 'confirmed', 'in_progress']) // Only count active appointments
+    .in('status', ['scheduled', 'confirmed', 'in_progress']) // Only active appointments
     .order('start_time');
   
   if (appointmentError) {
@@ -91,14 +90,17 @@ export async function fetchExistingAppointments(employeeId: string, formattedDat
     return [];
   }
   
-  console.log(`Found ${appointments?.length || 0} existing appointments for employee ${employeeId} on ${formattedDate}:`, appointments);
+  // Filter out any appointments that might be invalid
+  const validAppointments = (appointments || []).filter(apt => 
+    apt.start_time && apt.end_time && apt.status
+  );
   
   CACHE.appointments.set(cacheKey, {
-    data: appointments || [],
+    data: validAppointments,
     timestamp: Date.now()
   });
   
-  return appointments || [];
+  return validAppointments;
 }
 
 /**

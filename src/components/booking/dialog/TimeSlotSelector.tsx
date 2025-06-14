@@ -40,7 +40,7 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
         // Format date as yyyy-MM-dd for the API
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         
-        // Fetch available slots from the API (already filters out occupied times)
+        // Fetch available slots from the API - this now returns only truly available slots
         const allAvailableSlots = await fetchAvailableTimeSlots(
           employeeId,
           serviceId,
