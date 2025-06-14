@@ -59,12 +59,16 @@ export function useEmployeeInvites() {
       if (!newAuthUserId) {
         // Tenta buscar usuário pelo email usando a API correta
         let foundUser: string | null = null;
-        const result = await supabase.auth.admin.listUsers();
-        if (result.data?.users) {
-          const existingUser = result.data.users.find(u => u.email === inviteData.email);
-          if (existingUser) {
-            foundUser = existingUser.id;
+        try {
+          const result = await supabase.auth.admin.listUsers();
+          if (result.data?.users && Array.isArray(result.data.users)) {
+            const existingUser = result.data.users.find((u: any) => u.email === inviteData.email);
+            if (existingUser?.id) {
+              foundUser = existingUser.id;
+            }
           }
+        } catch (error) {
+          console.warn("Não foi possível listar usuários existentes:", error);
         }
 
         if (!foundUser) {
