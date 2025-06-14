@@ -1,162 +1,98 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { useCalendarState } from "@/hooks/useCalendarState";
-import { useFilteredAppointments } from "./CalendarFilters";
+import CalendarSidebar from "./CalendarSidebar";
 import CalendarMainHeader from "./CalendarMainHeader";
-import CalendarContent from "./CalendarContent";
-import CalendarDialogs from "./CalendarDialogs";
-import { useAppointments } from "@/hooks/useAppointments";
-import { useEmployees } from "@/hooks/useEmployees";
+import { Employee } from "@/types/employee";
+import { CalendarViewOptions } from "@/types/calendar";
 
 interface CalendarLayoutProps {
-  isEmployeeView?: boolean;
-  employeeId?: string;
+  children: React.ReactNode;
+  view: CalendarViewOptions["view"];
+  onViewChange: (view: CalendarViewOptions["view"]) => void;
+  employees: Employee[];
+  selectedEmployeeId?: string;
+  onEmployeeChange: (employeeId?: string) => void;
+  hideCanceled: boolean;
+  onToggleHideCanceled: () => void;
+  onNewAppointment: () => void;
+  onBlockTime: () => void;
+  onGoToToday: () => void;
+  currentDate: Date;
+  onNavigatePrevious: () => void;
+  onNavigateNext: () => void;
+  isMaximized: boolean;
+  onToggleMaximized: () => void;
 }
 
 const CalendarLayout: React.FC<CalendarLayoutProps> = ({
-  isEmployeeView = false,
-  employeeId,
+  children,
+  view,
+  onViewChange,
+  employees,
+  selectedEmployeeId,
+  onEmployeeChange,
+  hideCanceled,
+  onToggleHideCanceled,
+  onNewAppointment,
+  onBlockTime,
+  onGoToToday,
+  currentDate,
+  onNavigatePrevious,
+  onNavigateNext,
+  isMaximized,
+  onToggleMaximized,
 }) => {
-  const {
-    view,
-    currentDate,
-    selectedEmployee,
-    setSelectedEmployee,
-    appointmentDialogOpen,
-    setAppointmentDialogOpen,
-    blockTimeDialogOpen,
-    setBlockTimeDialogOpen,
-    actionsDialogOpen,
-    setActionsDialogOpen,
-    selectedAppointment,
-    setSelectedAppointment,
-    editMode,
-    setEditMode,
-    dialogKey,
-    hideCanceled,
-    selectedTimeSlot,
-    setSelectedTimeSlot,
-    isMaximized,
-    toggleHideCanceled,
-    toggleMaximized,
-    handleSelectAppointment,
-    handleEditAppointment,
-    navigatePrevious,
-    navigateNext,
-    handleOpenNewAppointment,
-    handleOpenBlockTime,
-    goToToday,
-  } = useCalendarState();
-
-  const { appointments, isLoading: appointmentsLoading } = useAppointments();
-  const { employees } = useEmployees();
-
-  // Se for vista de funcionário, usar o employeeId fixo
-  const effectiveSelectedEmployee = isEmployeeView ? employeeId : selectedEmployee;
-
-  const appointmentsWithDetails = useFilteredAppointments({
-    appointments,
-    selectedEmployee: effectiveSelectedEmployee,
-    hideCanceled,
-  });
-
-  // Encontrar dados do funcionário se for vista de funcionário
-  const employee = isEmployeeView && employeeId
-    ? employees.find(emp => emp.id === employeeId)
-    : null;
-
-  const handleEmployeeChange = (newEmployeeId: string | undefined) => {
-    // Se for vista de funcionário, não permitir mudança
-    if (!isEmployeeView) {
-      setSelectedEmployee(newEmployeeId);
-    }
-  };
-
-  const handleNewAppointment = () => {
-    // Funcionários não podem criar agendamentos
-    if (!isEmployeeView) {
-      handleOpenNewAppointment();
-    }
-  };
-
-  const handleBlockTime = () => {
-    // Funcionários não podem bloquear horários
-    if (!isEmployeeView) {
-      handleOpenBlockTime();
-    }
-  };
-
-  const calendarTitle = isEmployeeView && employee
-    ? `Minha Agenda - ${employee.name}`
-    : "Agenda";
+  const containerClass = isMaximized 
+    ? "flex h-screen w-screen bg-slate-50 dark:bg-slate-900 overflow-hidden"
+    : "flex h-full w-full bg-slate-50 dark:bg-slate-900 overflow-hidden";
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CalendarIcon className="h-5 w-5" />
-          {calendarTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Header do calendário com navegação */}
-        <CalendarMainHeader
+    <div className={containerClass}>
+      {/* Sidebar - Sempre visível */}
+      <div className="w-72 lg:w-80 flex-shrink-0 p-3 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+        <CalendarSidebar
           view={view}
-          currentDate={currentDate}
-          onNavigatePrevious={navigatePrevious}
-          onNavigateNext={navigateNext}
-          onToday={goToToday}
-          isMaximized={isMaximized}
-          onToggleMaximized={toggleMaximized}
-          selectedEmployeeId={effectiveSelectedEmployee}
+          onViewChange={onViewChange}
           employees={employees}
-          onEmployeeChange={handleEmployeeChange}
-          onViewChange={() => {}} // View fixa para funcionários
+          selectedEmployeeId={selectedEmployeeId}
+          onEmployeeChange={onEmployeeChange}
           hideCanceled={hideCanceled}
-          onToggleHideCanceled={toggleHideCanceled}
-          onNewAppointment={handleNewAppointment}
-          onBlockTime={handleBlockTime}
-          isEmployeeView={isEmployeeView}
+          onToggleHideCanceled={onToggleHideCanceled}
+          onNewAppointment={onNewAppointment}
+          onBlockTime={onBlockTime}
+          onGoToToday={onGoToToday}
         />
-        
-        {/* Conteúdo do calendário */}
-        <CalendarContent
-          view={view}
-          appointments={appointmentsWithDetails}
-          currentDate={currentDate}
-          employees={employees}
-          selectedEmployee={effectiveSelectedEmployee}
-          onSelectAppointment={handleSelectAppointment}
-          onSelectTimeSlot={setSelectedTimeSlot}
-          setView={() => {}} // View fixa para funcionários
-          isLoading={appointmentsLoading}
-          isEmployeeView={isEmployeeView}
-        />
+      </div>
 
-        {/* Diálogos */}
-        {!isEmployeeView && (
-          <CalendarDialogs
-            appointmentDialogOpen={appointmentDialogOpen}
-            setAppointmentDialogOpen={setAppointmentDialogOpen}
-            blockTimeDialogOpen={blockTimeDialogOpen}
-            setBlockTimeDialogOpen={setBlockTimeDialogOpen}
-            actionsDialogOpen={actionsDialogOpen}
-            setActionsDialogOpen={setActionsDialogOpen}
-            selectedAppointment={selectedAppointment}
-            setSelectedAppointment={setSelectedAppointment}
-            editMode={editMode}
-            setEditMode={setEditMode}
-            dialogKey={dialogKey}
-            selectedTimeSlot={selectedTimeSlot}
-            setSelectedTimeSlot={setSelectedTimeSlot}
-            selectedEmployee={effectiveSelectedEmployee}
-            onEditAppointment={handleEditAppointment}
+      {/* Main Content - Full width expansion */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 w-full h-full">
+        {/* Header - Fixed height */}
+        <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+          <CalendarMainHeader
+            currentDate={currentDate}
+            view={view}
+            onNavigatePrevious={onNavigatePrevious}
+            onNavigateNext={onNavigateNext}
+            onToday={onGoToToday}
+            isMaximized={isMaximized}
+            onToggleMaximized={onToggleMaximized}
+            onNewAppointment={onNewAppointment}
+            onBlockTime={onBlockTime}
+            employees={employees}
+            selectedEmployeeId={selectedEmployeeId}
+            onEmployeeChange={onEmployeeChange}
+            onViewChange={onViewChange}
+            hideCanceled={hideCanceled}
+            onToggleHideCanceled={onToggleHideCanceled}
           />
-        )}
-      </CardContent>
-    </Card>
+        </div>
+
+        {/* Calendar Content - Full expansion */}
+        <div className="flex-1 overflow-hidden w-full h-full">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 };
 

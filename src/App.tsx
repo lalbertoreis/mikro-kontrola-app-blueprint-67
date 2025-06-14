@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import PrivateRoute from "@/components/auth/PrivateRoute";
+import EmployeeRoute from "@/components/auth/EmployeeRoute";
 import { OnboardingManager } from "@/components/onboarding/OnboardingManager";
 
 // Import pages
@@ -27,6 +28,7 @@ import FixedCosts from "./pages/FixedCosts";
 import PublicBooking from "./pages/PublicBooking";
 import Business404 from "./pages/Business404";
 import ServicePackages from "./pages/ServicePackages";
+import EmployeeCalendarView from "./components/calendar/EmployeeCalendarView";
 
 const queryClient = new QueryClient();
 
@@ -51,7 +53,14 @@ function App() {
                 <Route path="/booking/:slug" element={<PublicBooking />} />
                 <Route path="/booking-not-found" element={<Business404 />} />
                 
-                {/* Protected routes - acessível para proprietários e funcionários */}
+                {/* Employee routes - agenda restrita */}
+                <Route path="/employee/calendar" element={
+                  <EmployeeRoute>
+                    <EmployeeCalendarView />
+                  </EmployeeRoute>
+                } />
+                
+                {/* Protected routes - apenas para proprietários */}
                 <Route path="/dashboard" element={
                   <PrivateRoute>
                     <Dashboard />
