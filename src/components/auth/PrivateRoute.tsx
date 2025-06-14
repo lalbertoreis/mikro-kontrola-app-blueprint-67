@@ -50,9 +50,9 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Se for funcionário, redirecionar para a agenda restrita
+  // Se for funcionário, redirecionar para a agenda
   if (isEmployee) {
-    return <Navigate to="/employee/calendar" replace />;
+    return <Navigate to="/dashboard/calendar" replace />;
   }
 
   return <>{children}</>;
