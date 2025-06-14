@@ -5,17 +5,39 @@ import { HelpCircle, PlayCircle } from 'lucide-react';
 import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 import { OnboardingWizard } from './OnboardingWizard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEmployeePermissions } from '@/hooks/useAuth';
 import { useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 export const OnboardingManager: React.FC = () => {
   const { user } = useAuth();
+  const { checkEmployeePermissions } = useEmployeePermissions();
   const location = useLocation();
+  const [isEmployee, setIsEmployee] = useState<boolean | null>(null);
+  
   const { 
     isCompleted, 
     isSkipped, 
     isWizardVisible,
     showWizard 
   } = useOnboardingWizard();
+
+  // Verificar se o usuário é funcionário
+  useEffect(() => {
+    const checkUserType = async () => {
+      if (!user) return;
+      
+      try {
+        const permissions = await checkEmployeePermissions();
+        setIsEmployee(!!permissions);
+      } catch (error) {
+        console.error("Erro ao verificar tipo de usuário:", error);
+        setIsEmployee(false);
+      }
+    };
+
+    checkUserType();
+  }, [user, checkEmployeePermissions]);
 
   // Páginas onde o botão Tutorial deve aparecer após conclusão
   const allowedPagesForTutorialButton = ['/dashboard', '/dashboard/settings'];
@@ -28,12 +50,13 @@ export const OnboardingManager: React.FC = () => {
     userLoggedIn: !!user,
     currentPath: location.pathname,
     shouldShowTutorialButton,
-    shouldShowResumeButton: !isWizardVisible && !isCompleted && !isSkipped,
-    shouldShowTutorialButtonAfterComplete: (isCompleted || isSkipped) && !isWizardVisible && shouldShowTutorialButton
+    isEmployee,
+    shouldShowResumeButton: !isWizardVisible && !isCompleted && !isSkipped && !isEmployee,
+    shouldShowTutorialButtonAfterComplete: (isCompleted || isSkipped) && !isWizardVisible && shouldShowTutorialButton && !isEmployee
   });
 
-  // Não mostrar nada se o usuário não estiver logado
-  if (!user) {
+  // Não mostrar nada se o usuário não estiver logado ou for funcionário
+  if (!user || isEmployee) {
     return null;
   }
 

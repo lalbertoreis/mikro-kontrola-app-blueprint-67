@@ -3,7 +3,6 @@ import React from "react";
 import { useAuth, useEmployeePermissions } from "@/hooks/useAuth";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useEmployees } from "@/hooks/useEmployees";
-import CalendarContent from "./CalendarContent";
 import { useCalendarState } from "@/hooks/useCalendarState";
 import { useFilteredAppointments } from "./CalendarFilters";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -11,6 +10,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar as CalendarIcon, User } from "lucide-react";
 import { useState, useEffect } from "react";
+import CalendarMainHeader from "./CalendarMainHeader";
+import CalendarContent from "./CalendarContent";
 
 export default function EmployeeCalendarView() {
   const { user } = useAuth();
@@ -20,6 +21,7 @@ export default function EmployeeCalendarView() {
 
   const {
     view,
+    setView,
     currentDate,
     selectedTimeSlot,
     handleSelectAppointment,
@@ -110,6 +112,25 @@ export default function EmployeeCalendarView() {
                 </ul>
               </div>
               
+              {/* Header do calendário com navegação */}
+              <CalendarMainHeader
+                view={view}
+                setView={() => {}} // View fixa para funcionários
+                currentDate={currentDate}
+                onPrevious={navigatePrevious}
+                onNext={navigateNext}
+                onToday={goToToday}
+                selectedEmployee={employeeData.employee.id}
+                employees={employees}
+                onEmployeeChange={() => {}} // Funcionário não pode trocar de funcionário
+                hideCanceled={false}
+                onToggleHideCanceled={() => {}} // Sempre mostrar todos
+                onNewAppointment={() => {}} // Funcionários não podem criar agendamentos
+                onBlockTime={() => {}} // Funcionários não podem bloquear horários
+                isEmployeeView={true}
+              />
+              
+              {/* Conteúdo do calendário */}
               <CalendarContent
                 view={view}
                 appointments={appointmentsWithDetails}
