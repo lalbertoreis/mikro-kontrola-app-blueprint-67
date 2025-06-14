@@ -24,6 +24,7 @@ interface CalendarMainHeaderProps {
   onViewChange: (view: CalendarViewOptions["view"]) => void;
   hideCanceled: boolean;
   onToggleHideCanceled: () => void;
+  isEmployeeView?: boolean;
 }
 
 const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
@@ -34,6 +35,9 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
   onToday,
   isMaximized,
   onToggleMaximized,
+  employees,
+  selectedEmployeeId,
+  isEmployeeView = false,
 }) => {
   const getDateDisplay = () => {
     if (view === "week") {
@@ -41,6 +45,12 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
     }
     return format(currentDate, "MMMM yyyy", { locale: ptBR });
   };
+
+  // Encontrar nome do funcionário se for vista de funcionário
+  const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
+  const headerTitle = isEmployeeView && selectedEmployee 
+    ? `Minha Agenda - ${selectedEmployee.name}`
+    : getDateDisplay();
 
   return (
     <div className="flex items-center justify-between w-full">
@@ -78,7 +88,7 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
       {/* Center - Date display */}
       <div className="flex-1 flex justify-center">
         <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-200 capitalize">
-          {getDateDisplay()}
+          {headerTitle}
         </h1>
       </div>
 

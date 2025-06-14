@@ -22,6 +22,7 @@ interface CalendarLayoutProps {
   onNavigateNext: () => void;
   isMaximized: boolean;
   onToggleMaximized: () => void;
+  isEmployeeView?: boolean;
 }
 
 const CalendarLayout: React.FC<CalendarLayoutProps> = ({
@@ -41,6 +42,7 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
   onNavigateNext,
   isMaximized,
   onToggleMaximized,
+  isEmployeeView = false,
 }) => {
   const containerClass = isMaximized 
     ? "flex h-screen w-screen bg-slate-50 dark:bg-slate-900 overflow-hidden"
@@ -48,21 +50,23 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
 
   return (
     <div className={containerClass}>
-      {/* Sidebar - Sempre visível */}
-      <div className="w-72 lg:w-80 flex-shrink-0 p-3 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
-        <CalendarSidebar
-          view={view}
-          onViewChange={onViewChange}
-          employees={employees}
-          selectedEmployeeId={selectedEmployeeId}
-          onEmployeeChange={onEmployeeChange}
-          hideCanceled={hideCanceled}
-          onToggleHideCanceled={onToggleHideCanceled}
-          onNewAppointment={onNewAppointment}
-          onBlockTime={onBlockTime}
-          onGoToToday={onGoToToday}
-        />
-      </div>
+      {/* Sidebar - Sempre visível para proprietários, oculta para funcionários */}
+      {!isEmployeeView && (
+        <div className="w-72 lg:w-80 flex-shrink-0 p-3 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+          <CalendarSidebar
+            view={view}
+            onViewChange={onViewChange}
+            employees={employees}
+            selectedEmployeeId={selectedEmployeeId}
+            onEmployeeChange={onEmployeeChange}
+            hideCanceled={hideCanceled}
+            onToggleHideCanceled={onToggleHideCanceled}
+            onNewAppointment={onNewAppointment}
+            onBlockTime={onBlockTime}
+            onGoToToday={onGoToToday}
+          />
+        </div>
+      )}
 
       {/* Main Content - Full width expansion */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 w-full h-full">
@@ -84,6 +88,7 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
             onViewChange={onViewChange}
             hideCanceled={hideCanceled}
             onToggleHideCanceled={onToggleHideCanceled}
+            isEmployeeView={isEmployeeView}
           />
         </div>
 

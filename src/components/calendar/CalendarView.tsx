@@ -1,8 +1,9 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useCalendarState } from "@/hooks/useCalendarState";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useEmployees } from "@/hooks/useEmployees";
+import { useEmployeePermissions } from "@/hooks/useAuth";
 import CalendarDialogs from "./CalendarDialogs";
 import MobileCalendarView from "./MobileCalendarView";
 import CalendarLayout from "./CalendarLayout";
@@ -15,6 +16,10 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function CalendarView() {
   const { user } = useAuth();
+  const { checkEmployeePermissions } = useEmployeePermissions();
+  const [isEmployee, setIsEmployee] = React.useState<boolean>(false);
+  const [employeeData, setEmployeeData] = React.useState<any>(null);
+
   const {
     view,
     setView,
@@ -50,6 +55,30 @@ export default function CalendarView() {
   const { employees } = useEmployees();
   const isMobile = useIsMobile();
 
+  // Verificar se é funcionário
+  useEffect(() => {
+    const checkEmployeeStatus = async () => {
+      try {
+        const permissions = await checkEmployeePermissions();
+        if (permissions) {
+          setIsEmployee(true);
+          setEmployeeData(permissions);
+          // Automaticamente selecionar o funcionário logado
+          setSelectedEmployee(permissions.employee_id);
+        } else {
+          setIsEmployee(false);
+        }
+      } catch (error) {
+        console.error("Erro ao verificar permissões:", error);
+        setIsEmployee(false);
+      }
+    };
+
+    if (user) {
+      checkEmployeeStatus();
+    }
+  }, [user, checkEmployeePermissions, setSelectedEmployee]);
+
   const appointmentsWithDetails = useFilteredAppointments({
     appointments,
     selectedEmployee,
@@ -58,6 +87,15 @@ export default function CalendarView() {
 
   // Handler for selecting a time slot (to open new appointment or navigate to date)
   const handleSelectTimeSlot = (date: Date, hour?: number) => {
+    // Se é funcionário, não permite criar agendamentos
+    if (isEmployee) {
+      // Apenas navegar para a data
+      if (!hour) {
+        setCurrentDate(date);
+      }
+      return;
+    }
+    
     // If it's just a date selection (no hour), update the current date
     if (!hour) {
       setCurrentDate(date);
@@ -90,17 +128,18 @@ export default function CalendarView() {
             onViewChange={setView}
             employees={employees}
             selectedEmployeeId={selectedEmployee}
-            onEmployeeChange={setSelectedEmployee}
+            onEmployeeChange={isEmployee ? () => {} : setSelectedEmployee}
             hideCanceled={hideCanceled}
             onToggleHideCanceled={toggleHideCanceled}
-            onNewAppointment={handleOpenNewAppointment}
-            onBlockTime={handleOpenBlockTime}
+            onNewAppointment={isEmployee ? () => {} : handleOpenNewAppointment}
+            onBlockTime={isEmployee ? () => {} : handleOpenBlockTime}
             onGoToToday={goToToday}
             currentDate={currentDate}
             onNavigatePrevious={navigatePrevious}
             onNavigateNext={navigateNext}
             isMaximized={isMaximized}
             onToggleMaximized={toggleMaximized}
+            isEmployeeView={isEmployee}
           >
             <CalendarContent
               view={view}
@@ -112,26 +151,29 @@ export default function CalendarView() {
               onSelectTimeSlot={handleSelectTimeSlot}
               setView={setView}
               isLoading={isLoading}
+              isEmployeeView={isEmployee}
             />
 
-            <CalendarDialogs
-              appointmentDialogOpen={appointmentDialogOpen}
-              blockTimeDialogOpen={blockTimeDialogOpen}
-              actionsDialogOpen={actionsDialogOpen}
-              selectedAppointment={selectedAppointment}
-              editMode={editMode}
-              currentDate={selectedTimeSlot?.date || currentDate}
-              selectedEmployeeId={selectedEmployee}
-              selectedTimeSlot={selectedTimeSlot}
-              dialogKey={dialogKey}
-              onAppointmentDialogClose={() => {
-                setAppointmentDialogOpen(false);
-                setSelectedTimeSlot(null);
-              }}
-              onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
-              onActionsDialogOpenChange={setActionsDialogOpen}
-              onEditAppointment={handleEditAppointment}
-            />
+            {!isEmployee && (
+              <CalendarDialogs
+                appointmentDialogOpen={appointmentDialogOpen}
+                blockTimeDialogOpen={blockTimeDialogOpen}
+                actionsDialogOpen={actionsDialogOpen}
+                selectedAppointment={selectedAppointment}
+                editMode={editMode}
+                currentDate={selectedTimeSlot?.date || currentDate}
+                selectedEmployeeId={selectedEmployee}
+                selectedTimeSlot={selectedTimeSlot}
+                dialogKey={dialogKey}
+                onAppointmentDialogClose={() => {
+                  setAppointmentDialogOpen(false);
+                  setSelectedTimeSlot(null);
+                }}
+                onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+                onActionsDialogOpenChange={setActionsDialogOpen}
+                onEditAppointment={handleEditAppointment}
+              />
+            )}
           </CalendarLayout>
         </div>
       </TooltipProvider>
@@ -153,35 +195,38 @@ export default function CalendarView() {
             onSelectAppointment={handleSelectAppointment}
             onSelectTimeSlot={handleSelectTimeSlot}
             onViewChange={setView}
-            onEmployeeChange={setSelectedEmployee}
+            onEmployeeChange={isEmployee ? () => {} : setSelectedEmployee}
             onToggleHideCanceled={toggleHideCanceled}
-            onNewAppointment={handleOpenNewAppointment}
-            onBlockTime={handleOpenBlockTime}
+            onNewAppointment={isEmployee ? () => {} : handleOpenNewAppointment}
+            onBlockTime={isEmployee ? () => {} : handleOpenBlockTime}
             onGoToToday={goToToday}
             onNavigatePrevious={navigatePrevious}
             onNavigateNext={navigateNext}
             onToggleMaximized={toggleMaximized}
             isLoading={isLoading}
+            isEmployeeView={isEmployee}
           />
 
-          <CalendarDialogs
-            appointmentDialogOpen={appointmentDialogOpen}
-            blockTimeDialogOpen={blockTimeDialogOpen}
-            actionsDialogOpen={actionsDialogOpen}
-            selectedAppointment={selectedAppointment}
-            editMode={editMode}
-            currentDate={selectedTimeSlot?.date || currentDate}
-            selectedEmployeeId={selectedEmployee}
-            selectedTimeSlot={selectedTimeSlot}
-            dialogKey={dialogKey}
-            onAppointmentDialogClose={() => {
-              setAppointmentDialogOpen(false);
-              setSelectedTimeSlot(null);
-            }}
-            onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
-            onActionsDialogOpenChange={setActionsDialogOpen}
-            onEditAppointment={handleEditAppointment}
-          />
+          {!isEmployee && (
+            <CalendarDialogs
+              appointmentDialogOpen={appointmentDialogOpen}
+              blockTimeDialogOpen={blockTimeDialogOpen}
+              actionsDialogOpen={actionsDialogOpen}
+              selectedAppointment={selectedAppointment}
+              editMode={editMode}
+              currentDate={selectedTimeSlot?.date || currentDate}
+              selectedEmployeeId={selectedEmployee}
+              selectedTimeSlot={selectedTimeSlot}
+              dialogKey={dialogKey}
+              onAppointmentDialogClose={() => {
+                setAppointmentDialogOpen(false);
+                setSelectedTimeSlot(null);
+              }}
+              onBlockTimeDialogClose={() => setBlockTimeDialogClose(false)}
+              onActionsDialogOpenChange={setActionsDialogOpen}
+              onEditAppointment={handleEditAppointment}
+            />
+          )}
         </div>
       </DashboardLayout>
     );
@@ -196,17 +241,18 @@ export default function CalendarView() {
           onViewChange={setView}
           employees={employees}
           selectedEmployeeId={selectedEmployee}
-          onEmployeeChange={setSelectedEmployee}
+          onEmployeeChange={isEmployee ? () => {} : setSelectedEmployee}
           hideCanceled={hideCanceled}
           onToggleHideCanceled={toggleHideCanceled}
-          onNewAppointment={handleOpenNewAppointment}
-          onBlockTime={handleOpenBlockTime}
+          onNewAppointment={isEmployee ? () => {} : handleOpenNewAppointment}
+          onBlockTime={isEmployee ? () => {} : handleOpenBlockTime}
           onGoToToday={goToToday}
           currentDate={currentDate}
           onNavigatePrevious={navigatePrevious}
           onNavigateNext={navigateNext}
           isMaximized={isMaximized}
           onToggleMaximized={toggleMaximized}
+          isEmployeeView={isEmployee}
         >
           <CalendarContent
             view={view}
@@ -218,26 +264,29 @@ export default function CalendarView() {
             onSelectTimeSlot={handleSelectTimeSlot}
             setView={setView}
             isLoading={isLoading}
+            isEmployeeView={isEmployee}
           />
 
-          <CalendarDialogs
-            appointmentDialogOpen={appointmentDialogOpen}
-            blockTimeDialogOpen={blockTimeDialogOpen}
-            actionsDialogOpen={actionsDialogOpen}
-            selectedAppointment={selectedAppointment}
-            editMode={editMode}
-            currentDate={selectedTimeSlot?.date || currentDate}
-            selectedEmployeeId={selectedEmployee}
-            selectedTimeSlot={selectedTimeSlot}
-            dialogKey={dialogKey}
-            onAppointmentDialogClose={() => {
-              setAppointmentDialogOpen(false);
-              setSelectedTimeSlot(null);
-            }}
-            onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
-            onActionsDialogOpenChange={setActionsDialogOpen}
-            onEditAppointment={handleEditAppointment}
-          />
+          {!isEmployee && (
+            <CalendarDialogs
+              appointmentDialogOpen={appointmentDialogOpen}
+              blockTimeDialogOpen={blockTimeDialogOpen}
+              actionsDialogOpen={actionsDialogOpen}
+              selectedAppointment={selectedAppointment}
+              editMode={editMode}
+              currentDate={selectedTimeSlot?.date || currentDate}
+              selectedEmployeeId={selectedEmployee}
+              selectedTimeSlot={selectedTimeSlot}
+              dialogKey={dialogKey}
+              onAppointmentDialogClose={() => {
+                setAppointmentDialogOpen(false);
+                setSelectedTimeSlot(null);
+              }}
+              onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+              onActionsDialogOpenChange={setActionsDialogOpen}
+              onEditAppointment={handleEditAppointment}
+            />
+          )}
         </CalendarLayout>
       </TooltipProvider>
     </DashboardLayout>
