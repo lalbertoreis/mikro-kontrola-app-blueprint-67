@@ -1,161 +1,151 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-interface CreateEmployeeUserRequest {
-  email: string;
-  temporaryPassword: string;
-  employeeId: string;
-  employeeName: string;
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { email, temporaryPassword, employeeId, employeeName }: CreateEmployeeUserRequest = await req.json();
-    
-    // Criar cliente Supabase com service role
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-    // Verificar se o usuário já existe
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(user => user.email === email);
+    const { email, temporaryPassword, employeeId, employeeName } = await req.json();
 
-    let authUserId: string;
+    console.log('Creating user for employee:', { email, employeeId, employeeName });
 
-    if (existingUser) {
-      // Se o usuário já existe, usar o ID existente
-      authUserId = existingUser.id;
-      console.log(`Usuário já existe: ${email}, usando ID: ${authUserId}`);
-    } else {
-      // Criar novo usuário no Supabase Auth
-      const { data: newUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: temporaryPassword,
-        email_confirm: true, // Auto-confirmar email
-        user_metadata: {
-          name: employeeName,
-          role: 'employee',
-          employee_id: employeeId
-        }
-      });
-
-      if (authError) {
-        console.error("Erro ao criar usuário:", authError);
-        throw new Error(`Erro ao criar usuário: ${authError.message}`);
-      }
-
-      if (!newUser.user) {
-        throw new Error("Falha ao criar usuário");
-      }
-
-      authUserId = newUser.user.id;
-      console.log(`Novo usuário criado: ${email}, ID: ${authUserId}`);
-    }
-
-    // Obter o user_id do proprietário do negócio (quem está criando o funcionário)
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Token de autorização não encontrado");
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: requestUser, error: userError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userError || !requestUser.user) {
-      throw new Error("Usuário não autenticado");
-    }
-
-    const businessOwnerId = requestUser.user.id;
-
-    // Atualizar a tabela employees com o auth_user_id
-    const { error: updateError } = await supabaseAdmin
-      .from("employees")
-      .update({ 
-        auth_user_id: authUserId,
-        email: email 
-      })
-      .eq("id", employeeId);
-
-    if (updateError) {
-      console.error("Erro ao atualizar funcionário:", updateError);
-      throw new Error(`Erro ao vincular funcionário: ${updateError.message}`);
-    }
-
-    // Criar ou atualizar permissões do funcionário
-    const { error: permissionError } = await supabaseAdmin
-      .from("employee_permissions")
-      .upsert({
-        user_id: authUserId,
-        business_owner_id: businessOwnerId,
+    // Criar usuário no Supabase Auth
+    const { data: newUser, error: createError } = await supabaseClient.auth.admin.createUser({
+      email: email,
+      password: temporaryPassword,
+      email_confirm: true,
+      user_metadata: {
         employee_id: employeeId,
-        can_view_schedule: true,
+        employee_name: employeeName,
+        role: 'employee'
+      }
+    });
+
+    if (createError) {
+      console.error('Erro ao criar usuário:', createError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Erro ao criar usuário: ${createError.message}` 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+
+    console.log('Usuário criado com sucesso:', newUser.user?.id);
+
+    // Obter o ID do proprietário do negócio a partir do employee
+    const { data: employee, error: employeeError } = await supabaseClient
+      .from('employees')
+      .select('user_id')
+      .eq('id', employeeId)
+      .single();
+
+    if (employeeError) {
+      console.error('Erro ao buscar funcionário:', employeeError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Erro ao buscar funcionário: ${employeeError.message}` 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+
+    // Criar permissões para o funcionário
+    const { error: permissionsError } = await supabaseClient
+      .from('employee_permissions')
+      .insert({
+        user_id: newUser.user!.id,
+        employee_id: employeeId,
+        business_owner_id: employee.user_id,
+        can_view_calendar: true,
+        can_manage_appointments: false,
         can_edit_own_appointments: false
-      }, {
-        onConflict: "user_id,business_owner_id"
       });
 
-    if (permissionError) {
-      console.error("Erro ao criar permissões:", permissionError);
-      throw new Error(`Erro ao configurar permissões: ${permissionError.message}`);
+    if (permissionsError) {
+      console.error('Erro ao criar permissões:', permissionsError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Erro ao configurar permissões: ${permissionsError.message}` 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
     }
 
-    // Atualizar o convite como ativado
-    const { error: inviteError } = await supabaseAdmin
-      .from("employee_invites")
+    // Atualizar o convite com o user_id
+    const { error: updateInviteError } = await supabaseClient
+      .from('employee_invites')
       .update({
-        user_id: authUserId,
-        activated_at: new Date().toISOString(),
-        is_active: true
+        user_id: newUser.user!.id,
+        activated_at: new Date().toISOString()
       })
-      .eq("employee_id", employeeId);
+      .eq('employee_id', employeeId);
 
-    if (inviteError) {
-      console.error("Erro ao atualizar convite:", inviteError);
+    if (updateInviteError) {
+      console.error('Erro ao atualizar convite:', updateInviteError);
     }
+
+    // Atualizar employee com auth_user_id
+    const { error: updateEmployeeError } = await supabaseClient
+      .from('employees')
+      .update({ auth_user_id: newUser.user!.id })
+      .eq('id', employeeId);
+
+    if (updateEmployeeError) {
+      console.error('Erro ao atualizar funcionário:', updateEmployeeError);
+    }
+
+    console.log('Usuário e permissões criados com sucesso');
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        userId: authUserId,
-        message: "Usuário funcionário criado com sucesso"
+      JSON.stringify({ 
+        success: true, 
+        user_id: newUser.user!.id,
+        message: 'Usuário criado com sucesso' 
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
       }
     );
 
-  } catch (error: any) {
-    console.error("Erro na função create-employee-user:", error);
+  } catch (error) {
+    console.error('Erro inesperado:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || "Erro interno do servidor" 
+        error: `Erro inesperado: ${error.message}` 
       }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
       }
     );
   }
-};
-
-serve(handler);
+})

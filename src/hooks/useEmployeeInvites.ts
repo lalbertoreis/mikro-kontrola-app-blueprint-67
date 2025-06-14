@@ -63,7 +63,7 @@ export function useEmployeeInvites() {
         .from("employee_invites")
         .select("id")
         .eq("employee_id", inviteData.employeeId)
-        .single();
+        .maybeSingle();
 
       let inviteId: string;
 

@@ -183,6 +183,7 @@ export type Database = {
       employee_permissions: {
         Row: {
           business_owner_id: string
+          can_edit_own_appointments: boolean
           can_manage_appointments: boolean
           can_view_calendar: boolean
           created_at: string
@@ -192,6 +193,7 @@ export type Database = {
         }
         Insert: {
           business_owner_id: string
+          can_edit_own_appointments?: boolean
           can_manage_appointments?: boolean
           can_view_calendar?: boolean
           created_at?: string
@@ -201,6 +203,7 @@ export type Database = {
         }
         Update: {
           business_owner_id?: string
+          can_edit_own_appointments?: boolean
           can_manage_appointments?: boolean
           can_view_calendar?: boolean
           created_at?: string
