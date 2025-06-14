@@ -34,11 +34,18 @@ export function useEmployeeCalendarData() {
           console.log("useEmployeeCalendarData - No permissions found");
           setAccessDenied(true);
         } else {
-          console.log("useEmployeeCalendarData - Employee data found:", {
-            employee: permissions.employee,
-            employeeId: permissions.employee_id
-          });
-          setEmployeeData(permissions);
+          // Buscar dados do funcionário usando o employee_id
+          const employee = employees.find(emp => emp.id === permissions.employee_id);
+          console.log("useEmployeeCalendarData - Employee found:", employee);
+          
+          // Adicionar os dados do funcionário aos dados de permissão
+          const enrichedData = {
+            ...permissions,
+            employee: employee || null
+          };
+          
+          console.log("useEmployeeCalendarData - Final employee data:", enrichedData);
+          setEmployeeData(enrichedData);
           setAccessDenied(false);
         }
       } catch (error) {
@@ -50,16 +57,16 @@ export function useEmployeeCalendarData() {
     };
 
     loadEmployeeData();
-  }, [user?.id, checkEmployeePermissions]);
+  }, [user?.id, checkEmployeePermissions, employees]);
 
-  // Memoizar o filtro de agendamentos para evitar recálculos desnecessários
+  // Usar employee_id diretamente para filtrar agendamentos
   const employeeAppointments = useMemo(() => {
-    const employeeId = employeeData?.employee?.id || employeeData?.employee_id;
+    const employeeId = employeeData?.employee_id;
     
-    console.log("useEmployeeCalendarData - Filtering appointments for employee:", employeeId);
+    console.log("useEmployeeCalendarData - Filtering appointments for employee_id:", employeeId);
     
     if (!employeeId) {
-      console.log("useEmployeeCalendarData - No employee ID found");
+      console.log("useEmployeeCalendarData - No employee_id found");
       return [];
     }
     
@@ -69,11 +76,11 @@ export function useEmployeeCalendarData() {
     
     console.log("useEmployeeCalendarData - Filtered appointments:", filtered.length);
     return filtered;
-  }, [appointments, employeeData?.employee?.id, employeeData?.employee_id]);
+  }, [appointments, employeeData?.employee_id]);
 
   const appointmentsWithDetails = useFilteredAppointments({
     appointments: employeeAppointments,
-    selectedEmployee: employeeData?.employee?.id || employeeData?.employee_id,
+    selectedEmployee: employeeData?.employee_id,
     hideCanceled: false,
   });
 
