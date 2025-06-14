@@ -1,5 +1,5 @@
 
-import { useContext } from "react";
+import { useContext, useCallback } from "react";
 import AuthContext from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,7 +15,7 @@ export const useAuth = () => {
 export const useEmployeePermissions = () => {
   const { user } = useAuth();
 
-  const checkEmployeePermissions = async () => {
+  const checkEmployeePermissions = useCallback(async () => {
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -32,10 +32,8 @@ export const useEmployeePermissions = () => {
       return null;
     }
 
-    console.log("useEmployeePermissions: Raw data from Supabase:", data);
-
     return data;
-  };
+  }, [user?.id]); // Só re-cria a função se o user.id mudar
 
   return { checkEmployeePermissions };
 };
