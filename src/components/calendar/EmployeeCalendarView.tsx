@@ -73,7 +73,7 @@ export default function EmployeeCalendarView() {
     );
   }
 
-  if (!employeeData) {
+  if (!employeeData || !employeeData.employee) {
     return (
       <DashboardLayout>
         <Card>
