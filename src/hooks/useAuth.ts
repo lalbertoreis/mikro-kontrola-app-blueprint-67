@@ -16,12 +16,7 @@ export const useEmployeePermissions = () => {
   const { user } = useAuth();
 
   const checkEmployeePermissions = async () => {
-    if (!user) {
-      console.log("checkEmployeePermissions: No user found");
-      return null;
-    }
-
-    console.log("checkEmployeePermissions: Starting check for user:", user.id);
+    if (!user) return null;
 
     const { data, error } = await supabase
       .from("employee_permissions")
@@ -33,24 +28,10 @@ export const useEmployeePermissions = () => {
       .single();
 
     if (error) {
-      console.error("checkEmployeePermissions: Error fetching permissions:", error);
+      console.error("Erro ao verificar permissões de funcionário:", error);
       return null;
     }
 
-    console.log("checkEmployeePermissions: Raw data from query:", data);
-    console.log("checkEmployeePermissions: Employee data:", data?.employee);
-
-    if (!data) {
-      console.log("checkEmployeePermissions: No data returned from query");
-      return null;
-    }
-
-    if (!data.employee) {
-      console.log("checkEmployeePermissions: No employee data in permissions");
-      return null;
-    }
-
-    console.log("checkEmployeePermissions: Returning valid permissions with employee:", data.employee);
     return data;
   };
 

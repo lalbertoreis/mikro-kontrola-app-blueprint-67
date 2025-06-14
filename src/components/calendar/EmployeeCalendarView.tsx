@@ -69,29 +69,16 @@ export default function EmployeeCalendarView() {
     loadEmployeeData();
   }, [user, checkEmployeePermissions]);
 
-  // Log dos agendamentos originais
-  console.log("EmployeeCalendarView: Original appointments:", appointments);
-  console.log("EmployeeCalendarView: Total appointments count:", appointments.length);
-
   // Filtrar agendamentos apenas do funcionário logado
   const employeeAppointments = appointments.filter(appointment => {
     if (!employeeData?.employee?.id) {
       console.log("EmployeeCalendarView: No employee ID found for filtering");
       return false;
     }
-    
-    console.log(`EmployeeCalendarView: Checking appointment ${appointment.id}:`, {
-      appointmentEmployeeId: appointment.employeeId,
-      currentEmployeeId: employeeData.employee.id,
-      matches: appointment.employeeId === employeeData.employee.id
-    });
-    
     const matches = appointment.employeeId === employeeData.employee.id;
+    console.log(`EmployeeCalendarView: Appointment ${appointment.id} matches employee: ${matches}`);
     return matches;
   });
-
-  console.log("EmployeeCalendarView: Filtered employee appointments:", employeeAppointments);
-  console.log("EmployeeCalendarView: Employee appointments count:", employeeAppointments.length);
 
   const appointmentsWithDetails = useFilteredAppointments({
     appointments: employeeAppointments,
@@ -99,17 +86,13 @@ export default function EmployeeCalendarView() {
     hideCanceled: false,
   });
 
-  console.log("EmployeeCalendarView: Final appointments with details:", appointmentsWithDetails);
-
   console.log("EmployeeCalendarView: Render state:", {
     loading,
     accessDenied,
     hasEmployeeData: !!employeeData,
     hasEmployee: !!employeeData?.employee,
     employeeId: employeeData?.employee?.id,
-    appointmentsCount: appointmentsWithDetails.length,
-    appointmentsLoading,
-    originalAppointmentsCount: appointments.length
+    appointmentsCount: appointmentsWithDetails.length
   });
 
   if (loading) {
@@ -140,8 +123,6 @@ export default function EmployeeCalendarView() {
               <br />User ID: {user?.id}
               <br />Employee Data: {employeeData ? 'Present' : 'None'}
               <br />Access Denied: {accessDenied ? 'Yes' : 'No'}
-              <br />Total Appointments: {appointments.length}
-              <br />Loading: {loading ? 'Yes' : 'No'}
             </div>
           </CardContent>
         </Card>
@@ -168,13 +149,6 @@ export default function EmployeeCalendarView() {
                   <li>• Acesso somente à agenda</li>
                   <li>• Não é possível criar ou editar agendamentos</li>
                 </ul>
-                <div className="mt-2 p-2 bg-blue-100 rounded text-xs">
-                  <strong>Debug Info:</strong>
-                  <br />Employee ID: {employeeData.employee?.id}
-                  <br />Total Appointments: {appointments.length}
-                  <br />Employee Appointments: {employeeAppointments.length}
-                  <br />Final Appointments: {appointmentsWithDetails.length}
-                </div>
               </div>
               
               {/* Header do calendário com navegação */}

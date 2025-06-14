@@ -57,19 +57,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const checkUserType = async () => {
       try {
         const permissions = await checkEmployeePermissions();
-        console.log("DashboardLayout: Employee permissions check result:", permissions);
-        
-        if (permissions && permissions.employee) {
-          setIsEmployee(true);
-          setEmployeeData(permissions);
-          console.log("DashboardLayout: User is employee, setting employee data:", permissions.employee);
-        } else {
-          setIsEmployee(false);
-          setEmployeeData(null);
-          console.log("DashboardLayout: User is NOT employee");
-        }
+        setIsEmployee(!!permissions);
+        setEmployeeData(permissions);
       } catch (error) {
-        console.error("DashboardLayout: Erro ao verificar tipo de usuário:", error);
+        console.error("Erro ao verificar tipo de usuário:", error);
         setIsEmployee(false);
       }
     };
@@ -129,13 +120,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   // Escolher o menu baseado no tipo de usuário
   const menuCategories = isEmployee ? employeeMenuCategories : ownerMenuCategories;
-
-  console.log("DashboardLayout: Current render state:", {
-    isEmployee,
-    hasEmployeeData: !!employeeData,
-    menuCategoriesLength: menuCategories.length,
-    currentPath: location.pathname
-  });
 
   const handleLogout = () => {
     signOut();
