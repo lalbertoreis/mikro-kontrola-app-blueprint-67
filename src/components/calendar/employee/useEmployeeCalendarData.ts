@@ -34,18 +34,7 @@ export function useEmployeeCalendarData() {
           console.log("useEmployeeCalendarData - No permissions found");
           setAccessDenied(true);
         } else {
-          // Buscar dados do funcionário usando o employee_id
-          const employee = employees.find(emp => emp.id === permissions.employee_id);
-          console.log("useEmployeeCalendarData - Employee found:", employee);
-          
-          // Adicionar os dados do funcionário aos dados de permissão
-          const enrichedData = {
-            ...permissions,
-            employee: employee || null
-          };
-          
-          console.log("useEmployeeCalendarData - Final employee data:", enrichedData);
-          setEmployeeData(enrichedData);
+          setEmployeeData(permissions);
           setAccessDenied(false);
         }
       } catch (error) {
@@ -57,46 +46,50 @@ export function useEmployeeCalendarData() {
     };
 
     loadEmployeeData();
-  }, [user?.id, checkEmployeePermissions, employees]);
+  }, [user?.id, checkEmployeePermissions]);
 
-  // Filtrar agendamentos por employee_id
+  // Filtrar agendamentos usando employee_id (não employeeId)
   const employeeAppointments = useMemo(() => {
     const employeeId = employeeData?.employee_id;
     
-    console.log("useEmployeeCalendarData - Filtering appointments for employee_id:", employeeId);
-    console.log("useEmployeeCalendarData - Total appointments before filter:", appointments.length);
+    console.log("useEmployeeCalendarData - employee_id from permissions:", employeeId);
+    console.log("useEmployeeCalendarData - Total appointments:", appointments.length);
     
     if (!employeeId) {
-      console.log("useEmployeeCalendarData - No employee_id found");
+      console.log("useEmployeeCalendarData - No employee_id found, returning empty array");
       return [];
     }
     
-    // Filtrar agendamentos onde o employeeId corresponde ao employee_id do funcionário
+    // Filtrar agendamentos onde employee_id corresponde ao funcionário logado
     const filtered = appointments.filter(appointment => {
-      console.log("Checking appointment:", {
-        appointmentId: appointment.id,
-        appointmentEmployeeId: appointment.employeeId,
-        targetEmployeeId: employeeId,
-        matches: appointment.employeeId === employeeId
-      });
-      return appointment.employeeId === employeeId;
+      const matches = appointment.employee_id === employeeId;
+      console.log(`Appointment ${appointment.id}: employee_id=${appointment.employee_id}, target=${employeeId}, matches=${matches}`);
+      return matches;
     });
     
-    console.log("useEmployeeCalendarData - Filtered appointments:", filtered.length);
-    console.log("useEmployeeCalendarData - Filtered appointments details:", filtered);
+    console.log(`useEmployeeCalendarData - Filtered ${filtered.length} appointments for employee ${employeeId}`);
     return filtered;
   }, [appointments, employeeData?.employee_id]);
 
-  // Aplicar filtros adicionais (mas sem filtro por funcionário, pois já foi aplicado)
+  // Encontrar dados do funcionário pelos employees
+  const employee = useMemo(() => {
+    if (!employeeData?.employee_id) return null;
+    return employees.find(emp => emp.id === employeeData.employee_id) || null;
+  }, [employees, employeeData?.employee_id]);
+
+  // Aplicar filtros adicionais usando o hook existente
   const appointmentsWithDetails = useFilteredAppointments({
     appointments: employeeAppointments,
-    selectedEmployee: undefined, // Não aplicar filtro adicional por funcionário
+    selectedEmployee: undefined, // Já filtrado acima
     hideCanceled: false,
   });
 
   return {
     user,
-    employeeData,
+    employeeData: {
+      ...employeeData,
+      employee
+    },
     loading,
     accessDenied,
     appointments,

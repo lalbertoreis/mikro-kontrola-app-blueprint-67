@@ -38,12 +38,14 @@ const EmployeeCalendarContent: React.FC<EmployeeCalendarContentProps> = ({
     toggleMaximized,
   } = useCalendarState();
 
+  const employeeName = employeeData?.employee?.name || 'Funcionário';
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarIcon className="h-5 w-5" />
-          Minha Agenda - {employeeData.employee?.name || 'Funcionário'}
+          Minha Agenda - {employeeName}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -67,7 +69,7 @@ const EmployeeCalendarContent: React.FC<EmployeeCalendarContentProps> = ({
           onToday={goToToday}
           isMaximized={isMaximized}
           onToggleMaximized={toggleMaximized}
-          selectedEmployeeId={employeeData.employee_id}
+          selectedEmployeeId={employeeData?.employee_id}
           employees={employees}
           onEmployeeChange={() => {}} // Funcionário não pode trocar de funcionário
           onViewChange={() => {}} // View fixa para funcionários
@@ -83,7 +85,7 @@ const EmployeeCalendarContent: React.FC<EmployeeCalendarContentProps> = ({
           appointments={appointmentsWithDetails}
           currentDate={currentDate}
           employees={employees}
-          selectedEmployee={employeeData.employee_id}
+          selectedEmployee={employeeData?.employee_id}
           onSelectAppointment={handleSelectAppointment}
           onSelectTimeSlot={() => {}} // Funcionários não podem criar agendamentos
           setView={() => {}} // View fixa para funcionários
