@@ -10,11 +10,32 @@ interface CalendarFiltersProps {
 
 export function useFilteredAppointments({ appointments, selectedEmployee, hideCanceled }: CalendarFiltersProps) {
   return useMemo(() => {
+    console.log("CalendarFilters - Input:", {
+      totalAppointments: appointments.length,
+      selectedEmployee,
+      hideCanceled
+    });
+
     // Filter appointments based on selected employee and canceled status
     const filteredAppointments = appointments.filter(appointment => {
       const matchesEmployee = !selectedEmployee || appointment.employeeId === selectedEmployee;
       const notCanceled = !hideCanceled || appointment.status !== 'canceled';
+      
+      console.log(`Appointment ${appointment.id}:`, {
+        appointmentEmployeeId: appointment.employeeId,
+        selectedEmployee,
+        matchesEmployee,
+        status: appointment.status,
+        notCanceled,
+        included: matchesEmployee && notCanceled
+      });
+      
       return matchesEmployee && notCanceled;
+    });
+
+    console.log("CalendarFilters - Output:", {
+      filteredCount: filteredAppointments.length,
+      appointmentIds: filteredAppointments.map(a => a.id)
     });
 
     // Convert Appointment[] to AppointmentWithDetails[] to match component props
