@@ -15,6 +15,7 @@ interface CalendarContentProps {
   onSelectTimeSlot: (date: Date, hour?: number) => void;
   setView: (view: CalendarViewOptions["view"]) => void;
   isLoading: boolean;
+  isEmployeeView?: boolean;
 }
 
 const CalendarContent: React.FC<CalendarContentProps> = ({
@@ -27,27 +28,21 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
   onSelectTimeSlot,
   setView,
   isLoading,
+  isEmployeeView = false,
 }) => {
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center space-y-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-slate-600 dark:text-slate-400">Carregando agendamentos...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleTimeSlotSelect = isEmployeeView ? () => {} : onSelectTimeSlot;
 
   if (view === "week") {
     return (
       <WeekCalendar
         appointments={appointments}
-        date={currentDate}
+        currentDate={currentDate}
         employees={employees}
         selectedEmployee={selectedEmployee}
         onSelectAppointment={onSelectAppointment}
-        onSelectTimeSlot={onSelectTimeSlot}
+        onSelectTimeSlot={handleTimeSlotSelect}
+        isLoading={isLoading}
+        isEmployeeView={isEmployeeView}
       />
     );
   }
@@ -55,13 +50,12 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
   return (
     <MonthCalendar
       appointments={appointments}
-      date={currentDate}
-      employees={employees}
-      selectedEmployee={selectedEmployee}
+      currentDate={currentDate}
       onSelectAppointment={onSelectAppointment}
-      onSelectDate={(date) => {
-        setView("week");
-      }}
+      onSelectTimeSlot={handleTimeSlotSelect}
+      setView={setView}
+      isLoading={isLoading}
+      isEmployeeView={isEmployeeView}
     />
   );
 };

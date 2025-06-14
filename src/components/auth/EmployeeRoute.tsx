@@ -4,18 +4,18 @@ import { Navigate } from "react-router-dom";
 import { useAuth, useEmployeePermissions } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
-interface PrivateRouteProps {
+interface EmployeeRouteProps {
   children: React.ReactNode;
 }
 
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+const EmployeeRoute: React.FC<EmployeeRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const { checkEmployeePermissions } = useEmployeePermissions();
   const [isEmployee, setIsEmployee] = useState<boolean | null>(null);
   const [checkingPermissions, setCheckingPermissions] = useState(true);
 
   useEffect(() => {
-    const verifyUserType = async () => {
+    const verifyEmployeeStatus = async () => {
       if (!user) {
         setIsEmployee(false);
         setCheckingPermissions(false);
@@ -26,7 +26,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
         const permissions = await checkEmployeePermissions();
         setIsEmployee(!!permissions);
       } catch (error) {
-        console.error("Erro ao verificar tipo de usuário:", error);
+        console.error("Erro ao verificar status de funcionário:", error);
         setIsEmployee(false);
       } finally {
         setCheckingPermissions(false);
@@ -34,7 +34,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     };
 
     if (!loading) {
-      verifyUserType();
+      verifyEmployeeStatus();
     }
   }, [user, loading, checkEmployeePermissions]);
 
@@ -50,12 +50,11 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Se for funcionário, redirecionar para a agenda restrita
-  if (isEmployee) {
-    return <Navigate to="/employee/calendar" replace />;
+  if (isEmployee === false) {
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
 };
 
-export default PrivateRoute;
+export default EmployeeRoute;
