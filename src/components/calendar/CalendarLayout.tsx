@@ -88,6 +88,11 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
     }
   };
 
+  // Create a proper handler for time slot selection
+  const handleTimeSlotSelect = (date: Date, hour?: number) => {
+    setSelectedTimeSlot({ date, hour });
+  };
+
   const calendarTitle = isEmployeeView && employee
     ? `Minha Agenda - ${employee.name}`
     : "Agenda";
@@ -129,7 +134,7 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
           employees={employees}
           selectedEmployee={effectiveSelectedEmployee}
           onSelectAppointment={handleSelectAppointment}
-          onSelectTimeSlot={setSelectedTimeSlot}
+          onSelectTimeSlot={handleTimeSlotSelect}
           setView={() => {}} // View fixa para funcionários
           isLoading={appointmentsLoading}
           isEmployeeView={isEmployeeView}
@@ -139,19 +144,17 @@ const CalendarLayout: React.FC<CalendarLayoutProps> = ({
         {!isEmployeeView && (
           <CalendarDialogs
             appointmentDialogOpen={appointmentDialogOpen}
-            setAppointmentDialogOpen={setAppointmentDialogOpen}
             blockTimeDialogOpen={blockTimeDialogOpen}
-            setBlockTimeDialogOpen={setBlockTimeDialogOpen}
             actionsDialogOpen={actionsDialogOpen}
-            setActionsDialogOpen={setActionsDialogOpen}
             selectedAppointment={selectedAppointment}
-            setSelectedAppointment={setSelectedAppointment}
             editMode={editMode}
-            setEditMode={setEditMode}
-            dialogKey={dialogKey}
+            currentDate={currentDate}
+            selectedEmployeeId={effectiveSelectedEmployee}
             selectedTimeSlot={selectedTimeSlot}
-            setSelectedTimeSlot={setSelectedTimeSlot}
-            selectedEmployee={effectiveSelectedEmployee}
+            dialogKey={dialogKey}
+            onAppointmentDialogClose={() => setAppointmentDialogOpen(false)}
+            onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+            onActionsDialogOpenChange={setActionsDialogOpen}
             onEditAppointment={handleEditAppointment}
           />
         )}
