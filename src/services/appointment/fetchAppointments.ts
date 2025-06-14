@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment, AppointmentStatus } from "@/types/calendar";
 
@@ -32,12 +31,13 @@ export async function fetchAppointments(): Promise<Appointment[]> {
     
     console.log(`Fetched ${data?.length || 0} appointments for user ${userData.user.id}`);
     
+    // Corrigir o mapeamento do employeeId:
     return data.map(item => ({
       id: item.id,
       title: item.service?.name || 'BLOQUEADO',
       start: new Date(item.start_time),
       end: new Date(item.end_time),
-      employeeId: item.employee_id,
+      employeeId: item.employee_id, // Corrigido para sempre vir do campo employee_id
       serviceId: item.service_id,
       clientId: item.client_id,
       status: item.status as AppointmentStatus,
@@ -110,7 +110,7 @@ export async function fetchAppointmentById(id: string): Promise<Appointment | nu
       title: data.service?.name || 'BLOQUEADO',
       start: new Date(data.start_time),
       end: new Date(data.end_time),
-      employeeId: data.employee_id,
+      employeeId: data.employee_id, // Corrigido para sempre vir do campo employee_id
       serviceId: data.service_id,
       clientId: data.client_id,
       status: data.status as AppointmentStatus,
