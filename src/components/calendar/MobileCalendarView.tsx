@@ -50,6 +50,7 @@ interface MobileCalendarViewProps {
   onNavigateNext: () => void;
   onToggleMaximized: () => void;
   isLoading: boolean;
+  isEmployeeView?: boolean;
 }
 
 const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
@@ -67,6 +68,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   onNewAppointment,
   onBlockTime,
   isLoading,
+  isEmployeeView = false,
 }) => {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date>(currentDate);
@@ -116,10 +118,12 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     <div className="flex-1 flex flex-col p-4 space-y-4">
       {/* Action Buttons */}
       <div className="flex gap-2">
-        <Button onClick={onNewAppointment} className="flex-1" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Agendamento
-        </Button>
+        {!isEmployeeView && (
+          <Button onClick={onNewAppointment} className="flex-1" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Agendamento
+          </Button>
+        )}
         
         <Sheet>
           <SheetTrigger asChild>
@@ -145,24 +149,26 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                 </Select>
               </div>
               
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Funcionário</Label>
-                <Select value={selectedEmployee || "all"} onValueChange={(value) => onEmployeeChange(value === "all" ? undefined : value)}>
-                  <SelectTrigger>
-                    <SelectValue>
-                      {selectedEmployee_ ? selectedEmployee_.name : "Todos"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos Funcionários</SelectItem>
-                    {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {!isEmployeeView && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Funcionário</Label>
+                  <Select value={selectedEmployee || "all"} onValueChange={(value) => onEmployeeChange(value === "all" ? undefined : value)}>
+                    <SelectTrigger>
+                      <SelectValue>
+                        {selectedEmployee_ ? selectedEmployee_.name : "Todos"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos Funcionários</SelectItem>
+                      {employees.map((employee) => (
+                        <SelectItem key={employee.id} value={employee.id}>
+                          {employee.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               <div className="flex items-center space-x-2">
                 <Switch 
@@ -173,9 +179,11 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                 <Label htmlFor="hide-canceled-mobile">Ocultar Cancelados</Label>
               </div>
               
-              <Button onClick={onBlockTime} variant="outline" className="w-full">
-                Bloquear Horário
-              </Button>
+              {!isEmployeeView && (
+                <Button onClick={onBlockTime} variant="outline" className="w-full">
+                  Bloquear Horário
+                </Button>
+              )}
             </div>
           </SheetContent>
         </Sheet>
@@ -254,14 +262,16 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
             <CardContent className="py-8 text-center">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">Nenhum agendamento para esta data</p>
-              <Button 
-                onClick={() => onSelectTimeSlot(currentDate)} 
-                variant="outline" 
-                size="sm" 
-                className="mt-3"
-              >
-                Criar Agendamento
-              </Button>
+              {!isEmployeeView && (
+                <Button 
+                  onClick={() => onSelectTimeSlot(currentDate)} 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-3"
+                >
+                  Criar Agendamento
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (

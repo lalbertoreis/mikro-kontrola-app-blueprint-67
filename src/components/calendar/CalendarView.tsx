@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useCalendarState } from "@/hooks/useCalendarState";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -222,7 +221,7 @@ export default function CalendarView() {
                 setAppointmentDialogOpen(false);
                 setSelectedTimeSlot(null);
               }}
-              onBlockTimeDialogClose={() => setBlockTimeDialogClose(false)}
+              onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
               onActionsDialogOpenChange={setActionsDialogOpen}
               onEditAppointment={handleEditAppointment}
             />
