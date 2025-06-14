@@ -59,28 +59,38 @@ export function useEmployeeCalendarData() {
     loadEmployeeData();
   }, [user?.id, checkEmployeePermissions, employees]);
 
-  // Usar employee_id diretamente para filtrar agendamentos
+  // Filtrar agendamentos por employee_id
   const employeeAppointments = useMemo(() => {
     const employeeId = employeeData?.employee_id;
     
     console.log("useEmployeeCalendarData - Filtering appointments for employee_id:", employeeId);
+    console.log("useEmployeeCalendarData - Total appointments before filter:", appointments.length);
     
     if (!employeeId) {
       console.log("useEmployeeCalendarData - No employee_id found");
       return [];
     }
     
-    const filtered = appointments.filter(appointment => 
-      appointment.employeeId === employeeId
-    );
+    // Filtrar agendamentos onde o employeeId corresponde ao employee_id do funcionário
+    const filtered = appointments.filter(appointment => {
+      console.log("Checking appointment:", {
+        appointmentId: appointment.id,
+        appointmentEmployeeId: appointment.employeeId,
+        targetEmployeeId: employeeId,
+        matches: appointment.employeeId === employeeId
+      });
+      return appointment.employeeId === employeeId;
+    });
     
     console.log("useEmployeeCalendarData - Filtered appointments:", filtered.length);
+    console.log("useEmployeeCalendarData - Filtered appointments details:", filtered);
     return filtered;
   }, [appointments, employeeData?.employee_id]);
 
+  // Aplicar filtros adicionais (mas sem filtro por funcionário, pois já foi aplicado)
   const appointmentsWithDetails = useFilteredAppointments({
     appointments: employeeAppointments,
-    selectedEmployee: employeeData?.employee_id,
+    selectedEmployee: undefined, // Não aplicar filtro adicional por funcionário
     hideCanceled: false,
   });
 
