@@ -18,6 +18,7 @@ export default function EmployeeCalendarView() {
   const { checkEmployeePermissions } = useEmployeePermissions();
   const [employeeData, setEmployeeData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const {
     view,
@@ -37,13 +38,29 @@ export default function EmployeeCalendarView() {
 
   useEffect(() => {
     const loadEmployeeData = async () => {
-      if (!user) return;
+      if (!user) {
+        console.log("EmployeeCalendarView: No user found");
+        setAccessDenied(true);
+        setLoading(false);
+        return;
+      }
       
       try {
+        console.log("EmployeeCalendarView: Checking permissions for user:", user.id);
         const permissions = await checkEmployeePermissions();
-        setEmployeeData(permissions);
+        console.log("EmployeeCalendarView: Permissions received:", permissions);
+        
+        if (!permissions) {
+          console.log("EmployeeCalendarView: No permissions found, access denied");
+          setAccessDenied(true);
+        } else {
+          console.log("EmployeeCalendarView: Access granted, employee data:", permissions);
+          setEmployeeData(permissions);
+          setAccessDenied(false);
+        }
       } catch (error) {
-        console.error("Erro ao carregar dados do funcionário:", error);
+        console.error("EmployeeCalendarView: Erro ao carregar dados do funcionário:", error);
+        setAccessDenied(true);
       } finally {
         setLoading(false);
       }
@@ -54,14 +71,28 @@ export default function EmployeeCalendarView() {
 
   // Filtrar agendamentos apenas do funcionário logado
   const employeeAppointments = appointments.filter(appointment => {
-    if (!employeeData?.employee?.id) return false;
-    return appointment.employeeId === employeeData.employee.id;
+    if (!employeeData?.employee?.id) {
+      console.log("EmployeeCalendarView: No employee ID found for filtering");
+      return false;
+    }
+    const matches = appointment.employeeId === employeeData.employee.id;
+    console.log(`EmployeeCalendarView: Appointment ${appointment.id} matches employee: ${matches}`);
+    return matches;
   });
 
   const appointmentsWithDetails = useFilteredAppointments({
     appointments: employeeAppointments,
     selectedEmployee: employeeData?.employee?.id,
     hideCanceled: false,
+  });
+
+  console.log("EmployeeCalendarView: Render state:", {
+    loading,
+    accessDenied,
+    hasEmployeeData: !!employeeData,
+    hasEmployee: !!employeeData?.employee,
+    employeeId: employeeData?.employee?.id,
+    appointmentsCount: appointmentsWithDetails.length
   });
 
   if (loading) {
@@ -77,7 +108,7 @@ export default function EmployeeCalendarView() {
     );
   }
 
-  if (!employeeData || !employeeData.employee) {
+  if (accessDenied || !employeeData) {
     return (
       <DashboardLayout>
         <Card>
@@ -87,6 +118,12 @@ export default function EmployeeCalendarView() {
             <p className="text-muted-foreground">
               Você não tem permissão para acessar esta área.
             </p>
+            <div className="mt-4 p-3 bg-gray-100 rounded text-sm text-left">
+              <strong>Debug Info:</strong>
+              <br />User ID: {user?.id}
+              <br />Employee Data: {employeeData ? 'Present' : 'None'}
+              <br />Access Denied: {accessDenied ? 'Yes' : 'No'}
+            </div>
           </CardContent>
         </Card>
       </DashboardLayout>
@@ -101,7 +138,7 @@ export default function EmployeeCalendarView() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CalendarIcon className="h-5 w-5" />
-                Minha Agenda - {employeeData.employee.name}
+                Minha Agenda - {employeeData.employee?.name || 'Funcionário'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -123,7 +160,7 @@ export default function EmployeeCalendarView() {
                 onToday={goToToday}
                 isMaximized={isMaximized}
                 onToggleMaximized={toggleMaximized}
-                selectedEmployeeId={employeeData.employee.id}
+                selectedEmployeeId={employeeData.employee?.id}
                 employees={employees}
                 onEmployeeChange={() => {}} // Funcionário não pode trocar de funcionário
                 onViewChange={() => {}} // View fixa para funcionários
@@ -139,7 +176,7 @@ export default function EmployeeCalendarView() {
                 appointments={appointmentsWithDetails}
                 currentDate={currentDate}
                 employees={employees}
-                selectedEmployee={employeeData.employee.id}
+                selectedEmployee={employeeData.employee?.id}
                 onSelectAppointment={handleSelectAppointment}
                 onSelectTimeSlot={() => {}} // Funcionários não podem criar agendamentos
                 setView={() => {}} // View fixa para funcionários
