@@ -1,10 +1,11 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useEmployeeInvites } from "@/hooks/useEmployeeInvites";
 import NoEmployeeMessage from "./access/NoEmployeeMessage";
 import ExistingAccessDisplay from "./access/ExistingAccessDisplay";
 import AccessForm from "./access/AccessForm";
+import { useEmployeeById } from "@/hooks/useEmployees";
 
 interface EmployeeAccessTabProps {
   employeeId?: string;
@@ -12,8 +13,15 @@ interface EmployeeAccessTabProps {
 
 const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => {
   const { createInvite, isCreating, getInviteByEmployeeId } = useEmployeeInvites();
+  const { data: employee } = useEmployeeById(employeeId);
   const [accessEnabled, setAccessEnabled] = useState(false);
-  
+
+  useEffect(() => {
+    if (employee) {
+      setAccessEnabled(!!employee.auth_user_id);
+    }
+  }, [employee]);
+
   const existingInvite = employeeId ? getInviteByEmployeeId(employeeId) : null;
 
   const onSubmit = async (data: { email: string; temporaryPassword: string }) => {
@@ -33,7 +41,6 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
         email: data.email,
         temporaryPassword: data.temporaryPassword,
       });
-      
       toast.success("Convite enviado com sucesso!");
     } catch (error) {
       console.error("Erro ao criar convite:", error);
@@ -58,7 +65,18 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
   return (
     <AccessForm
       accessEnabled={accessEnabled}
-      onAccessEnabledChange={setAccessEnabled}
+      onAccessEnabledChange={async (enabled) => {
+        setAccessEnabled(enabled);
+        // Se desabilitar, remove auth_user_id no banco
+        if (!enabled && employeeId) {
+          // Remove o vínculo auth_user_id
+          // Extra: Remove convite ativo (não obrigatório, mas evita “fantasmas”)
+          const { error } = await import("@/integrations/supabase/client").then(({ supabase }) =>
+            supabase.from("employees").update({ auth_user_id: null }).eq("id", employeeId)
+          );
+          if (!error) toast.success("Acesso removido");
+        }
+      }}
       onSubmit={onSubmit}
       isCreating={isCreating}
     />

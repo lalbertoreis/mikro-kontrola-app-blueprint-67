@@ -63,8 +63,8 @@ export async function fetchEmployeeById(id: string): Promise<Employee | null> {
       .from('employees')
       .select('*')
       .eq('id', id)
-      .single();
-    
+      .maybeSingle();
+
     if (employeeError) throw employeeError;
     if (!employee) return null;
 
@@ -73,7 +73,7 @@ export async function fetchEmployeeById(id: string): Promise<Employee | null> {
       .from('shifts')
       .select('*')
       .eq('employee_id', id);
-    
+
     if (shiftsError) throw shiftsError;
 
     // Fetch services for this employee
@@ -81,7 +81,7 @@ export async function fetchEmployeeById(id: string): Promise<Employee | null> {
       .from('employee_services')
       .select('service_id')
       .eq('employee_id', id);
-    
+
     if (servicesError) throw servicesError;
 
     const shifts: Shift[] = shiftsData.map(shift => ({
@@ -103,7 +103,8 @@ export async function fetchEmployeeById(id: string): Promise<Employee | null> {
       shifts,
       services,
       createdAt: employee.created_at,
-      updatedAt: employee.updated_at
+      updatedAt: employee.updated_at,
+      auth_user_id: employee.auth_user_id
     };
   } catch (error) {
     console.error('Erro ao buscar funcionário:', error);
