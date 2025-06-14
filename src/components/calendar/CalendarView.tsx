@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useCalendarState } from "@/hooks/useCalendarState";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -18,6 +19,9 @@ export default function CalendarView() {
   const { checkEmployeePermissions } = useEmployeePermissions();
   const [isEmployee, setIsEmployee] = React.useState<boolean>(false);
   const [employeeData, setEmployeeData] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  console.log("CalendarView render - user:", user?.id, "isEmployee:", isEmployee, "loading:", loading);
 
   const {
     view,
@@ -57,25 +61,38 @@ export default function CalendarView() {
   // Verificar se é funcionário
   useEffect(() => {
     const checkEmployeeStatus = async () => {
+      console.log("Checking employee status for user:", user?.id);
+      
+      if (!user) {
+        console.log("No user found, setting loading to false");
+        setLoading(false);
+        return;
+      }
+
       try {
         const permissions = await checkEmployeePermissions();
+        console.log("Employee permissions result:", permissions);
+        
         if (permissions) {
           setIsEmployee(true);
           setEmployeeData(permissions);
           // Automaticamente selecionar o funcionário logado
           setSelectedEmployee(permissions.employee_id);
+          console.log("User is employee, selected employee:", permissions.employee_id);
         } else {
           setIsEmployee(false);
+          console.log("User is not employee");
         }
       } catch (error) {
         console.error("Erro ao verificar permissões:", error);
         setIsEmployee(false);
+      } finally {
+        setLoading(false);
+        console.log("Employee check completed, loading set to false");
       }
     };
 
-    if (user) {
-      checkEmployeeStatus();
-    }
+    checkEmployeeStatus();
   }, [user, checkEmployeePermissions, setSelectedEmployee]);
 
   const appointmentsWithDetails = useFilteredAppointments({
@@ -86,6 +103,8 @@ export default function CalendarView() {
 
   // Handler for selecting a time slot (to open new appointment or navigate to date)
   const handleSelectTimeSlot = (date: Date, hour?: number) => {
+    console.log("handleSelectTimeSlot called - isEmployee:", isEmployee, "date:", date, "hour:", hour);
+    
     // Se é funcionário, não permite criar agendamentos
     if (isEmployee) {
       // Apenas navegar para a data
@@ -106,8 +125,24 @@ export default function CalendarView() {
     handleOpenNewAppointment();
   };
 
+  // Show loading state
+  if (loading) {
+    console.log("Showing loading state");
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center space-y-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-slate-600 dark:text-slate-400">Carregando agenda...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   // Show message if user is not authenticated
   if (!user) {
+    console.log("No user authenticated, showing login message");
     return (
       <DashboardLayout>
         <div className="text-center py-10 text-muted-foreground">
@@ -116,6 +151,8 @@ export default function CalendarView() {
       </DashboardLayout>
     );
   }
+
+  console.log("Rendering calendar - isEmployee:", isEmployee, "isMaximized:", isMaximized);
 
   // Maximized layout (fullscreen)
   if (isMaximized) {
