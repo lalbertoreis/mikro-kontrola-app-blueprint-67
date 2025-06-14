@@ -28,7 +28,7 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   employees,
   onNextStep,
   onBookingConfirm,
-  themeColor = "#9b87f5", // Default color
+  themeColor = "#9b87f5",
   businessSlug
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -36,17 +36,17 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
   const [selectedPeriod, setSelectedPeriod] = useState<"morning" | "afternoon" | "evening" | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(true);
   const isMobile = useIsMobile();
   
-  const { packages } = useServicePackages();
+  const { packages, isLoading: isPackagesLoading } = useServicePackages();
 
   useEffect(() => {
-    console.log("BookingDateTimeStep - All employees:", employees?.length || 0);
-    console.log("BookingDateTimeStep - Service:", service);
+    setIsLoadingEmployees(true);
     
     if (!employees || !service) {
-      console.log("Missing employees or service data");
       setAvailableEmployees([]);
+      setIsLoadingEmployees(false);
       return;
     }
     
@@ -58,12 +58,9 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
       const packageId = service.id.replace('package:', '');
       const packageData = packages.find(pkg => pkg.id === packageId);
       
-      if (packageData) {
-        console.log("Looking for employees that can provide package:", packageData.name, "with services:", packageData.services);
-        
+      if (packageData && !isPackagesLoading) {
         const filtered = employees.filter((emp) => {
           if (!emp.services || !Array.isArray(emp.services)) {
-            console.log(`Employee ${emp.name} has no services array`);
             return false;
           }
           
@@ -75,37 +72,38 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
             });
           });
           
-          console.log(`Employee ${emp.name} can provide package ${packageData.name}: ${hasAllServices}`);
           return hasAllServices;
         });
         
-        console.log("BookingDateTimeStep - Employees who can provide package:", filtered);
         setAvailableEmployees(filtered);
+        setIsLoadingEmployees(false);
+      } else if (isPackagesLoading) {
+        // Still loading packages, wait
+        return;
+      } else {
+        // Package not found
+        setAvailableEmployees([]);
+        setIsLoadingEmployees(false);
       }
     } else {
       // For individual services, use existing logic
       const serviceId = typeof service.id === 'object' ? (service.id as any).id : service.id;
-      console.log("Looking for employees that can provide service ID:", serviceId);
       
       const filtered = employees.filter((emp) => {
         if (!emp.services || !Array.isArray(emp.services)) {
-          console.log(`Employee ${emp.name} has no services array`);
           return false;
         }
         
         const canProvideService = emp.services.some((s) => {
           const empServiceId = typeof s === 'object' ? (s as any).id : s;
-          const match = empServiceId === serviceId;
-          console.log(`Checking if ${empServiceId} === ${serviceId}: ${match}`);
-          return match;
+          return empServiceId === serviceId;
         });
         
-        console.log(`Employee ${emp.name} (${emp.id}) can provide service ${serviceId}: ${canProvideService}`);
         return canProvideService;
       });
       
-      console.log("BookingDateTimeStep - Filtered employees:", filtered);
       setAvailableEmployees(filtered);
+      setIsLoadingEmployees(false);
     }
     
     // Reset selections when employees or service change
@@ -113,13 +111,36 @@ const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
     setSelectedDate(null);
     setSelectedPeriod(null);
     setSelectedTime(null);
-  }, [employees, service, packages]);
+  }, [employees, service, packages, isPackagesLoading]);
 
   const handleNextStep = () => {
     if (selectedEmployee && selectedDate && selectedTime) {
       onBookingConfirm(selectedEmployee.id, selectedDate, selectedTime);
     }
   };
+
+  // Show loading state while determining available employees
+  if (isLoadingEmployees) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold mb-4" style={{ color: themeColor }}>
+          {service.name}
+        </h2>
+        <ServiceInfo service={service} />
+        <div className="mb-4">
+          <p className="text-sm text-gray-600 mb-2">Carregando profissionais disponíveis...</p>
+          <div className="flex gap-2">
+            {[1, 2].map((item) => (
+              <div 
+                key={item} 
+                className="w-24 h-10 bg-gray-200 animate-pulse rounded-md"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Se for mobile, usar o layout de etapas
   if (isMobile) {

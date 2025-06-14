@@ -22,21 +22,16 @@ export function useServicesWithEmployees(slug?: string) {
 
   // Filter services that are active and enabled for online booking
   const availableServices = useMemo(() => {
-    console.log("useServicesWithEmployees - All services:", allServices.length);
-    console.log("useServicesWithEmployees - All employees:", allEmployees.length);
-    
-    if (!allServices || !allEmployees) return [];
+    // Wait for both data to be loaded before processing
+    if (isServicesLoading || isEmployeesLoading || !allServices || !allEmployees) {
+      return [];
+    }
     
     // Only include services that are active and have show_in_online_booking enabled
     const onlineBookingServices = allServices.filter(service => {
       const isActive = service.isActive;
-      // For now, assume all active services are available for online booking
-      // This can be enhanced when the services table has a show_in_online_booking column
-      console.log(`Service ${service.name}: isActive=${isActive}`);
       return isActive;
     });
-    
-    console.log("Services available for online booking:", onlineBookingServices.length);
     
     // For each service, check if there are employees who can provide it
     const servicesWithEmployees = onlineBookingServices.map(service => {
@@ -55,7 +50,6 @@ export function useServicesWithEmployees(slug?: string) {
       });
       
       const hasEmployees = availableEmployees.length > 0;
-      console.log(`Service ${service.name} has ${availableEmployees.length} employees available`);
       
       return {
         ...service,
@@ -64,11 +58,8 @@ export function useServicesWithEmployees(slug?: string) {
     });
     
     // Only return services that have employees
-    const finalServices = servicesWithEmployees.filter(service => service.hasEmployees);
-    console.log("Final services with employees:", finalServices.length);
-    
-    return finalServices;
-  }, [allServices, allEmployees]);
+    return servicesWithEmployees.filter(service => service.hasEmployees);
+  }, [allServices, allEmployees, isServicesLoading, isEmployeesLoading]);
 
   // Get booking settings - using default values since we don't have businessProfile here
   const bookingSettings = useMemo(() => {

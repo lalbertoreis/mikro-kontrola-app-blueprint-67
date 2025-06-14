@@ -6,27 +6,16 @@ interface EmployeeSelectorProps {
   employees: Employee[];
   selectedEmployee: Employee | null;
   onSelectEmployee: (employee: Employee) => void;
-  themeColor?: string; // Theme color prop
+  themeColor?: string;
 }
 
 const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({ 
   employees, 
   selectedEmployee, 
   onSelectEmployee,
-  themeColor = "#9b87f5" // Default color
+  themeColor = "#9b87f5"
 }) => {
-  // Add detailed logging for diagnostics
-  useEffect(() => {
-    console.log("EmployeeSelector - Employees received:", employees);
-    console.log("EmployeeSelector - Selected employee:", selectedEmployee);
-    
-    // Check each employee's services
-    employees.forEach(employee => {
-      console.log(`Employee ${employee.name} (${employee.id}) has ${employee.services?.length || 0} services:`, employee.services);
-    });
-  }, [employees, selectedEmployee]);
-
-  // If there are no employees, show a clear message
+  // Only show error message if we're sure there are no employees and not loading
   if (!employees || employees.length === 0) {
     return (
       <div className="mb-4">

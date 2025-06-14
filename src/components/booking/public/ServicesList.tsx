@@ -18,31 +18,22 @@ const ServicesList: React.FC<ServicesListProps> = ({
   onSelectService,
   themeColor
 }) => {
-  const { packages } = useServicePackages();
+  const { packages, isLoading: isPackagesLoading } = useServicePackages();
 
   // Create package services that can be offered by available employees
   // Only include packages with show_in_online_booking = true
   const availablePackageServices = useMemo(() => {
-    if (!packages || !employees || !services) return [];
-
-    console.log("ServicesList - Processing packages:", packages.length);
-    console.log("ServicesList - Available employees:", employees.length);
-    console.log("ServicesList - Available services:", services.length);
+    if (isPackagesLoading || !packages || !employees || !services) return [];
 
     // Filter packages that are active and enabled for online booking
     const onlineBookingPackages = packages.filter(pkg => {
-      const isEligible = pkg.isActive && pkg.showInOnlineBooking;
-      console.log(`Package ${pkg.name}: isActive=${pkg.isActive}, showInOnlineBooking=${pkg.showInOnlineBooking}, eligible=${isEligible}`);
-      return isEligible;
+      return pkg.isActive && pkg.showInOnlineBooking;
     });
-
-    console.log("Packages eligible for online booking:", onlineBookingPackages.length);
     
     return onlineBookingPackages.map(pkg => {
       // Check which employees can provide ALL services in this package
       const availableEmployees = employees.filter(emp => {
         if (!emp.services || !Array.isArray(emp.services)) {
-          console.log(`Employee ${emp.name} has no services array`);
           return false;
         }
         
@@ -54,17 +45,13 @@ const ServicesList: React.FC<ServicesListProps> = ({
           });
         });
 
-        console.log(`Employee ${emp.name} can provide package ${pkg.name}: ${hasAllServices}`);
         return hasAllServices;
       });
 
       // Only include packages that have at least one employee who can provide them
       if (availableEmployees.length === 0) {
-        console.log(`Package ${pkg.name} has no available employees - excluding`);
         return null;
       }
-
-      console.log(`Package ${pkg.name} has ${availableEmployees.length} available employees`);
 
       // Create a Service object for the package
       const packageService: Service = {
@@ -82,11 +69,11 @@ const ServicesList: React.FC<ServicesListProps> = ({
 
       return packageService;
     }).filter(Boolean) as Service[];
-  }, [packages, employees, services]);
+  }, [packages, employees, services, isPackagesLoading]);
 
   // Filter regular services to only show those with available employees
   const availableServices = useMemo(() => {
-    console.log("ServicesList - Filtering regular services:", services.length);
+    if (!services || !employees) return [];
     
     return services.filter(service => {
       const hasEmployees = employees.some(emp => {
@@ -97,17 +84,28 @@ const ServicesList: React.FC<ServicesListProps> = ({
         });
       });
       
-      console.log(`Service ${service.name} has employees: ${hasEmployees}`);
       return hasEmployees;
     });
   }, [services, employees]);
 
-  // Combine individual services and package services
-  const allAvailableServices = [...availableServices, ...availablePackageServices];
+  // Loading state
+  if (isPackagesLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-32 bg-gray-200 animate-pulse rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-  console.log("ServicesList - Final available services:", allAvailableServices.length);
+  // Check if we have any content to show
+  const hasServices = availableServices.length > 0;
+  const hasPackages = availablePackageServices.length > 0;
 
-  if (allAvailableServices.length === 0) {
+  if (!hasServices && !hasPackages) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-500">
@@ -118,15 +116,40 @@ const ServicesList: React.FC<ServicesListProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {allAvailableServices.map((service) => (
-        <ServiceCard
-          key={service.id}
-          item={service}
-          onClick={() => onSelectService(service)}
-          color={themeColor}
-        />
-      ))}
+    <div className="space-y-8">
+      {/* Individual Services Section */}
+      {hasServices && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Serviços</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {availableServices.map((service) => (
+              <ServiceCard
+                key={service.id}
+                item={service}
+                onClick={() => onSelectService(service)}
+                color={themeColor}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Packages Section */}
+      {hasPackages && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Pacotes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {availablePackageServices.map((service) => (
+              <ServiceCard
+                key={service.id}
+                item={service}
+                onClick={() => onSelectService(service)}
+                color={themeColor}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
