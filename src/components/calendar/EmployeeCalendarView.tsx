@@ -28,6 +28,8 @@ export default function EmployeeCalendarView() {
     navigatePrevious,
     navigateNext,
     goToToday,
+    isMaximized,
+    toggleMaximized,
   } = useCalendarState();
 
   const { appointments, isLoading: appointmentsLoading } = useAppointments();
@@ -115,19 +117,20 @@ export default function EmployeeCalendarView() {
               {/* Header do calendário com navegação */}
               <CalendarMainHeader
                 view={view}
-                setView={() => {}} // View fixa para funcionários
                 currentDate={currentDate}
-                onPrevious={navigatePrevious}
-                onNext={navigateNext}
+                onNavigatePrevious={navigatePrevious}
+                onNavigateNext={navigateNext}
                 onToday={goToToday}
-                selectedEmployee={employeeData.employee.id}
+                isMaximized={isMaximized}
+                onToggleMaximized={toggleMaximized}
+                selectedEmployeeId={employeeData.employee.id}
                 employees={employees}
                 onEmployeeChange={() => {}} // Funcionário não pode trocar de funcionário
+                onViewChange={() => {}} // View fixa para funcionários
                 hideCanceled={false}
                 onToggleHideCanceled={() => {}} // Sempre mostrar todos
                 onNewAppointment={() => {}} // Funcionários não podem criar agendamentos
                 onBlockTime={() => {}} // Funcionários não podem bloquear horários
-                isEmployeeView={true}
               />
               
               {/* Conteúdo do calendário */}
