@@ -55,5 +55,9 @@ export function useEmployeesBySlug(slug?: string) {
     queryKey: ["employees-by-slug", slug],
     queryFn: () => slug ? fetchEmployeesBySlug(slug) : Promise.resolve([]),
     enabled: !!slug,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 }

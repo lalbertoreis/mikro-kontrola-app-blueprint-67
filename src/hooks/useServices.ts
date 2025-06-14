@@ -21,9 +21,11 @@ export function useServices(businessUserId?: string) {
     queryKey,
     queryFn: () => fetchServices(businessUserId),
     enabled: true, // Sempre habilitado, mas com queryKey estável
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
     retry: 2,
     refetchOnWindowFocus: false, // Evitar refetch desnecessário
+    refetchOnMount: false, // Don't refetch on mount if we have cached data
   });
 
   const createMutation = useMutation({
@@ -102,6 +104,10 @@ export function useServicesBySlug(slug?: string) {
       return services;
     },
     enabled: !!slug,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 }
 

@@ -28,11 +28,11 @@ export async function createClientSecure({
     // Clean phone number - remove all non-digits
     const cleanPhone = phone.replace(/\D/g, '');
     
-    // Validate phone number format (Brazilian format: 11 digits)
-    if (cleanPhone.length !== 11) {
+    // More flexible phone validation - accept various formats
+    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
       return {
         success: false,
-        error: 'Número de telefone deve ter 11 dígitos (DDD + número)'
+        error: 'Número de telefone deve ter entre 10 e 11 dígitos'
       };
     }
     
@@ -52,11 +52,14 @@ export async function createClientSecure({
       };
     }
     
+    // Normalize phone to 11 digits if needed (add leading 0 for area codes)
+    const normalizedPhone = cleanPhone.length === 10 ? `0${cleanPhone}` : cleanPhone;
+    
     // Call the secure RPC function
     const { data, error } = await supabase
       .rpc('create_client_for_auth', {
         name_param: name.trim(),
-        phone_param: cleanPhone,
+        phone_param: normalizedPhone,
         pin_param: pin || null,
         business_user_id_param: businessUserId
       });
@@ -114,7 +117,7 @@ export async function createClientSecure({
 }
 
 /**
- * Verify if a client exists by phone number
+ * Verify if a client exists by phone number - more flexible validation
  */
 export async function checkClientExists(phone: string): Promise<{
   exists: boolean;
@@ -124,29 +127,41 @@ export async function checkClientExists(phone: string): Promise<{
   try {
     const cleanPhone = phone.replace(/\D/g, '');
     
-    if (cleanPhone.length !== 11) {
+    // More flexible validation - accept 10 or 11 digits
+    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
       return {
         exists: false,
         error: 'Formato de telefone inválido'
       };
     }
     
-    const { data, error } = await supabase
-      .rpc('check_client_by_phone', { phone_param: cleanPhone });
-    
-    if (error) {
-      console.error('Error checking client:', error);
-      return {
-        exists: false,
-        error: error.message
-      };
+    // Try both normalized formats
+    const phoneFormats = [cleanPhone];
+    if (cleanPhone.length === 10) {
+      phoneFormats.push(`0${cleanPhone}`);
+    } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+      phoneFormats.push(cleanPhone.substring(1));
     }
     
-    const exists = data && data.length > 0;
+    for (const phoneFormat of phoneFormats) {
+      const { data, error } = await supabase
+        .rpc('check_client_by_phone', { phone_param: phoneFormat });
+      
+      if (error) {
+        console.error('Error checking client with format', phoneFormat, ':', error);
+        continue;
+      }
+      
+      if (data && data.length > 0) {
+        return {
+          exists: true,
+          client: data[0]
+        };
+      }
+    }
     
     return {
-      exists,
-      client: exists ? data[0] : null
+      exists: false
     };
     
   } catch (error: any) {

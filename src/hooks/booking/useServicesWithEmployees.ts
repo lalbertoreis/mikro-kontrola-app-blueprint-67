@@ -22,8 +22,8 @@ export function useServicesWithEmployees(slug?: string) {
 
   // Filter services that are active and enabled for online booking
   const availableServices = useMemo(() => {
-    // Wait for both data to be loaded before processing
-    if (isServicesLoading || isEmployeesLoading || !allServices || !allEmployees) {
+    // Always return cached data if available, even during loading states
+    if (!allServices || !allEmployees) {
       return [];
     }
     
@@ -59,7 +59,7 @@ export function useServicesWithEmployees(slug?: string) {
     
     // Only return services that have employees
     return servicesWithEmployees.filter(service => service.hasEmployees);
-  }, [allServices, allEmployees, isServicesLoading, isEmployeesLoading]);
+  }, [allServices, allEmployees]);
 
   // Get booking settings - using default values since we don't have businessProfile here
   const bookingSettings = useMemo(() => {
@@ -74,8 +74,8 @@ export function useServicesWithEmployees(slug?: string) {
   return {
     services: availableServices,
     employees: allEmployees,
-    isServicesLoading,
-    isEmployeesLoading,
+    isServicesLoading: isServicesLoading && availableServices.length === 0,
+    isEmployeesLoading: isEmployeesLoading && allEmployees.length === 0,
     isViewLoading: false,
     bookingSettings
   };

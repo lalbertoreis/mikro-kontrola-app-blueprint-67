@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
@@ -16,6 +15,10 @@ export function useServicePackages() {
   const { data: packages = [], isLoading, error } = useQuery({
     queryKey: ["servicePackages"],
     queryFn: fetchServicePackages,
+    staleTime: 1000 * 60 * 10, // 10 minutes - keep data fresh longer
+    gcTime: 1000 * 60 * 30, // 30 minutes - keep in cache longer
+    refetchOnWindowFocus: false, // Don't refetch on window focus to maintain stability
+    refetchOnMount: false, // Don't refetch on mount if we have cached data
   });
 
   const createMutation = useMutation({
