@@ -48,7 +48,7 @@ export function useEmployeeCalendarData() {
     loadEmployeeData();
   }, [user?.id, checkEmployeePermissions]);
 
-  // Filtrar agendamentos usando employee_id (não employeeId)
+  // Filtrar agendamentos usando employeeId (propriedade do tipo Appointment)
   const employeeAppointments = useMemo(() => {
     const employeeId = employeeData?.employee_id;
     
@@ -60,10 +60,10 @@ export function useEmployeeCalendarData() {
       return [];
     }
     
-    // Filtrar agendamentos onde employee_id corresponde ao funcionário logado
+    // Filtrar agendamentos onde employeeId corresponde ao funcionário logado
     const filtered = appointments.filter(appointment => {
-      const matches = appointment.employee_id === employeeId;
-      console.log(`Appointment ${appointment.id}: employee_id=${appointment.employee_id}, target=${employeeId}, matches=${matches}`);
+      const matches = appointment.employeeId === employeeId;
+      console.log(`Appointment ${appointment.id}: employeeId=${appointment.employeeId}, target=${employeeId}, matches=${matches}`);
       return matches;
     });
     
