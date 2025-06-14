@@ -9,15 +9,14 @@ export interface Employee {
   services: string[];
   createdAt: string;
   updatedAt: string;
-  auth_user_id?: string; // <== Adicionado para persistir acesso
 }
 
 export interface Shift {
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  lunchBreakStart?: string;
-  lunchBreakEnd?: string;
+  dayOfWeek: number; // 0 = Sunday, 1 = Monday, etc.
+  startTime: string; // format: "HH:MM"
+  endTime: string; // format: "HH:MM"
+  lunchBreakStart?: string; // format: "HH:MM"
+  lunchBreakEnd?: string; // format: "HH:MM"
 }
 
 export interface EmployeeFormData {
