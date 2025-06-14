@@ -69,15 +69,39 @@ export default function EmployeeCalendarView() {
     loadEmployeeData();
   }, [user, checkEmployeePermissions]);
 
-  // Filtrar agendamentos apenas do funcionário logado
+  // Log detalhado dos agendamentos para debug
+  console.log("EmployeeCalendarView: Debug detalhado:", {
+    appointmentsTotal: appointments.length,
+    employeeDataExists: !!employeeData,
+    employeeId: employeeData?.employee?.id,
+    allAppointments: appointments.map(app => ({
+      id: app.id,
+      title: app.title,
+      employeeId: app.employeeId,
+      matchesEmployee: app.employeeId === employeeData?.employee?.id
+    }))
+  });
+
+  // Filtrar agendamentos apenas do funcionário logado com logs detalhados
   const employeeAppointments = appointments.filter(appointment => {
     if (!employeeData?.employee?.id) {
       console.log("EmployeeCalendarView: No employee ID found for filtering");
       return false;
     }
+    
     const matches = appointment.employeeId === employeeData.employee.id;
-    console.log(`EmployeeCalendarView: Appointment ${appointment.id} matches employee: ${matches}`);
+    console.log(`EmployeeCalendarView: Appointment ${appointment.id} (${appointment.title}) - employeeId: "${appointment.employeeId}" vs expected: "${employeeData.employee.id}" - matches: ${matches}`);
+    
     return matches;
+  });
+
+  console.log("EmployeeCalendarView: Filtered appointments:", {
+    total: employeeAppointments.length,
+    appointments: employeeAppointments.map(app => ({
+      id: app.id,
+      title: app.title,
+      employeeId: app.employeeId
+    }))
   });
 
   const appointmentsWithDetails = useFilteredAppointments({
@@ -86,13 +110,13 @@ export default function EmployeeCalendarView() {
     hideCanceled: false,
   });
 
-  console.log("EmployeeCalendarView: Render state:", {
-    loading,
-    accessDenied,
-    hasEmployeeData: !!employeeData,
-    hasEmployee: !!employeeData?.employee,
-    employeeId: employeeData?.employee?.id,
-    appointmentsCount: appointmentsWithDetails.length
+  console.log("EmployeeCalendarView: Final appointments with details:", {
+    count: appointmentsWithDetails.length,
+    appointments: appointmentsWithDetails.map(app => ({
+      id: app.id,
+      title: app.title,
+      employeeId: app.employeeId
+    }))
   });
 
   if (loading) {
@@ -142,6 +166,18 @@ export default function EmployeeCalendarView() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Debug info detalhado */}
+              <div className="bg-yellow-50 p-4 rounded-lg mb-4 text-sm">
+                <h4 className="font-medium text-yellow-900 mb-2">Debug Info Detalhado:</h4>
+                <div className="text-yellow-800 space-y-1">
+                  <div>Employee ID: {employeeData.employee?.id || 'UNDEFINED'}</div>
+                  <div>Total Appointments: {appointments.length}</div>
+                  <div>Filtered Appointments: {employeeAppointments.length}</div>
+                  <div>Final Appointments: {appointmentsWithDetails.length}</div>
+                  <div>Loading Appointments: {appointmentsLoading ? 'Yes' : 'No'}</div>
+                </div>
+              </div>
+
               <div className="bg-blue-50 p-4 rounded-lg mb-4">
                 <h4 className="text-sm font-medium text-blue-900 mb-2">Suas Permissões:</h4>
                 <ul className="text-sm text-blue-800 space-y-1">
