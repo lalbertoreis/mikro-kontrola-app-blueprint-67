@@ -11,6 +11,7 @@ interface AccessFormProps {
   onAccessEnabledChange: (enabled: boolean) => void;
   onSubmit: (data: { email: string; temporaryPassword: string }) => void;
   isCreating: boolean;
+  defaultEmail?: string;
 }
 
 const AccessForm: React.FC<AccessFormProps> = ({
@@ -18,6 +19,7 @@ const AccessForm: React.FC<AccessFormProps> = ({
   onAccessEnabledChange,
   onSubmit,
   isCreating,
+  defaultEmail = "",
 }) => {
   return (
     <Card>
@@ -38,7 +40,11 @@ const AccessForm: React.FC<AccessFormProps> = ({
 
         {accessEnabled && (
           <>
-            <InviteForm onSubmit={onSubmit} isCreating={isCreating} />
+            <InviteForm 
+              onSubmit={onSubmit} 
+              isCreating={isCreating}
+              defaultEmail={defaultEmail}
+            />
             <div className="bg-amber-50 p-3 sm:p-4 rounded-lg">
               <h4 className="text-sm font-medium text-amber-900 mb-2">O funcionário terá acesso a:</h4>
               <ul className="text-sm text-amber-800 space-y-1">

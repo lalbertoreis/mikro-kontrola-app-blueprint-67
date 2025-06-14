@@ -1,7 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useEmployeeInvites } from "@/hooks/useEmployeeInvites";
+import { useEmployeeById } from "@/hooks/useEmployees";
 import NoEmployeeMessage from "./access/NoEmployeeMessage";
 import ExistingAccessDisplay from "./access/ExistingAccessDisplay";
 import AccessForm from "./access/AccessForm";
@@ -12,9 +13,19 @@ interface EmployeeAccessTabProps {
 
 const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => {
   const { createInvite, isCreating, getInviteByEmployeeId } = useEmployeeInvites();
+  const { data: employee } = useEmployeeById(employeeId);
   const [accessEnabled, setAccessEnabled] = useState(false);
   
   const existingInvite = employeeId ? getInviteByEmployeeId(employeeId) : null;
+
+  // Sincronizar o estado com o convite existente
+  useEffect(() => {
+    if (existingInvite) {
+      setAccessEnabled(existingInvite.is_active);
+    } else {
+      setAccessEnabled(false);
+    }
+  }, [existingInvite]);
 
   const onSubmit = async (data: { email: string; temporaryPassword: string }) => {
     if (!employeeId) {
@@ -33,11 +44,19 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
         email: data.email,
         temporaryPassword: data.temporaryPassword,
       });
-      
-      toast.success("Convite enviado com sucesso!");
     } catch (error) {
       console.error("Erro ao criar convite:", error);
       toast.error("Erro ao enviar convite. Tente novamente.");
+    }
+  };
+
+  const handleAccessToggle = (enabled: boolean) => {
+    setAccessEnabled(enabled);
+    
+    if (!enabled && existingInvite) {
+      // Se desabilitar o acesso, desativar o convite existente
+      // Isso será implementado quando necessário
+      console.log("Desabilitando acesso para funcionário:", employeeId);
     }
   };
 
@@ -45,12 +64,12 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
     return <NoEmployeeMessage />;
   }
 
-  if (existingInvite && accessEnabled) {
+  if (existingInvite && existingInvite.is_active) {
     return (
       <ExistingAccessDisplay
         invite={existingInvite}
         accessEnabled={accessEnabled}
-        onAccessEnabledChange={setAccessEnabled}
+        onAccessEnabledChange={handleAccessToggle}
       />
     );
   }
@@ -58,9 +77,10 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
   return (
     <AccessForm
       accessEnabled={accessEnabled}
-      onAccessEnabledChange={setAccessEnabled}
+      onAccessEnabledChange={handleAccessToggle}
       onSubmit={onSubmit}
       isCreating={isCreating}
+      defaultEmail={employee?.email || ""}
     />
   );
 };

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,16 +23,24 @@ const inviteSchema = z.object({
 interface InviteFormProps {
   onSubmit: (data: { email: string; temporaryPassword: string }) => void;
   isCreating: boolean;
+  defaultEmail?: string;
 }
 
-const InviteForm: React.FC<InviteFormProps> = ({ onSubmit, isCreating }) => {
+const InviteForm: React.FC<InviteFormProps> = ({ onSubmit, isCreating, defaultEmail = "" }) => {
   const form = useForm<z.infer<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
     defaultValues: {
-      email: "",
+      email: defaultEmail,
       temporaryPassword: "",
     },
   });
+
+  // Atualizar o email quando defaultEmail mudar
+  useEffect(() => {
+    if (defaultEmail) {
+      form.setValue("email", defaultEmail);
+    }
+  }, [defaultEmail, form]);
 
   const generatePassword = () => {
     const length = 8;

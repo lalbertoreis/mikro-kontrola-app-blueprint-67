@@ -38,6 +38,8 @@ export function useEmployeeInvites() {
 
   const createMutation = useMutation({
     mutationFn: async (inviteData: CreateInviteData) => {
+      console.log("Creating invite for employee:", inviteData.employeeId);
+      
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id;
 
@@ -53,30 +55,60 @@ export function useEmployeeInvites() {
         .single();
 
       if (existingInvite) {
-        throw new Error("Já existe um convite para este funcionário");
+        // Atualizar convite existente
+        const { data, error } = await supabase
+          .from("employee_invites")
+          .update({
+            email: inviteData.email,
+            temporary_password: inviteData.temporaryPassword,
+            is_active: true,
+          })
+          .eq("employee_id", inviteData.employeeId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        
+        // Também atualizar o email na tabela employees
+        await supabase
+          .from("employees")
+          .update({ email: inviteData.email })
+          .eq("id", inviteData.employeeId);
+
+        return data;
+      } else {
+        // Criar novo convite
+        const { data, error } = await supabase
+          .from("employee_invites")
+          .insert({
+            employee_id: inviteData.employeeId,
+            email: inviteData.email,
+            temporary_password: inviteData.temporaryPassword,
+            created_by: userId,
+            is_active: true,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        
+        // Também atualizar o email na tabela employees
+        await supabase
+          .from("employees")
+          .update({ email: inviteData.email })
+          .eq("id", inviteData.employeeId);
+
+        return data;
       }
-
-      const { data, error } = await supabase
-        .from("employee_invites")
-        .insert({
-          employee_id: inviteData.employeeId,
-          email: inviteData.email,
-          temporary_password: inviteData.temporaryPassword,
-          created_by: userId,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-invites"] });
-      toast.success("Convite criado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      toast.success("Acesso ao painel configurado com sucesso!");
     },
     onError: (error: any) => {
-      console.error("Erro ao criar convite:", error);
-      toast.error(error.message || "Erro ao criar convite. Tente novamente.");
+      console.error("Erro ao configurar acesso:", error);
+      toast.error(error.message || "Erro ao configurar acesso. Tente novamente.");
     },
   });
 
