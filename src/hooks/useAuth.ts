@@ -22,7 +22,7 @@ export const useEmployeePermissions = () => {
       .from("employee_permissions")
       .select(`
         *,
-        employee:employees(id, name, role)
+        employee:employee_id(id, name, role)
       `)
       .eq("user_id", user.id)
       .single();
@@ -31,6 +31,8 @@ export const useEmployeePermissions = () => {
       console.error("Erro ao verificar permissões de funcionário:", error);
       return null;
     }
+
+    console.log("useEmployeePermissions: Raw data from Supabase:", data);
 
     return data;
   };
