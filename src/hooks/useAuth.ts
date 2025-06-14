@@ -18,11 +18,13 @@ export const useEmployeePermissions = () => {
   const checkEmployeePermissions = useCallback(async () => {
     if (!user) return null;
 
+    console.log("checkEmployeePermissions - Checking for user:", user.id);
+
     const { data, error } = await supabase
       .from("employee_permissions")
       .select(`
         *,
-        employee:employee_id(id, name, role)
+        employee:employees!employee_permissions_employee_id_fkey(id, name, role)
       `)
       .eq("user_id", user.id)
       .single();
@@ -32,8 +34,9 @@ export const useEmployeePermissions = () => {
       return null;
     }
 
+    console.log("checkEmployeePermissions - Result:", data);
     return data;
-  }, [user?.id]); // Só re-cria a função se o user.id mudar
+  }, [user?.id]);
 
   return { checkEmployeePermissions };
 };
