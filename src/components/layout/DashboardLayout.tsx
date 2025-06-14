@@ -21,7 +21,7 @@ import {
   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, useEmployeePermissions } from "@/contexts/AuthContext";
 import { useThemeSettings } from "@/hooks/useThemeSettings";
 import NotificationIndicator from "@/components/notifications/NotificationIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -44,11 +44,31 @@ type MenuCategory = {
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { checkEmployeePermissions } = useEmployeePermissions();
   const { theme, toggleTheme, isLoading: themeLoading } = useThemeSettings();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isEmployee, setIsEmployee] = useState<boolean | null>(null);
+  const [employeeData, setEmployeeData] = useState<any>(null);
   
-  const menuCategories: MenuCategory[] = [
+  // Verificar se o usuário é funcionário
+  useEffect(() => {
+    const checkUserType = async () => {
+      try {
+        const permissions = await checkEmployeePermissions();
+        setIsEmployee(!!permissions);
+        setEmployeeData(permissions);
+      } catch (error) {
+        console.error("Erro ao verificar tipo de usuário:", error);
+        setIsEmployee(false);
+      }
+    };
+
+    checkUserType();
+  }, [checkEmployeePermissions]);
+
+  // Menus para proprietários (completo)
+  const ownerMenuCategories: MenuCategory[] = [
     {
       label: "Principal",
       icon: Home,
@@ -85,6 +105,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       ]
     }
   ];
+
+  // Menu simplificado para funcionários (apenas agenda)
+  const employeeMenuCategories: MenuCategory[] = [
+    {
+      label: "Agenda",
+      icon: Calendar,
+      items: [
+        { name: "Minha Agenda", to: "/employee/calendar", icon: Calendar },
+      ]
+    }
+  ];
+
+  // Escolher o menu baseado no tipo de usuário
+  const menuCategories = isEmployee ? employeeMenuCategories : ownerMenuCategories;
 
   const handleLogout = () => {
     signOut();
@@ -132,6 +166,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </Button>
           )}
         </div>
+
+        {/* Informações do funcionário se aplicável */}
+        {isEmployee && employeeData && (
+          <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              Funcionário: {employeeData.employee?.name}
+            </p>
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              Acesso restrito à agenda
+            </p>
+          </div>
+        )}
 
         {/* Menu de navegação - usando ScrollArea do shadcn/ui */}
         <ScrollArea className="flex-1 overflow-hidden">
@@ -228,7 +274,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </div>
           
           <div className="flex items-center ml-auto">
-            <NotificationIndicator />
+            {!isEmployee && <NotificationIndicator />}
           </div>
         </header>
 
