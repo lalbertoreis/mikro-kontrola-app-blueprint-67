@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     watch: {
-      // Reduce the number of files being watched
+      // Aggressively reduce the number of files being watched
       ignored: [
         '**/node_modules/**',
         '**/.git/**',
@@ -25,8 +25,17 @@ export default defineConfig(({ mode }) => ({
         '**/Thumbs.db',
         '**/.env*',
         '**/supabase/logs/**',
-        '**/supabase/.temp/**'
-      ]
+        '**/supabase/.temp/**',
+        '**/supabase/functions/**',
+        '**/supabase/migrations/**',
+        '**/.lovable/**',
+        '**/tmp/**',
+        '**/temp/**'
+      ],
+      // Use polling instead of native file watching to reduce file descriptors
+      usePolling: true,
+      // Reduce polling interval to improve performance
+      interval: 1000
     }
   },
   plugins: [
@@ -39,7 +48,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Optimize dependency pre-bundling
+  // Optimize dependency pre-bundling to reduce file watching
   optimizeDeps: {
     include: [
       'react',
@@ -49,6 +58,18 @@ export default defineConfig(({ mode }) => ({
       'lucide-react',
       'date-fns',
       'recharts'
-    ]
+    ],
+    // Force pre-bundling of dependencies to reduce file watching
+    force: true
+  },
+  // Reduce build warnings and improve performance
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress certain warnings to reduce console noise
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return;
+        warn(warning);
+      }
+    }
   }
 }));
