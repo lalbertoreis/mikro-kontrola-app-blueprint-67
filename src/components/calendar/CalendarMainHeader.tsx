@@ -116,7 +116,6 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
                 id="hide-canceled-header" 
                 checked={hideCanceled} 
                 onCheckedChange={onToggleHideCanceled}
-                size="sm"
               />
               <Label htmlFor="hide-canceled-header" className="text-sm">
                 Ocultar Cancelados
@@ -173,7 +172,6 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
                 id="hide-canceled-header" 
                 checked={hideCanceled} 
                 onCheckedChange={onToggleHideCanceled}
-                size="sm"
               />
               <Label htmlFor="hide-canceled-header" className="text-sm">
                 Ocultar Cancelados

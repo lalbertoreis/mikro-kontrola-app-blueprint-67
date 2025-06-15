@@ -247,7 +247,7 @@ export default function CalendarView() {
                 setAppointmentDialogOpen(false);
                 setSelectedTimeSlot(null);
               }}
-              onBlockTimeDialogClose={() => setBlockTimeDialogClose(false)}
+              onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
               onActionsDialogOpenChange={setActionsDialogOpen}
               onEditAppointment={handleEditAppointment}
             />
