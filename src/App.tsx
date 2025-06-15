@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -53,22 +52,17 @@ function App() {
                 <Route path="/booking/:slug" element={<PublicBooking />} />
                 <Route path="/booking-not-found" element={<Business404 />} />
                 
-                {/* Employee routes - agenda restrita */}
-                <Route path="/employee/calendar" element={
-                  <EmployeeRoute>
-                    <EmployeeCalendarView />
-                  </EmployeeRoute>
-                } />
-                
-                {/* Protected routes - apenas para proprietários */}
-                <Route path="/dashboard" element={
-                  <PrivateRoute>
-                    <Dashboard />
-                  </PrivateRoute>
-                } />
+                {/* Calendar route - acessível tanto para proprietários quanto funcionários */}
                 <Route path="/dashboard/calendar" element={
                   <PrivateRoute>
                     <Calendar />
+                  </PrivateRoute>
+                } />
+                
+                {/* Protected routes - apenas para proprietários (não funcionários) */}
+                <Route path="/dashboard" element={
+                  <PrivateRoute>
+                    <Dashboard />
                   </PrivateRoute>
                 } />
                 <Route path="/dashboard/clients" element={

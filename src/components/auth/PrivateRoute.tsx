@@ -14,8 +14,20 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { checkEmployeePermissions } = useEmployeePermissions();
   const [isEmployee, setIsEmployee] = useState<boolean | null>(null);
   const [checkingPermissions, setCheckingPermissions] = useState(true);
+  const [minLoadingTime, setMinLoadingTime] = useState(true);
 
   console.log("PrivateRoute render - user:", user?.id, "loading:", loading, "checkingPermissions:", checkingPermissions, "isEmployee:", isEmployee);
+
+  // Garantir um tempo mínimo de loading para funcionários
+  useEffect(() => {
+    if (!loading && user) {
+      const timer = setTimeout(() => {
+        setMinLoadingTime(false);
+      }, 2000); // 2 segundos mínimo de loading
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, user]);
 
   useEffect(() => {
     const verifyUserType = async () => {
@@ -50,11 +62,12 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     }
   }, [user, loading, checkEmployeePermissions]);
 
-  if (loading || checkingPermissions) {
+  // Mostrar loading enquanto carrega ou durante o tempo mínimo para funcionários
+  if (loading || checkingPermissions || (user && minLoadingTime)) {
     console.log("PrivateRoute - Showing loading state");
     
-    // Se já temos usuário e estamos verificando permissões, mostrar loading de funcionário
-    if (user && checkingPermissions) {
+    // Se já temos usuário, mostrar loading de funcionário
+    if (user) {
       return <EmployeeLoginLoading />;
     }
     
@@ -71,13 +84,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Se for funcionário, redirecionar para a agenda (somente se não estiver já na rota correta)
-  if (isEmployee && window.location.pathname !== "/dashboard/calendar") {
+  // Se for funcionário, redirecionar diretamente para a agenda
+  if (isEmployee) {
     console.log("PrivateRoute - Employee detected, redirecting to calendar");
     return <Navigate to="/dashboard/calendar" replace />;
   }
 
-  console.log("PrivateRoute - Rendering children");
+  console.log("PrivateRoute - Rendering children for business owner");
   return <>{children}</>;
 };
 
