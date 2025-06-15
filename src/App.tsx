@@ -28,6 +28,7 @@ import FixedCosts from "./pages/FixedCosts";
 import PublicBooking from "./pages/PublicBooking";
 import Business404 from "./pages/Business404";
 import ServicePackages from "./pages/ServicePackages";
+import EmployeeCalendarView from "./components/calendar/EmployeeCalendarView";
 
 const queryClient = new QueryClient();
 
@@ -52,17 +53,22 @@ function App() {
                 <Route path="/booking/:slug" element={<PublicBooking />} />
                 <Route path="/booking-not-found" element={<Business404 />} />
                 
-                {/* Calendar route - funcionários são redirecionados automaticamente para cá */}
-                <Route path="/dashboard/calendar" element={
-                  <PrivateRoute>
-                    <Calendar />
-                  </PrivateRoute>
+                {/* Employee routes - agenda restrita */}
+                <Route path="/employee/calendar" element={
+                  <EmployeeRoute>
+                    <EmployeeCalendarView />
+                  </EmployeeRoute>
                 } />
                 
-                {/* Protected routes - apenas para proprietários (não funcionários) */}
+                {/* Protected routes - apenas para proprietários */}
                 <Route path="/dashboard" element={
                   <PrivateRoute>
                     <Dashboard />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/calendar" element={
+                  <PrivateRoute>
+                    <Calendar />
                   </PrivateRoute>
                 } />
                 <Route path="/dashboard/clients" element={
