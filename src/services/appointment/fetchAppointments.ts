@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment, AppointmentStatus } from "@/types/calendar";
 
@@ -12,8 +13,15 @@ export async function fetchAppointments(): Promise<Appointment[]> {
     
     console.log("Fetching appointments for user:", userData.user.id);
     
-    // Get appointments filtered by user_id - RLS will enforce this automatically
-    const { data, error } = await supabase
+    // First, check if user is an employee with permissions
+    const { data: employeePermissions } = await supabase
+      .from('employee_permissions')
+      .select('business_owner_id, can_view_calendar')
+      .eq('user_id', userData.user.id)
+      .eq('can_view_calendar', true)
+      .maybeSingle();
+
+    let appointmentsQuery = supabase
       .from('appointments')
       .select(`
         *,
@@ -21,15 +29,26 @@ export async function fetchAppointments(): Promise<Appointment[]> {
         service:services(id, name, duration, price),
         client:clients(id, name, phone, email)
       `)
-      .eq('user_id', userData.user.id)
       .order('start_time');
+
+    // If user is an employee, get appointments from business owner
+    // If user is owner, get their own appointments
+    if (employeePermissions?.business_owner_id) {
+      console.log("User is employee, fetching business appointments from owner:", employeePermissions.business_owner_id);
+      appointmentsQuery = appointmentsQuery.eq('user_id', employeePermissions.business_owner_id);
+    } else {
+      console.log("User is business owner, fetching own appointments");
+      appointmentsQuery = appointmentsQuery.eq('user_id', userData.user.id);
+    }
+    
+    const { data, error } = await appointmentsQuery;
     
     if (error) {
       console.error("Error fetching appointments:", error);
       throw error;
     }
     
-    console.log(`Fetched ${data?.length || 0} appointments for user ${userData.user.id}`);
+    console.log(`Fetched ${data?.length || 0} appointments`);
     
     // Corrigir o mapeamento do employeeId:
     return data.map(item => ({
