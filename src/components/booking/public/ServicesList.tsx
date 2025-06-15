@@ -23,14 +23,25 @@ const ServicesList: React.FC<ServicesListProps> = ({
   // Create package services that can be offered by available employees
   // Only include packages with show_in_online_booking = true
   const availablePackageServices = useMemo(() => {
-    if (isPackagesLoading || !packages || !employees || !services) return [];
+    console.log("ServicesList - Processing packages:", {
+      packagesCount: packages?.length || 0,
+      isPackagesLoading,
+      employeesCount: employees?.length || 0,
+      servicesCount: services?.length || 0
+    });
+
+    if (isPackagesLoading || !packages || !employees || !services) {
+      return [];
+    }
 
     // Filter packages that are active and enabled for online booking
     const onlineBookingPackages = packages.filter(pkg => {
-      return pkg.isActive && pkg.showInOnlineBooking;
+      const isEligible = pkg.isActive && pkg.showInOnlineBooking;
+      console.log(`Package ${pkg.name}: isActive=${pkg.isActive}, showInOnlineBooking=${pkg.showInOnlineBooking}, eligible=${isEligible}`);
+      return isEligible;
     });
     
-    return onlineBookingPackages.map(pkg => {
+    const packageServices = onlineBookingPackages.map(pkg => {
       // Check which employees can provide ALL services in this package
       const availableEmployees = employees.filter(emp => {
         if (!emp.services || !Array.isArray(emp.services)) {
@@ -50,8 +61,11 @@ const ServicesList: React.FC<ServicesListProps> = ({
 
       // Only include packages that have at least one employee who can provide them
       if (availableEmployees.length === 0) {
+        console.log(`Package ${pkg.name}: No employees can provide all services`);
         return null;
       }
+
+      console.log(`Package ${pkg.name}: ${availableEmployees.length} employees can provide all services`);
 
       // Create a Service object for the package
       const packageService: Service = {
@@ -69,27 +83,30 @@ const ServicesList: React.FC<ServicesListProps> = ({
 
       return packageService;
     }).filter(Boolean) as Service[];
+
+    console.log(`ServicesList - Package services result: ${packageServices.length} packages available`);
+    return packageServices;
   }, [packages, employees, services, isPackagesLoading]);
 
-  // Filter regular services to only show those with available employees
+  // Services are already filtered and deduplicated in the parent hook
   const availableServices = useMemo(() => {
-    if (!services || !employees) return [];
-    
-    return services.filter(service => {
-      const hasEmployees = employees.some(emp => {
-        if (!emp.services || !Array.isArray(emp.services)) return false;
-        return emp.services.some(empService => {
-          const empServiceId = typeof empService === 'object' ? (empService as any).id : empService;
-          return empServiceId === service.id;
-        });
-      });
-      
-      return hasEmployees;
+    console.log("ServicesList - Processing individual services:", {
+      servicesCount: services?.length || 0,
+      employeesCount: employees?.length || 0
     });
+
+    if (!services || !employees) {
+      return [];
+    }
+    
+    // Services are already filtered to only include those with available employees
+    console.log(`ServicesList - Individual services result: ${services.length} services available`);
+    return services;
   }, [services, employees]);
 
   // Loading state
   if (isPackagesLoading) {
+    console.log("ServicesList - Still loading packages, showing skeleton");
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -104,6 +121,12 @@ const ServicesList: React.FC<ServicesListProps> = ({
   // Check if we have any content to show
   const hasServices = availableServices.length > 0;
   const hasPackages = availablePackageServices.length > 0;
+
+  console.log("ServicesList - Final content check:", {
+    hasServices,
+    hasPackages,
+    totalContent: hasServices || hasPackages
+  });
 
   if (!hasServices && !hasPackages) {
     return (

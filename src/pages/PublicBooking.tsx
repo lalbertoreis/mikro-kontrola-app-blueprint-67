@@ -53,8 +53,17 @@ const PublicBooking: React.FC = () => {
   // Log active services when they change
   useEffect(() => {
     console.log(`PublicBooking component: ${activeServices.length} active services available`);
-    activeServices.forEach(service => console.log(`- ${service.name} (hasEmployees: ${service.hasEmployees})`));
-  }, [activeServices]);
+    console.log(`PublicBooking component: ${activePackages.length} active packages available`);
+    console.log("PublicBooking loading states:", {
+      isServicesLoading,
+      isPackagesLoading,
+      isEmployeesLoading,
+      isViewLoading
+    });
+    
+    activeServices.forEach(service => console.log(`- Service: ${service.name} (hasEmployees: ${service.hasEmployees})`));
+    activePackages.forEach(pkg => console.log(`- Package: ${pkg.name}`));
+  }, [activeServices, activePackages, isServicesLoading, isPackagesLoading, isEmployeesLoading, isViewLoading]);
 
   if (isLoadingBusiness) {
     return (
@@ -68,8 +77,15 @@ const PublicBooking: React.FC = () => {
     return <Business404 />;
   }
 
-  // Considerar todas as fontes de loading para um estado mais preciso
+  // Show loading state while data is being fetched
   const isLoading = isServicesLoading || isPackagesLoading || isEmployeesLoading || isViewLoading;
+
+  console.log("PublicBooking render state:", {
+    isLoading,
+    servicesCount: activeServices.length,
+    packagesCount: activePackages.length,
+    employeesCount: employees.length
+  });
 
   // Convert the complex booking confirm handler to match the expected signature
   const handleBookingConfirmWrapper = (employeeId: string, date: Date, time: string) => {
@@ -108,12 +124,25 @@ const PublicBooking: React.FC = () => {
       onLoginClick={() => setIsLoginDialogOpen(true)} 
       onLogoutClick={handleLogout}
     >      
-      <ServicesList 
-        services={activeServices} 
-        employees={employees}
-        onSelectService={handleServiceClick}
-        themeColor={businessProfile?.bookingColor}
-      />
+      {isLoading ? (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <p className="text-gray-500">Carregando serviços disponíveis...</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-32 bg-gray-200 animate-pulse rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <ServicesList 
+          services={activeServices} 
+          employees={employees}
+          onSelectService={handleServiceClick}
+          themeColor={businessProfile?.bookingColor}
+        />
+      )}
 
       {!isLoading && activeServices.length === 0 && activePackages.length === 0 && (
         <div className="py-10 text-center">

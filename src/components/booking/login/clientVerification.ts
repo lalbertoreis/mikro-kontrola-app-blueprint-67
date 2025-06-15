@@ -3,26 +3,43 @@ import { supabase } from "@/integrations/supabase/client";
 import { setSlugContext } from "@/services/appointment/availability/slugContext";
 import { ClientCheckResult, ExistingUserData } from "./types";
 
+/**
+ * Normalize phone number to ensure consistent format for database queries
+ * Handles both 10 and 11 digit numbers correctly
+ */
+const normalizePhoneForDatabase = (phone: string): string => {
+  // Remove all non-digit characters
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  console.log("normalizePhoneForDatabase - Input:", phone, "Digits:", digitsOnly);
+  
+  // Return the digits as-is - let the database functions handle the format validation
+  return digitsOnly;
+};
+
 export const checkClientExists = async (
   phone: string, 
   businessSlug?: string
 ): Promise<ExistingUserData | null> => {
-  if (!phone || phone.replace(/\D/g, '').length !== 11) {
+  const normalizedPhone = normalizePhoneForDatabase(phone);
+  
+  // Validate phone length (10 or 11 digits)
+  if (!normalizedPhone || (normalizedPhone.length !== 10 && normalizedPhone.length !== 11)) {
+    console.log("checkClientExists - Invalid phone length:", normalizedPhone.length);
     return null;
   }
 
   try {
-    console.log("Checking user exists for phone:", phone, "business:", businessSlug);
+    console.log("Checking user exists for normalized phone:", normalizedPhone, "business:", businessSlug);
     
     // Set slug context if available
     if (businessSlug) {
       await setSlugContext(businessSlug);
     }
     
-    // Use the secure function to check if client exists
-    const cleanPhone = phone.replace(/\D/g, '');
+    // Use the secure function to check if client exists with normalized phone
     const { data: clientData, error } = await supabase
-      .rpc('check_client_by_phone', { phone_param: cleanPhone });
+      .rpc('check_client_by_phone', { phone_param: normalizedPhone });
     
     if (error) {
       console.error('Error checking client:', error);
@@ -42,10 +59,10 @@ export const checkClientExists = async (
         hasPin: client.has_pin
       };
     } else {
-      // Check if client exists in other businesses
-      console.log("Client not found, checking other businesses");
+      // Check if client exists in other businesses with the normalized phone
+      console.log("Client not found, checking other businesses with normalized phone");
       const { data: allClientsData, error: findError } = await supabase
-        .rpc('find_clients_by_phone', { phone_param: cleanPhone });
+        .rpc('find_clients_by_phone', { phone_param: normalizedPhone });
       
       if (findError) {
         console.error('Error finding clients:', findError);

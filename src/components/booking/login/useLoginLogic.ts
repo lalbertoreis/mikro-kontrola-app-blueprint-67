@@ -45,6 +45,7 @@ export function useLoginLogic(businessSlug?: string) {
           setIsLoading(true);
           console.log("useLoginLogic - Checking client with normalized phone:", normalizedPhone);
           
+          // Pass the normalized phone (digits only) to the check function
           const userData = await checkClientExists(normalizedPhone, businessSlug);
           
           if (userData) {

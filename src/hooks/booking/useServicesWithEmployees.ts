@@ -7,7 +7,7 @@ import { Employee } from "@/types/employee";
 
 /**
  * Hook to get services with employee availability information
- * Only returns services that have show_in_online_booking enabled
+ * Returns unique services (no duplicates) that have employees available
  */
 export function useServicesWithEmployees(slug?: string) {
   const { 
@@ -20,21 +20,39 @@ export function useServicesWithEmployees(slug?: string) {
     isLoading: isEmployeesLoading 
   } = useEmployeesBySlug(slug);
 
-  // Filter services that are active and enabled for online booking
+  // Filter and deduplicate services that are active and have available employees
   const availableServices = useMemo(() => {
-    // Always return cached data if available, even during loading states
+    console.log("useServicesWithEmployees - Processing services:", {
+      servicesCount: allServices?.length || 0,
+      employeesCount: allEmployees?.length || 0,
+      isServicesLoading,
+      isEmployeesLoading
+    });
+
+    // Don't filter if we're still loading
+    if (isServicesLoading || isEmployeesLoading) {
+      return [];
+    }
+
     if (!allServices || !allEmployees) {
+      console.log("useServicesWithEmployees - No services or employees data");
       return [];
     }
     
-    // Only include services that are active and have show_in_online_booking enabled
-    const onlineBookingServices = allServices.filter(service => {
+    // Create a Map to ensure unique services (deduplicate by service ID)
+    const uniqueServicesMap = new Map<string, Service>();
+    
+    // Only include services that are active
+    const activeServices = allServices.filter(service => {
       const isActive = service.isActive;
+      console.log(`Service ${service.name}: isActive=${isActive}`);
       return isActive;
     });
     
-    // For each service, check if there are employees who can provide it
-    const servicesWithEmployees = onlineBookingServices.map(service => {
+    // For each active service, check if there are employees who can provide it
+    activeServices.forEach(service => {
+      const serviceId = typeof service.id === 'object' ? (service.id as any).id : service.id;
+      
       const availableEmployees = allEmployees.filter(employee => {
         if (!employee.services || !Array.isArray(employee.services)) {
           return false;
@@ -43,23 +61,29 @@ export function useServicesWithEmployees(slug?: string) {
         // Check if employee provides this service
         const canProvideService = employee.services.some(empService => {
           const empServiceId = typeof empService === 'object' ? (empService as any).id : empService;
-          return empServiceId === service.id;
+          return empServiceId === serviceId;
         });
         
         return canProvideService;
       });
       
       const hasEmployees = availableEmployees.length > 0;
+      console.log(`Service ${service.name}: hasEmployees=${hasEmployees}, employeesCount=${availableEmployees.length}`);
       
-      return {
-        ...service,
-        hasEmployees
-      };
+      // Only add to map if service has employees (this ensures uniqueness and availability)
+      if (hasEmployees) {
+        uniqueServicesMap.set(serviceId, {
+          ...service,
+          hasEmployees
+        });
+      }
     });
     
-    // Only return services that have employees
-    return servicesWithEmployees.filter(service => service.hasEmployees);
-  }, [allServices, allEmployees]);
+    const result = Array.from(uniqueServicesMap.values());
+    console.log(`useServicesWithEmployees - Final result: ${result.length} unique services with employees`);
+    
+    return result;
+  }, [allServices, allEmployees, isServicesLoading, isEmployeesLoading]);
 
   // Get booking settings - using default values since we don't have businessProfile here
   const bookingSettings = useMemo(() => {
@@ -71,11 +95,22 @@ export function useServicesWithEmployees(slug?: string) {
     };
   }, []);
 
+  // Only show loading if we have no services and are actually loading
+  const showServicesLoading = isServicesLoading && availableServices.length === 0;
+  const showEmployeesLoading = isEmployeesLoading && allEmployees.length === 0;
+
+  console.log("useServicesWithEmployees - Hook result:", {
+    servicesCount: availableServices.length,
+    employeesCount: allEmployees.length,
+    showServicesLoading,
+    showEmployeesLoading
+  });
+
   return {
     services: availableServices,
     employees: allEmployees,
-    isServicesLoading: isServicesLoading && availableServices.length === 0,
-    isEmployeesLoading: isEmployeesLoading && allEmployees.length === 0,
+    isServicesLoading: showServicesLoading,
+    isEmployeesLoading: showEmployeesLoading,
     isViewLoading: false,
     bookingSettings
   };
