@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
@@ -15,10 +16,19 @@ export function useServicePackages() {
   const { data: packages = [], isLoading, error } = useQuery({
     queryKey: ["servicePackages"],
     queryFn: fetchServicePackages,
-    staleTime: 1000 * 60 * 10, // 10 minutes - keep data fresh longer
-    gcTime: 1000 * 60 * 30, // 30 minutes - keep in cache longer
-    refetchOnWindowFocus: false, // Don't refetch on window focus to maintain stability
-    refetchOnMount: false, // Don't refetch on mount if we have cached data
+    staleTime: 1000 * 60 * 5, // 5 minutes - data considered fresh
+    gcTime: 1000 * 60 * 20, // 20 minutes - keep in cache
+    refetchOnWindowFocus: true, // Refetch when user comes back to ensure fresh data
+    refetchOnMount: true, // Always refetch on mount to ensure we have latest data
+    retry: 3, // Retry failed requests
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+  });
+
+  // Log for debugging
+  console.log("useServicePackages - Query state:", {
+    packagesCount: packages?.length || 0,
+    isLoading,
+    hasError: !!error
   });
 
   const createMutation = useMutation({

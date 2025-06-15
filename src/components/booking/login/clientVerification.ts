@@ -5,7 +5,7 @@ import { ClientCheckResult, ExistingUserData } from "./types";
 
 /**
  * Normalize phone number to ensure consistent format for database queries
- * Handles both 10 and 11 digit numbers correctly
+ * Only accepts 11 digit numbers
  */
 const normalizePhoneForDatabase = (phone: string): string => {
   // Remove all non-digit characters
@@ -23,8 +23,8 @@ export const checkClientExists = async (
 ): Promise<ExistingUserData | null> => {
   const normalizedPhone = normalizePhoneForDatabase(phone);
   
-  // Validate phone length (10 or 11 digits)
-  if (!normalizedPhone || (normalizedPhone.length !== 10 && normalizedPhone.length !== 11)) {
+  // Validate phone length (only 11 digits accepted)
+  if (!normalizedPhone || normalizedPhone.length !== 11) {
     console.log("checkClientExists - Invalid phone length:", normalizedPhone.length);
     return null;
   }

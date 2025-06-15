@@ -15,13 +15,14 @@ export function usePackages() {
       isPackagesLoading
     });
 
-    // Don't filter if we're still loading
+    // Return empty array while loading to prevent flash of empty state
     if (isPackagesLoading) {
+      console.log("usePackages - Still loading packages, returning empty array");
       return [];
     }
     
-    if (!packages) {
-      console.log("usePackages - No packages data");
+    if (!packages || packages.length === 0) {
+      console.log("usePackages - No packages data available");
       return [];
     }
     
@@ -35,8 +36,14 @@ export function usePackages() {
     return filtered;
   }, [packages, isPackagesLoading]);
 
-  // Only show loading if we have no packages and are actually loading
-  const showPackagesLoading = isPackagesLoading && activePackages.length === 0;
+  // Show loading if we're actually loading and have no cached data
+  const showPackagesLoading = isPackagesLoading;
+
+  console.log("usePackages - Hook result:", {
+    packagesCount: activePackages.length,
+    isLoading: showPackagesLoading,
+    packagesData: packages?.length || 0
+  });
 
   return {
     activePackages,

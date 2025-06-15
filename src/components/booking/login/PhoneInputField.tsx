@@ -38,7 +38,7 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
     return formatted;
   };
 
-  // Enhanced validation with detailed feedback
+  // Enhanced validation - only accept 11 digits
   const validatePhone = (digits: string): string | null => {
     console.log("PhoneInputField - validatePhone called with:", digits, "length:", digits.length);
     
@@ -46,12 +46,12 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
       return null; // No error for empty field
     }
     
-    if (digits.length < 10) {
-      return "Telefone deve ter pelo menos 10 dígitos";
+    if (digits.length < 11) {
+      return "Telefone deve ter 11 dígitos (DDD + número)";
     }
     
-    if (digits.length !== 10 && digits.length !== 11) {
-      return "Telefone deve ter 10 ou 11 dígitos";
+    if (digits.length !== 11) {
+      return "Telefone deve ter exatamente 11 dígitos";
     }
     
     // Check if it starts with valid area code (11-99)
@@ -86,7 +86,7 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
 
   const digits = normalizePhone(phone);
   const phoneError = validatePhone(digits);
-  const isValid = digits.length >= 10 && digits.length <= 11 && !phoneError;
+  const isValid = digits.length === 11 && !phoneError;
 
   console.log("PhoneInputField - Render state:", {
     phone,
@@ -129,7 +129,7 @@ const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
         )}
         {digits.length === 0 && (
           <p className="text-xs text-gray-500">
-            Digite seu número com DDD (apenas números)
+            Digite seu número com DDD (11 dígitos)
           </p>
         )}
       </div>

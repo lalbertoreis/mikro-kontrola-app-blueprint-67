@@ -21,10 +21,10 @@ export function useLoginLogic(businessSlug?: string) {
     return digitsOnly;
   };
 
-  // Validate phone format (must be 10 or 11 digits)
+  // Validate phone format (must be exactly 11 digits)
   const isValidPhone = (phoneValue: string): boolean => {
     const digits = normalizePhone(phoneValue);
-    const isValid = digits.length === 10 || digits.length === 11;
+    const isValid = digits.length === 11;
     console.log("isValidPhone - Phone:", phoneValue, "Digits:", digits, "Valid:", isValid);
     return isValid;
   };
@@ -87,14 +87,14 @@ export function useLoginLogic(businessSlug?: string) {
       isValid: isValidPhone(phone)
     });
     
-    // Enhanced validation with detailed logging
+    // Enhanced validation - only accept 11 digits
     if (!isValidPhone(phone)) {
       console.error("useLoginLogic - Invalid phone format:", {
         phone,
         normalizedPhone,
         length: normalizedPhone.length
       });
-      toast.error("Por favor, insira um número de telefone válido (10 ou 11 dígitos)");
+      toast.error("Por favor, insira um número de telefone válido com 11 dígitos (DDD + número)");
       return null;
     }
     
