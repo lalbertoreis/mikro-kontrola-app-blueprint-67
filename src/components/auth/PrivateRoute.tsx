@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth, useEmployeePermissions } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import EmployeeLoginLoading from "@/components/employee/EmployeeLoginLoading";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -51,6 +52,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
 
   if (loading || checkingPermissions) {
     console.log("PrivateRoute - Showing loading state");
+    
+    // Se já temos usuário e estamos verificando permissões, mostrar loading de funcionário
+    if (user && checkingPermissions) {
+      return <EmployeeLoginLoading />;
+    }
+    
+    // Loading padrão quando ainda não tem usuário
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
