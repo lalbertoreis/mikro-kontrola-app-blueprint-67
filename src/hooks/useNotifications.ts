@@ -2,16 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: string;
-  read: boolean;
-  createdAt: string;
-  userId: string;
-}
+import { Notification, NotificationType } from "@/types/notification";
 
 export function useNotifications() {
   const { user } = useAuth();
@@ -37,29 +28,25 @@ export function useNotifications() {
           id: `${user.id}-1`,
           title: "Novo agendamento",
           message: "Você tem um novo agendamento para amanhã às 14:00",
-          type: "appointment_created",
+          type: "appointment_created" as NotificationType,
           read: false,
           createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-          userId: user.id
         },
         {
           id: `${user.id}-2`,
           title: "Lembrete de agendamento",
           message: "Você tem um agendamento em 30 minutos",
-          type: "appointment_reminder",
+          type: "appointment_reminder" as NotificationType,
           read: true,
           createdAt: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
-          userId: user.id
         }
       ];
 
-      // Filter notifications by current user
-      const userNotifications = mockNotifications.filter(n => n.userId === user.id);
+      // Filter notifications by current user - they're already filtered by user.id in the mock
+      setNotifications(mockNotifications);
+      setUnreadCount(mockNotifications.filter(n => !n.read).length);
       
-      setNotifications(userNotifications);
-      setUnreadCount(userNotifications.filter(n => !n.read).length);
-      
-      console.log(`Loaded ${userNotifications.length} notifications for user ${user.id}`);
+      console.log(`Loaded ${mockNotifications.length} notifications for user ${user.id}`);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       setNotifications([]);
