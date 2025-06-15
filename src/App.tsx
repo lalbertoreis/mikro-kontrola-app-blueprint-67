@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -27,7 +28,6 @@ import FixedCosts from "./pages/FixedCosts";
 import PublicBooking from "./pages/PublicBooking";
 import Business404 from "./pages/Business404";
 import ServicePackages from "./pages/ServicePackages";
-import EmployeeCalendarView from "./components/calendar/EmployeeCalendarView";
 
 const queryClient = new QueryClient();
 
@@ -52,7 +52,7 @@ function App() {
                 <Route path="/booking/:slug" element={<PublicBooking />} />
                 <Route path="/booking-not-found" element={<Business404 />} />
                 
-                {/* Calendar route - acessível tanto para proprietários quanto funcionários */}
+                {/* Calendar route - funcionários são redirecionados automaticamente para cá */}
                 <Route path="/dashboard/calendar" element={
                   <PrivateRoute>
                     <Calendar />
