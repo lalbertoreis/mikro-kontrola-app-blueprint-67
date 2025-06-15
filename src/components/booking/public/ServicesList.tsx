@@ -1,12 +1,12 @@
 
-import React, { useMemo } from "react";
-import { Service } from "@/types/service";
+import React from "react";
+import { Service, ServicePackage } from "@/types/service";
 import { Employee } from "@/types/employee";
 import ServiceCard from "../ServiceCard";
-import { useServicePackages } from "@/hooks/useServicePackages";
 
 interface ServicesListProps {
   services: Service[];
+  packages: ServicePackage[];
   employees: Employee[];
   onSelectService: (service: Service) => void;
   themeColor?: string;
@@ -14,34 +14,24 @@ interface ServicesListProps {
 
 const ServicesList: React.FC<ServicesListProps> = ({
   services,
+  packages,
   employees,
   onSelectService,
   themeColor
 }) => {
-  const { packages, isLoading: isPackagesLoading } = useServicePackages();
+  console.log("ServicesList - Render props:", {
+    servicesCount: services?.length || 0,
+    packagesCount: packages?.length || 0,
+    employeesCount: employees?.length || 0
+  });
 
   // Create package services that can be offered by available employees
-  // Only include packages with show_in_online_booking = true
-  const availablePackageServices = useMemo(() => {
-    console.log("ServicesList - Processing packages:", {
-      packagesCount: packages?.length || 0,
-      isPackagesLoading,
-      employeesCount: employees?.length || 0,
-      servicesCount: services?.length || 0
-    });
-
-    if (isPackagesLoading || !packages || !employees || !services) {
+  const availablePackageServices = React.useMemo(() => {
+    if (!packages || !employees || !services) {
       return [];
     }
 
-    // Filter packages that are active and enabled for online booking
-    const onlineBookingPackages = packages.filter(pkg => {
-      const isEligible = pkg.isActive && pkg.showInOnlineBooking;
-      console.log(`Package ${pkg.name}: isActive=${pkg.isActive}, showInOnlineBooking=${pkg.showInOnlineBooking}, eligible=${isEligible}`);
-      return isEligible;
-    });
-    
-    const packageServices = onlineBookingPackages.map(pkg => {
+    const packageServices = packages.map(pkg => {
       // Check which employees can provide ALL services in this package
       const availableEmployees = employees.filter(emp => {
         if (!emp.services || !Array.isArray(emp.services)) {
@@ -86,40 +76,10 @@ const ServicesList: React.FC<ServicesListProps> = ({
 
     console.log(`ServicesList - Package services result: ${packageServices.length} packages available`);
     return packageServices;
-  }, [packages, employees, services, isPackagesLoading]);
-
-  // Services are already filtered and deduplicated in the parent hook
-  const availableServices = useMemo(() => {
-    console.log("ServicesList - Processing individual services:", {
-      servicesCount: services?.length || 0,
-      employeesCount: employees?.length || 0
-    });
-
-    if (!services || !employees) {
-      return [];
-    }
-    
-    // Services are already filtered to only include those with available employees
-    console.log(`ServicesList - Individual services result: ${services.length} services available`);
-    return services;
-  }, [services, employees]);
-
-  // Loading state
-  if (isPackagesLoading) {
-    console.log("ServicesList - Still loading packages, showing skeleton");
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-gray-200 animate-pulse rounded-lg"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  }, [packages, employees, services]);
 
   // Check if we have any content to show
-  const hasServices = availableServices.length > 0;
+  const hasServices = services && services.length > 0;
   const hasPackages = availablePackageServices.length > 0;
 
   console.log("ServicesList - Final content check:", {
@@ -145,7 +105,7 @@ const ServicesList: React.FC<ServicesListProps> = ({
         <div>
           <h2 className="text-xl font-semibold mb-4">Serviços</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availableServices.map((service) => (
+            {services.map((service) => (
               <ServiceCard
                 key={service.id}
                 item={service}

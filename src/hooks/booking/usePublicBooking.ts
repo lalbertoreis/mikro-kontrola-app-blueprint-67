@@ -87,11 +87,13 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     baseHandleServiceClick(service);
   };
 
-  // Log active services for debugging
+  // Log active services and packages for debugging
   useEffect(() => {
     console.log(`usePublicBooking hook: ${activeServices.length} active services available`);
-    activeServices.forEach(service => console.log(`- ${service.name} (hasEmployees: ${service.hasEmployees})`));
-  }, [activeServices]);
+    console.log(`usePublicBooking hook: ${activePackages.length} active packages available`);
+    activeServices.forEach(service => console.log(`- Service: ${service.name} (hasEmployees: ${service.hasEmployees})`));
+    activePackages.forEach(pkg => console.log(`- Package: ${pkg.name}`));
+  }, [activeServices, activePackages]);
 
   return {
     businessProfile,

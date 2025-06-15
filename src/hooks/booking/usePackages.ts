@@ -1,6 +1,7 @@
 
 import { useMemo } from "react";
 import { useServicePackages } from "@/hooks/useServicePackages";
+import { ServicePackage } from "@/types/service";
 
 /**
  * Hook to get active service packages with improved loading and persistence
@@ -26,7 +27,7 @@ export function usePackages() {
       return [];
     }
     
-    const filtered = packages.filter((pkg) => {
+    const filtered = packages.filter((pkg: ServicePackage) => {
       const isEligible = pkg.showInOnlineBooking && pkg.isActive;
       console.log(`Package ${pkg.name}: showInOnlineBooking=${pkg.showInOnlineBooking}, isActive=${pkg.isActive}, eligible=${isEligible}`);
       return isEligible;
@@ -36,17 +37,14 @@ export function usePackages() {
     return filtered;
   }, [packages, isPackagesLoading]);
 
-  // Show loading if we're actually loading and have no cached data
-  const showPackagesLoading = isPackagesLoading;
-
   console.log("usePackages - Hook result:", {
     packagesCount: activePackages.length,
-    isLoading: showPackagesLoading,
+    isLoading: isPackagesLoading,
     packagesData: packages?.length || 0
   });
 
   return {
     activePackages,
-    isPackagesLoading: showPackagesLoading
+    isPackagesLoading
   };
 }

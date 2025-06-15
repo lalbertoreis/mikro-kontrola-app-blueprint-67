@@ -5,7 +5,6 @@ import Business404 from "@/pages/Business404";
 import { usePublicBooking } from "@/hooks/booking/usePublicBooking";
 import BookingLayout from "@/components/booking/public/BookingLayout";
 import ServicesList from "@/components/booking/public/ServicesList";
-import PackagesList from "@/components/booking/public/PackagesList";
 import BookingDialogs from "@/components/booking/public/BookingDialogs";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ConfirmationScreen from "@/components/booking/dialog/ConfirmationScreen";
@@ -138,6 +137,7 @@ const PublicBooking: React.FC = () => {
       ) : (
         <ServicesList 
           services={activeServices} 
+          packages={activePackages}
           employees={employees}
           onSelectService={handleServiceClick}
           themeColor={businessProfile?.bookingColor}
