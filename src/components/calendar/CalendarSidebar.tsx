@@ -27,6 +27,7 @@ interface CalendarSidebarProps {
   onNewAppointment: () => void;
   onBlockTime: () => void;
   onGoToToday: () => void;
+  isEmployeeView?: boolean;
 }
 
 const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
@@ -40,6 +41,7 @@ const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
   onNewAppointment,
   onBlockTime,
   onGoToToday,
+  isEmployeeView = false,
 }) => {
   const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
 
@@ -48,49 +50,74 @@ const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Calendar className="h-5 w-5 text-primary" />
-          Controles da Agenda
+          {isEmployeeView ? "Minha Agenda" : "Controles da Agenda"}
         </CardTitle>
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Ações principais */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            Ações
-          </h4>
-          <div className="space-y-2">
-            <Button 
-              onClick={onNewAppointment}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              size="sm"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Agendamento
-            </Button>
-            
-            <Button 
-              onClick={onBlockTime}
-              variant="outline"
-              className="w-full"
-              size="sm"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Bloquear Horário
-            </Button>
-            
-            <Button 
-              onClick={onGoToToday}
-              variant="ghost"
-              className="w-full"
-              size="sm"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Ir para Hoje
-            </Button>
-          </div>
-        </div>
+        {/* Ações principais - ocultas para funcionários */}
+        {!isEmployeeView && (
+          <>
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Ações
+              </h4>
+              <div className="space-y-2">
+                <Button 
+                  onClick={onNewAppointment}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Agendamento
+                </Button>
+                
+                <Button 
+                  onClick={onBlockTime}
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Bloquear Horário
+                </Button>
+                
+                <Button 
+                  onClick={onGoToToday}
+                  variant="ghost"
+                  className="w-full"
+                  size="sm"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Ir para Hoje
+                </Button>
+              </div>
+            </div>
 
-        <Separator />
+            <Separator />
+          </>
+        )}
+
+        {/* Navegação para funcionários */}
+        {isEmployeeView && (
+          <>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Button 
+                  onClick={onGoToToday}
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Ir para Hoje
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+          </>
+        )}
 
         {/* Visualização */}
         <div className="space-y-3">
@@ -130,42 +157,68 @@ const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
           </div>
         </div>
 
-        <Separator />
+        {/* Filtros - ocultar seletor de funcionário para funcionários */}
+        {!isEmployeeView && (
+          <>
+            <Separator />
 
-        {/* Filtros */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filtros
-          </h4>
-          
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Funcionário</Label>
-            <Select 
-              value={selectedEmployeeId || "all"} 
-              onValueChange={(value) => onEmployeeChange(value === "all" ? undefined : value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue>
-                  {selectedEmployee ? selectedEmployee.name : "Todos Funcionários"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Todos Funcionários
-                  </div>
-                </SelectItem>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filtros
+              </h4>
+              
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Funcionário</Label>
+                <Select 
+                  value={selectedEmployeeId || "all"} 
+                  onValueChange={(value) => onEmployeeChange(value === "all" ? undefined : value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      {selectedEmployee ? selectedEmployee.name : "Todos Funcionários"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Todos Funcionários
+                      </div>
+                    </SelectItem>
+                    {employees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Mostrar funcionário atual para funcionários */}
+        {isEmployeeView && selectedEmployee && (
+          <>
+            <Separator />
+
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Funcionário
+              </h4>
+              
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  {selectedEmployee.name}
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Visualizando apenas seus agendamentos
+                </p>
+              </div>
+            </div>
+          </>
+        )}
 
         <Separator />
 

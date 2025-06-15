@@ -4,9 +4,18 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Maximize, Minimize } from "lucide-react";
+import { Maximize, Minimize, Plus, Eye } from "lucide-react";
 import { CalendarViewOptions } from "@/types/calendar";
 import { Employee } from "@/types/employee";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface CalendarMainHeaderProps {
   currentDate: Date;
@@ -35,8 +44,14 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
   onToday,
   isMaximized,
   onToggleMaximized,
+  onNewAppointment,
+  onBlockTime,
   employees,
   selectedEmployeeId,
+  onEmployeeChange,
+  onViewChange,
+  hideCanceled,
+  onToggleHideCanceled,
   isEmployeeView = false,
 }) => {
   const getDateDisplay = () => {
@@ -46,7 +61,6 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
     return format(currentDate, "MMMM yyyy", { locale: ptBR });
   };
 
-  // Encontrar nome do funcionário se for vista de funcionário
   const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
   const headerTitle = isEmployeeView && selectedEmployee 
     ? `Minha Agenda - ${selectedEmployee.name}`
@@ -83,6 +97,90 @@ const CalendarMainHeader: React.FC<CalendarMainHeaderProps> = ({
         >
           Hoje
         </Button>
+
+        {/* Mobile controls - only show for employees when maximized */}
+        {isMaximized && isEmployeeView && (
+          <div className="flex items-center space-x-2">
+            <Select value={view} onValueChange={(v) => onViewChange(v as "week" | "month")}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="week">Semanal</SelectItem>
+                <SelectItem value="month">Mensal</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="hide-canceled-header" 
+                checked={hideCanceled} 
+                onCheckedChange={onToggleHideCanceled}
+                size="sm"
+              />
+              <Label htmlFor="hide-canceled-header" className="text-sm">
+                Ocultar Cancelados
+              </Label>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile controls for owners when maximized */}
+        {isMaximized && !isEmployeeView && (
+          <div className="flex items-center space-x-2">
+            <Button onClick={onNewAppointment} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo
+            </Button>
+            
+            <Button onClick={onBlockTime} variant="outline" size="sm">
+              <Eye className="h-4 w-4 mr-2" />
+              Bloquear
+            </Button>
+            
+            <Select value={view} onValueChange={(v) => onViewChange(v as "week" | "month")}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="week">Semanal</SelectItem>
+                <SelectItem value="month">Mensal</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Employee filter for owners */}
+            <Select 
+              value={selectedEmployeeId || "all"} 
+              onValueChange={(value) => onEmployeeChange(value === "all" ? undefined : value)}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue>
+                  {selectedEmployee ? selectedEmployee.name : "Todos Funcionários"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Funcionários</SelectItem>
+                {employees.map((employee) => (
+                  <SelectItem key={employee.id} value={employee.id}>
+                    {employee.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="hide-canceled-header" 
+                checked={hideCanceled} 
+                onCheckedChange={onToggleHideCanceled}
+                size="sm"
+              />
+              <Label htmlFor="hide-canceled-header" className="text-sm">
+                Ocultar Cancelados
+              </Label>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Center - Date display */}

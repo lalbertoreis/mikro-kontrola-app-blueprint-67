@@ -21,12 +21,6 @@ export default function CalendarView() {
   const [employeeData, setEmployeeData] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
 
-  console.log("=== CalendarView DEBUG ===");
-  console.log("User:", user?.id);
-  console.log("Is Employee:", isEmployee);
-  console.log("Employee Data:", employeeData);
-  console.log("Loading:", loading);
-
   const {
     view,
     setView,
@@ -62,36 +56,24 @@ export default function CalendarView() {
   const { employees } = useEmployees();
   const isMobile = useIsMobile();
 
-  console.log("=== APPOINTMENTS DATA ===");
-  console.log("All appointments:", appointments.length);
-  console.log("Appointments loading:", isLoading);
-  console.log("Sample appointments:", appointments.slice(0, 3));
-
-  // Verificar se é funcionário
+  // Verificar se é funcionário e configurar filtro automaticamente
   useEffect(() => {
     const checkEmployeeStatus = async () => {
-      console.log("=== CHECKING EMPLOYEE STATUS ===");
-      console.log("User ID:", user?.id);
-      
       if (!user) {
-        console.log("No user found, setting loading to false");
         setLoading(false);
         return;
       }
 
       try {
         const permissions = await checkEmployeePermissions();
-        console.log("=== EMPLOYEE PERMISSIONS RESULT ===");
-        console.log("Permissions:", permissions);
         
         if (permissions && permissions.employee_id) {
-          console.log("User is employee with ID:", permissions.employee_id);
+          console.log("Employee detected - ID:", permissions.employee_id);
           setIsEmployee(true);
           setEmployeeData(permissions);
-          // IMPORTANTE: Usar o employee_id das permissões para filtrar
+          // Aplicar automaticamente o filtro do funcionário
           setSelectedEmployee(permissions.employee_id);
         } else {
-          console.log("User is not employee or no employee_id found");
           setIsEmployee(false);
           setEmployeeData(null);
         }
@@ -101,38 +83,21 @@ export default function CalendarView() {
         setEmployeeData(null);
       } finally {
         setLoading(false);
-        console.log("Employee check completed");
       }
     };
 
     checkEmployeeStatus();
   }, [user, checkEmployeePermissions, setSelectedEmployee]);
 
-  // Determinar qual employee ID usar para filtragem
-  const employeeIdForFiltering = isEmployee ? employeeData?.employee_id : selectedEmployee;
-
-  console.log("=== FILTERING LOGIC ===");
-  console.log("Is Employee:", isEmployee);
-  console.log("Employee ID for filtering:", employeeIdForFiltering);
-  console.log("Selected Employee (from state):", selectedEmployee);
-  console.log("Employee Data employee_id:", employeeData?.employee_id);
-
   // Aplicar filtragem dos agendamentos
   const appointmentsWithDetails = useFilteredAppointments({
     appointments,
-    selectedEmployee: employeeIdForFiltering,
+    selectedEmployee: isEmployee ? employeeData?.employee_id : selectedEmployee,
     hideCanceled,
   });
 
-  console.log("=== FINAL FILTERED APPOINTMENTS ===");
-  console.log("Filtered appointments count:", appointmentsWithDetails.length);
-  console.log("Filtered appointment IDs:", appointmentsWithDetails.map(a => a.id));
-  console.log("Filtered appointment employee IDs:", appointmentsWithDetails.map(a => a.employeeId));
-
-  // Handler for selecting a time slot (to open new appointment or navigate to date)
+  // Handler for selecting a time slot (restrict for employees)
   const handleSelectTimeSlot = (date: Date, hour?: number) => {
-    console.log("handleSelectTimeSlot called - isEmployee:", isEmployee, "date:", date, "hour:", hour);
-    
     // Se é funcionário, não permite criar agendamentos
     if (isEmployee) {
       // Apenas navegar para a data
@@ -155,7 +120,6 @@ export default function CalendarView() {
 
   // Show loading state
   if (loading) {
-    console.log("Showing loading state");
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -170,7 +134,6 @@ export default function CalendarView() {
 
   // Show message if user is not authenticated
   if (!user) {
-    console.log("No user authenticated, showing login message");
     return (
       <DashboardLayout>
         <div className="text-center py-10 text-muted-foreground">
@@ -179,11 +142,6 @@ export default function CalendarView() {
       </DashboardLayout>
     );
   }
-
-  console.log("=== RENDERING CALENDAR ===");
-  console.log("Is Employee:", isEmployee);
-  console.log("Is Maximized:", isMaximized);
-  console.log("Final appointments count:", appointmentsWithDetails.length);
 
   // Maximized layout (fullscreen)
   if (isMaximized) {
@@ -194,7 +152,7 @@ export default function CalendarView() {
             view={view}
             onViewChange={setView}
             employees={employees}
-            selectedEmployeeId={employeeIdForFiltering}
+            selectedEmployeeId={isEmployee ? employeeData?.employee_id : selectedEmployee}
             onEmployeeChange={isEmployee ? () => {} : setSelectedEmployee}
             hideCanceled={hideCanceled}
             onToggleHideCanceled={toggleHideCanceled}
@@ -213,7 +171,7 @@ export default function CalendarView() {
               appointments={appointmentsWithDetails}
               currentDate={currentDate}
               employees={employees}
-              selectedEmployee={employeeIdForFiltering}
+              selectedEmployee={isEmployee ? employeeData?.employee_id : selectedEmployee}
               onSelectAppointment={handleSelectAppointment}
               onSelectTimeSlot={handleSelectTimeSlot}
               setView={setView}
@@ -229,7 +187,7 @@ export default function CalendarView() {
                 selectedAppointment={selectedAppointment}
                 editMode={editMode}
                 currentDate={selectedTimeSlot?.date || currentDate}
-                selectedEmployeeId={employeeIdForFiltering}
+                selectedEmployeeId={isEmployee ? employeeData?.employee_id : selectedEmployee}
                 selectedTimeSlot={selectedTimeSlot}
                 dialogKey={dialogKey}
                 onAppointmentDialogClose={() => {
@@ -256,7 +214,7 @@ export default function CalendarView() {
             appointments={appointmentsWithDetails}
             currentDate={currentDate}
             employees={employees}
-            selectedEmployee={employeeIdForFiltering}
+            selectedEmployee={isEmployee ? employeeData?.employee_id : selectedEmployee}
             view={view}
             hideCanceled={hideCanceled}
             onSelectAppointment={handleSelectAppointment}
@@ -282,14 +240,14 @@ export default function CalendarView() {
               selectedAppointment={selectedAppointment}
               editMode={editMode}
               currentDate={selectedTimeSlot?.date || currentDate}
-              selectedEmployeeId={employeeIdForFiltering}
+              selectedEmployeeId={isEmployee ? employeeData?.employee_id : selectedEmployee}
               selectedTimeSlot={selectedTimeSlot}
               dialogKey={dialogKey}
               onAppointmentDialogClose={() => {
                 setAppointmentDialogOpen(false);
                 setSelectedTimeSlot(null);
               }}
-              onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+              onBlockTimeDialogClose={() => setBlockTimeDialogClose(false)}
               onActionsDialogOpenChange={setActionsDialogOpen}
               onEditAppointment={handleEditAppointment}
             />
@@ -307,7 +265,7 @@ export default function CalendarView() {
           view={view}
           onViewChange={setView}
           employees={employees}
-          selectedEmployeeId={employeeIdForFiltering}
+          selectedEmployeeId={isEmployee ? employeeData?.employee_id : selectedEmployee}
           onEmployeeChange={isEmployee ? () => {} : setSelectedEmployee}
           hideCanceled={hideCanceled}
           onToggleHideCanceled={toggleHideCanceled}
@@ -326,7 +284,7 @@ export default function CalendarView() {
             appointments={appointmentsWithDetails}
             currentDate={currentDate}
             employees={employees}
-            selectedEmployee={employeeIdForFiltering}
+            selectedEmployee={isEmployee ? employeeData?.employee_id : selectedEmployee}
             onSelectAppointment={handleSelectAppointment}
             onSelectTimeSlot={handleSelectTimeSlot}
             setView={setView}
@@ -342,7 +300,7 @@ export default function CalendarView() {
               selectedAppointment={selectedAppointment}
               editMode={editMode}
               currentDate={selectedTimeSlot?.date || currentDate}
-              selectedEmployeeId={employeeIdForFiltering}
+              selectedEmployeeId={isEmployee ? employeeData?.employee_id : selectedEmployee}
               selectedTimeSlot={selectedTimeSlot}
               dialogKey={dialogKey}
               onAppointmentDialogClose={() => {
