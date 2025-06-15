@@ -7,11 +7,30 @@ export async function fetchHolidays(): Promise<Holiday[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuário não autenticado');
 
-    const { data, error } = await supabase
+    // First, check if user is an employee with permissions
+    const { data: employeePermissions } = await supabase
+      .from('employee_permissions')
+      .select('business_owner_id, can_view_calendar')
+      .eq('user_id', user.id)
+      .eq('can_view_calendar', true)
+      .maybeSingle();
+
+    let holidaysQuery = supabase
       .from('holidays')
       .select('*')
-      .eq('user_id', user.id)
       .order('date', { ascending: true });
+
+    // If user is an employee, get holidays from business owner
+    // If user is owner, get their own holidays
+    if (employeePermissions?.business_owner_id) {
+      console.log("User is employee, fetching business holidays from owner:", employeePermissions.business_owner_id);
+      holidaysQuery = holidaysQuery.eq('user_id', employeePermissions.business_owner_id);
+    } else {
+      console.log("User is business owner, fetching own holidays");
+      holidaysQuery = holidaysQuery.eq('user_id', user.id);
+    }
+    
+    const { data, error } = await holidaysQuery;
     
     if (error) throw error;
     

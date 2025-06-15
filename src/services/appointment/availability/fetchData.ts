@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Shift } from './types';
 import { CACHE, getFromCache } from './cache';
@@ -173,21 +174,56 @@ export async function fetchHolidays(formattedDate: string, slug?: string): Promi
   return getFromCache(CACHE.holidays, cacheKey, async () => {
     await setSlugContext(slug);
     
-    // Use our new function to get holidays by date and slug
-    const { data: holidays, error: holidayError } = await supabase
-      .rpc('get_holidays_by_date_and_slug', {
-        date_param: formattedDate,
-        slug_param: slug || null
-      });
+    // Check if current user is an employee
+    const { data: { user } } = await supabase.auth.getUser();
+    let businessOwnerId = user?.id;
     
-    if (holidayError) {
-      console.error('Error fetching holidays:', holidayError);
-      return [];
+    if (user) {
+      const { data: employeePermissions } = await supabase
+        .from('employee_permissions')
+        .select('business_owner_id, can_view_calendar')
+        .eq('user_id', user.id)
+        .eq('can_view_calendar', true)
+        .maybeSingle();
+      
+      if (employeePermissions?.business_owner_id) {
+        businessOwnerId = employeePermissions.business_owner_id;
+        console.log("User is employee, fetching holidays from business owner:", businessOwnerId);
+      }
     }
     
-    console.log('Holidays for date', formattedDate, ':', holidays);
+    // If we have a slug, try to get holidays by slug first
+    if (slug) {
+      const { data: holidays, error: holidayError } = await supabase
+        .rpc('get_holidays_by_date_and_slug', {
+          date_param: formattedDate,
+          slug_param: slug
+        });
+      
+      if (!holidayError && holidays) {
+        console.log('Holidays for date', formattedDate, 'by slug:', holidays);
+        return (holidays || []).map(mapDatabaseHolidayToAppHoliday);
+      }
+    }
     
-    // Map the database holidays to our application Holiday type
-    return (holidays || []).map(mapDatabaseHolidayToAppHoliday);
+    // Fallback to direct query if we have a business owner ID
+    if (businessOwnerId) {
+      const { data: holidays, error: holidayError } = await supabase
+        .from('holidays')
+        .select('*')
+        .eq('date', formattedDate)
+        .eq('user_id', businessOwnerId)
+        .eq('is_active', true);
+      
+      if (holidayError) {
+        console.error('Error fetching holidays:', holidayError);
+        return [];
+      }
+      
+      console.log('Holidays for date', formattedDate, ':', holidays);
+      return (holidays || []).map(mapDatabaseHolidayToAppHoliday);
+    }
+    
+    return [];
   });
 }
