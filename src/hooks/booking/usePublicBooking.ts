@@ -33,8 +33,8 @@ export function usePublicBooking(slug: string | undefined, navigate: NavigateFun
     bookingSettings
   } = useServicesWithEmployees(slug);
   
-  // Get active packages
-  const { activePackages, isPackagesLoading } = usePackages();
+  // Get active packages using the new slug-based hook
+  const { activePackages, isPackagesLoading } = usePackages(slug);
   
   // Manage booking flow state
   const {

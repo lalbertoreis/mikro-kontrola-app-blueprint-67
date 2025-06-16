@@ -1,19 +1,21 @@
 
 import { useMemo } from "react";
-import { useServicePackages } from "@/hooks/useServicePackages";
+import { useServicePackagesBySlug } from "@/hooks/useServicePackagesBySlug";
 import { ServicePackage } from "@/types/service";
 
 /**
- * Hook to get active service packages with improved loading and persistence
+ * Hook to get active service packages for a specific business slug
  */
-export function usePackages() {
-  const { packages, isLoading: isPackagesLoading } = useServicePackages();
+export function usePackages(slug?: string) {
+  const { data: packages = [], isLoading: isPackagesLoading } = useServicePackagesBySlug(slug);
 
-  // Filter active packages that should be shown in online booking
+  // Since we're now using the database function that already filters for active packages
+  // with available employees, we can use the data directly
   const activePackages = useMemo(() => {
     console.log("usePackages - Processing packages:", {
       packagesCount: packages?.length || 0,
-      isPackagesLoading
+      isPackagesLoading,
+      slug
     });
 
     // Return empty array while loading to prevent flash of empty state
@@ -27,15 +29,14 @@ export function usePackages() {
       return [];
     }
     
-    const filtered = packages.filter((pkg: ServicePackage) => {
-      const isEligible = pkg.showInOnlineBooking && pkg.isActive;
-      console.log(`Package ${pkg.name}: showInOnlineBooking=${pkg.showInOnlineBooking}, isActive=${pkg.isActive}, eligible=${isEligible}`);
-      return isEligible;
-    });
-
-    console.log(`usePackages - Final result: ${filtered.length} active packages for online booking`);
-    return filtered;
-  }, [packages, isPackagesLoading]);
+    // The database function already filters for:
+    // - showInOnlineBooking = true
+    // - isActive = true
+    // - All services in package have available employees
+    // So we can use the data directly
+    console.log(`usePackages - Final result: ${packages.length} active packages for online booking`);
+    return packages;
+  }, [packages, isPackagesLoading, slug]);
 
   console.log("usePackages - Hook result:", {
     packagesCount: activePackages.length,

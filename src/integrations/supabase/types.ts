@@ -61,6 +61,13 @@ export type Database = {
             foreignKeyName: "appointments_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "business_services_view"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "appointments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -168,6 +175,13 @@ export type Database = {
             foreignKeyName: "employee_invites_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: true
+            referencedRelation: "business_services_view"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_invites_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -216,6 +230,13 @@ export type Database = {
             foreignKeyName: "employee_permissions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "business_services_view"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_permissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -251,6 +272,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "employee_services_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "business_services_view"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "employee_services_employee_id_fkey"
             columns: ["employee_id"]
@@ -641,6 +669,13 @@ export type Database = {
             foreignKeyName: "shifts_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "business_services_view"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "shifts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -764,6 +799,13 @@ export type Database = {
             foreignKeyName: "appointments_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "business_services_view"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "appointments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -807,22 +849,7 @@ export type Database = {
           price: number | null
           updated_at: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "employee_services_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_services_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees_shifts_view"
-            referencedColumns: ["employee_id"]
-          },
-        ]
+        Relationships: []
       }
       employees_shifts_view: {
         Row: {
@@ -891,6 +918,15 @@ export type Database = {
           has_pin: boolean
         }[]
       }
+      get_dashboard_stats: {
+        Args: { user_id_param: string }
+        Returns: {
+          total_clients: number
+          total_appointments: number
+          monthly_revenue: number
+          completed_appointments: number
+        }[]
+      }
       get_holidays_by_date_and_slug: {
         Args: { date_param: string; slug_param?: string }
         Returns: {
@@ -907,6 +943,22 @@ export type Database = {
           type: string
           updated_at: string | null
           user_id: string | null
+        }[]
+      }
+      get_packages_by_slug: {
+        Args: { slug_param: string }
+        Returns: {
+          id: string
+          name: string
+          description: string
+          services: Json
+          price: number
+          discount: number
+          is_active: boolean
+          show_in_online_booking: boolean
+          total_duration: number
+          created_at: string
+          updated_at: string
         }[]
       }
       get_service_by_id_and_slug: {

@@ -23,40 +23,34 @@ const ProtectedDashboardOverview = () => {
 
       console.log("Fetching dashboard stats for user:", user.id);
 
-      // Get current month for revenue calculation
-      const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      // Use the new database function for better performance
+      const { data, error } = await supabase
+        .rpc('get_dashboard_stats', { user_id_param: user.id });
 
-      // Fetch stats with RLS automatically filtering by user_id
-      const [clientsResult, appointmentsResult, revenueResult, completedResult] = await Promise.all([
-        supabase.from('clients').select('id', { count: 'exact', head: true }),
-        supabase.from('appointments').select('id', { count: 'exact', head: true }),
-        supabase
-          .from('transactions')
-          .select('amount')
-          .eq('type', 'income')
-          .gte('date', firstDayOfMonth)
-          .lte('date', lastDayOfMonth),
-        supabase
-          .from('appointments')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'completed')
-      ]);
+      if (error) {
+        console.error("Error fetching dashboard stats:", error);
+        throw error;
+      }
 
-      // Calculate monthly revenue
-      const monthlyRevenue = revenueResult.data?.reduce((sum, transaction) => 
-        sum + Number(transaction.amount), 0) || 0;
+      if (!data || data.length === 0) {
+        return {
+          totalClients: 0,
+          totalAppointments: 0,
+          monthlyRevenue: 0,
+          completedAppointments: 0
+        };
+      }
 
-      const stats = {
-        totalClients: clientsResult.count || 0,
-        totalAppointments: appointmentsResult.count || 0,
-        monthlyRevenue,
-        completedAppointments: completedResult.count || 0
+      const stats = data[0];
+      const result = {
+        totalClients: Number(stats.total_clients || 0),
+        totalAppointments: Number(stats.total_appointments || 0),
+        monthlyRevenue: Number(stats.monthly_revenue || 0),
+        completedAppointments: Number(stats.completed_appointments || 0)
       };
 
-      console.log("Dashboard stats for user:", user.id, stats);
-      return stats;
+      console.log("Dashboard stats for user:", user.id, result);
+      return result;
     },
     enabled: !!user,
     refetchOnWindowFocus: false,
