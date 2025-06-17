@@ -918,6 +918,16 @@ export type Database = {
           has_pin: boolean
         }[]
       }
+      get_average_service_cost: {
+        Args: { user_id_param: string; days_param?: number }
+        Returns: {
+          total_appointments: number
+          total_revenue: number
+          average_cost: number
+          period_start: string
+          period_end: string
+        }[]
+      }
       get_dashboard_stats: {
         Args: { user_id_param: string }
         Returns: {
@@ -925,6 +935,17 @@ export type Database = {
           total_appointments: number
           monthly_revenue: number
           completed_appointments: number
+        }[]
+      }
+      get_growth_trends: {
+        Args: { user_id_param: string; days_param?: number }
+        Returns: {
+          date_period: string
+          new_clients: number
+          total_appointments: number
+          completed_appointments: number
+          revenue: number
+          cumulative_clients: number
         }[]
       }
       get_holidays_by_date_and_slug: {
@@ -943,6 +964,26 @@ export type Database = {
           type: string
           updated_at: string | null
           user_id: string | null
+        }[]
+      }
+      get_most_used_services: {
+        Args: { user_id_param: string; days_param?: number }
+        Returns: {
+          service_id: string
+          service_name: string
+          usage_count: number
+          total_revenue: number
+          avg_price: number
+        }[]
+      }
+      get_occupation_rate: {
+        Args: { user_id_param: string; days_param?: number }
+        Returns: {
+          date_period: string
+          total_slots: number
+          booked_slots: number
+          occupation_rate: number
+          revenue: number
         }[]
       }
       get_packages_by_slug: {
@@ -997,6 +1038,20 @@ export type Database = {
           name: string | null
           price: number | null
           updated_at: string | null
+        }[]
+      }
+      get_upcoming_appointments: {
+        Args: { user_id_param: string; limit_param?: number }
+        Returns: {
+          id: string
+          start_time: string
+          end_time: string
+          client_name: string
+          client_phone: string
+          service_name: string
+          service_price: number
+          employee_name: string
+          status: string
         }[]
       }
       is_employee_of_business: {
