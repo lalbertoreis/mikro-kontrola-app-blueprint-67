@@ -32,9 +32,15 @@ export function useNotifications() {
         setNotifications([]);
         setUnreadCount(0);
       } else {
-        setNotifications(data || []);
-        setUnreadCount((data || []).filter(n => !n.read).length);
-        console.log(`Loaded ${(data || []).length} notifications for user ${user.id}`);
+        // Convert the data to match our Notification interface
+        const convertedData: Notification[] = (data || []).map(item => ({
+          ...item,
+          type: item.type as NotificationType
+        }));
+        
+        setNotifications(convertedData);
+        setUnreadCount(convertedData.filter(n => !n.read).length);
+        console.log(`Loaded ${convertedData.length} notifications for user ${user.id}`);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);

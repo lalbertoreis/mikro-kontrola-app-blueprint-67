@@ -109,7 +109,7 @@ const Notifications = () => {
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
                         <h3 className="font-medium">{notification.title}</h3>
                         <div className="text-sm text-muted-foreground whitespace-nowrap">
-                          {formatNotificationDate(notification.createdAt)}
+                          {formatNotificationDate(notification.created_at)}
                         </div>
                       </div>
                       <p className="text-muted-foreground mt-1 mb-4 break-words">{notification.message}</p>

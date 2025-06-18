@@ -83,7 +83,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
                   <div className="flex justify-between items-start">
                     <h4 className="font-medium text-sm">{notification.title}</h4>
                     <span className="text-xs text-muted-foreground">
-                      {formatNotificationTime(notification.createdAt)}
+                      {formatNotificationTime(notification.created_at)}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
