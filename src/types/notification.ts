@@ -1,13 +1,15 @@
 
 export interface Notification {
   id: string;
+  user_id: string;
   title: string;
   message: string;
   type: NotificationType;
   read: boolean;
-  entityId?: string;
-  entityType?: NotificationEntityType;
-  createdAt: string;
+  entity_id?: string;
+  entity_type?: NotificationEntityType;
+  created_at: string;
+  updated_at: string;
 }
 
 export type NotificationType = 
