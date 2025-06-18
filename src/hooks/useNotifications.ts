@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Notification, NotificationType } from "@/types/notification";
+import { Notification, NotificationType, NotificationEntityType } from "@/types/notification";
 
 export function useNotifications() {
   const { user } = useAuth();
@@ -35,7 +35,8 @@ export function useNotifications() {
         // Convert the data to match our Notification interface
         const convertedData: Notification[] = (data || []).map(item => ({
           ...item,
-          type: item.type as NotificationType
+          type: item.type as NotificationType,
+          entity_type: item.entity_type as NotificationEntityType
         }));
         
         setNotifications(convertedData);
