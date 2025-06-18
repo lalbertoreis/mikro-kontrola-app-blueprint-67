@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,14 +29,31 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   onChange, 
   colors = defaultColors 
 }) => {
-  const [inputValue, setInputValue] = useState(value);
+  const [inputValue, setInputValue] = useState(value || "#9b87f5");
+  
+  // Sync input value with prop value when it changes
+  useEffect(() => {
+    if (value) {
+      setInputValue(value);
+    }
+  }, [value]);
+  
+  const isValidHexColor = (hex: string): boolean => {
+    return /^#([0-9A-F]{3}){1,2}$/i.test(hex);
+  };
   
   const handleManualColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newColor = e.target.value;
+    let newColor = e.target.value;
+    
+    // Add # if user didn't include it
+    if (newColor && !newColor.startsWith('#')) {
+      newColor = '#' + newColor;
+    }
+    
     setInputValue(newColor);
     
     // Only update the actual value if it's a valid hex color
-    if (/^#([0-9A-F]{3}){1,2}$/i.test(newColor)) {
+    if (isValidHexColor(newColor)) {
       onChange(newColor);
     }
   };
@@ -46,16 +63,21 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
     onChange(color);
   };
   
-  // Apply the selected color as a preview
+  // Use the current value or fallback to default
+  const displayColor = value || "#9b87f5";
+  
   const previewStyle = {
-    backgroundColor: value || '#9b87f5'
+    backgroundColor: displayColor
   };
 
   return (
     <div className="flex items-center gap-2">
       <div 
-        className="w-10 h-10 rounded-md border border-gray-200"
+        className="w-10 h-10 rounded-md border border-gray-200 cursor-pointer"
         style={previewStyle}
+        onClick={() => {
+          // Optional: could open color popover on click
+        }}
       ></div>
       
       <div className="flex-1">
@@ -63,12 +85,12 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
           type="text"
           value={inputValue}
           onChange={handleManualColorChange}
-          placeholder="#RRGGBB"
+          placeholder="#9b87f5"
           className="font-mono"
           maxLength={7}
         />
         <p className="text-xs text-muted-foreground mt-1">
-          Insira um código de cor hexadecimal (#RRGGBB)
+          Insira um código de cor hexadecimal (ex: #9b87f5)
         </p>
       </div>
       
@@ -76,8 +98,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
         <PopoverTrigger asChild>
           <button 
             type="button" 
-            className="p-2 rounded-md border border-gray-200 hover:bg-gray-100" 
-            aria-label="Open color picker"
+            className="p-2 rounded-md border border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800" 
+            aria-label="Abrir seletor de cores"
           >
             <SwatchBook className="h-5 w-5" />
           </button>
@@ -89,12 +111,12 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
                 key={color}
                 type="button"
                 className={cn(
-                  "w-8 h-8 rounded-full border-2",
-                  color === value ? "border-gray-900 dark:border-white ring-2 ring-offset-2" : "border-gray-200"
+                  "w-8 h-8 rounded-full border-2 transition-all",
+                  color === displayColor ? "border-gray-900 dark:border-white ring-2 ring-offset-2" : "border-gray-200"
                 )}
                 style={{ backgroundColor: color }}
                 onClick={() => handleColorSelect(color)}
-                aria-label={`Select color ${color}`}
+                aria-label={`Selecionar cor ${color}`}
               />
             ))}
           </div>
