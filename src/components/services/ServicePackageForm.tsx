@@ -219,224 +219,234 @@ const ServicePackageForm: React.FC<ServicePackageFormProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {/* Service selection panel */}
-      <div className="md:col-span-1 bg-muted/30 p-2 sm:p-4 rounded-lg">
-        <h3 className="text-lg font-medium mb-2 sm:mb-4">Selecionar Serviços</h3>
-        <div className="relative mb-3">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar serviços..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <ScrollArea className="h-[260px] pr-3">
-          <div className="space-y-1.5">
-            {filteredServices.map((service) => {
-              const isSelected = selectedServices.includes(service.id);
-              return (
-                <div
-                  key={service.id}
-                  onClick={() => toggleService(service.id)}
-                  className={cn(
-                    "flex items-center justify-between px-3 py-2 rounded-md cursor-pointer transition-colors",
-                    isSelected
-                      ? "bg-primary/10 text-primary border border-primary/30"
-                      : "hover:bg-muted border border-transparent"
-                  )}
-                >
-                  <div>
-                    <div className="font-medium text-sm sm:text-base">{service.name}</div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span>R$ {service.price.toFixed(2)}</span>
-                      <span className="inline-block h-1 w-1 rounded-full bg-muted-foreground"></span>
-                      <span>{service.duration} min</span>
+    <div className="flex flex-col h-full min-h-0">
+      {/* Main content with proper scrolling */}
+      <div className="flex-1 overflow-auto pb-20 md:pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-1">
+          {/* Service selection panel */}
+          <div className="md:col-span-1 bg-muted/30 p-2 sm:p-4 rounded-lg">
+            <h3 className="text-lg font-medium mb-2 sm:mb-4">Selecionar Serviços</h3>
+            <div className="relative mb-3">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar serviços..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <ScrollArea className="h-[260px] pr-3">
+              <div className="space-y-1.5">
+                {filteredServices.map((service) => {
+                  const isSelected = selectedServices.includes(service.id);
+                  return (
+                    <div
+                      key={service.id}
+                      onClick={() => toggleService(service.id)}
+                      className={cn(
+                        "flex items-center justify-between px-3 py-2 rounded-md cursor-pointer transition-colors",
+                        isSelected
+                          ? "bg-primary/10 text-primary border border-primary/30"
+                          : "hover:bg-muted border border-transparent"
+                      )}
+                    >
+                      <div>
+                        <div className="font-medium text-sm sm:text-base">{service.name}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          <span>R$ {service.price.toFixed(2)}</span>
+                          <span className="inline-block h-1 w-1 rounded-full bg-muted-foreground"></span>
+                          <span>{service.duration} min</span>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <Check className="h-4 w-4 flex-shrink-0" />
+                      )}
                     </div>
+                  );
+                })}
+                {filteredServices.length === 0 && (
+                  <div className="p-4 text-center text-muted-foreground">
+                    Nenhum serviço encontrado.
                   </div>
-                  {isSelected && (
-                    <Check className="h-4 w-4 flex-shrink-0" />
-                  )}
-                </div>
-              );
-            })}
-            {filteredServices.length === 0 && (
-              <div className="p-4 text-center text-muted-foreground">
-                Nenhum serviço encontrado.
+                )}
               </div>
-            )}
+            </ScrollArea>
           </div>
-        </ScrollArea>
+          
+          {/* Package details form */}
+          <div className="md:col-span-2">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  {/* ... keep existing code (package information and pricing cards) */}
+                  <Card className="shadow-sm">
+                    <CardContent className="pt-4 px-4 pb-4">
+                      <h3 className="text-lg font-medium mb-3">Informações do Pacote</h3>
+                      
+                      <div className="space-y-3">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome do Pacote</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nome do pacote" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descrição</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Descrição do pacote..."
+                                  className="resize-none h-16"
+                                  {...field}
+                                  value={field.value || ""}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="shadow-sm">
+                    <CardContent className="pt-4 px-4 pb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-medium">Precificação</h3>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={toggleEditMode}
+                          className="flex items-center gap-2"
+                        >
+                          <span>{editMode === "discount" ? "Desconto %" : "Preço Final R$"}</span>
+                          <ArrowRightLeft className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <div className="text-sm text-muted-foreground">Valor Original</div>
+                          <div className="font-medium">R$ {safeToFixed(totalPrice)}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Desconto</div>
+                          <div className="font-medium">{safeToFixed(form.watch("discount"))}%</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Valor com Desconto</div>
+                          <div className="font-medium">R$ {safeToFixed(form.watch("price"))}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Economia do Cliente</div>
+                          <div className="font-medium">R$ {safeToFixed(totalPrice - form.watch("price"))}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {editMode === "discount" ? (
+                          <FormField
+                            control={form.control}
+                            name="discount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Desconto (%)</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ) : (
+                          <FormField
+                            control={form.control}
+                            name="price"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Preço Final (R$)</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    max={totalPrice}
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                        
+                        <FormField
+                          control={form.control}
+                          name="showInOnlineBooking"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Exibir na Agenda Online</FormLabel>
+                                <FormDescription className="text-xs">
+                                  Tornar este pacote disponível para agendamento online
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </form>
+            </Form>
+          </div>
+        </div>
       </div>
       
-      {/* Package details form */}
-      <div className="md:col-span-2">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <Card className="shadow-sm">
-                <CardContent className="pt-4 px-4 pb-4">
-                  <h3 className="text-lg font-medium mb-3">Informações do Pacote</h3>
-                  
-                  <div className="space-y-3">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome do Pacote</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nome do pacote" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descrição</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Descrição do pacote..."
-                              className="resize-none h-16"
-                              {...field}
-                              value={field.value || ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-sm">
-                <CardContent className="pt-4 px-4 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-medium">Precificação</h3>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={toggleEditMode}
-                      className="flex items-center gap-2"
-                    >
-                      <span>{editMode === "discount" ? "Desconto %" : "Preço Final R$"}</span>
-                      <ArrowRightLeft className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <div className="text-sm text-muted-foreground">Valor Original</div>
-                      <div className="font-medium">R$ {safeToFixed(totalPrice)}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Desconto</div>
-                      <div className="font-medium">{safeToFixed(form.watch("discount"))}%</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Valor com Desconto</div>
-                      <div className="font-medium">R$ {safeToFixed(form.watch("price"))}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Economia do Cliente</div>
-                      <div className="font-medium">R$ {safeToFixed(totalPrice - form.watch("price"))}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {editMode === "discount" ? (
-                      <FormField
-                        control={form.control}
-                        name="discount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Desconto (%)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    ) : (
-                      <FormField
-                        control={form.control}
-                        name="price"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Preço Final (R$)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                max={totalPrice}
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                    
-                    <FormField
-                      control={form.control}
-                      name="showInOnlineBooking"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Exibir na Agenda Online</FormLabel>
-                            <FormDescription className="text-xs">
-                              Tornar este pacote disponível para agendamento online
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="flex justify-end space-x-4 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onClose && onClose()}
-                disabled={isCreating || isUpdating}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit"
-                disabled={isCreating || isUpdating}
-              >
-                {isCreating || isUpdating ? "Salvando..." : (isEditing ? "Atualizar" : "Criar")} Pacote
-              </Button>
-            </div>
-          </form>
-        </Form>
+      {/* Fixed action buttons for mobile, regular positioning for desktop */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 md:relative md:border-t-0 md:bg-transparent md:p-0 md:pt-2">
+        <div className="flex justify-end space-x-4 max-w-7xl mx-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onClose && onClose()}
+            disabled={isCreating || isUpdating}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            type="submit"
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={isCreating || isUpdating}
+          >
+            {isCreating || isUpdating ? "Salvando..." : (isEditing ? "Atualizar" : "Criar")} Pacote
+          </Button>
+        </div>
       </div>
     </div>
   );

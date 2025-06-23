@@ -65,16 +65,17 @@ export const OnboardingManager: React.FC = () => {
       {/* Renderizar o wizard apenas quando visível */}
       {isWizardVisible && <OnboardingWizard />}
       
-      {/* Botão "Retomar Tutorial" - aparece quando wizard está oculto e não foi completado/pulado */}
+      {/* Botão "Retomar Tutorial" - posicionado no topo em mobile, canto inferior em desktop */}
       {!isWizardVisible && !isCompleted && !isSkipped && (
-        <div className="fixed bottom-4 right-4 z-50">
+        <div className="fixed top-20 right-4 z-50 md:top-auto md:bottom-4">
           <Button
             onClick={showWizard}
             className="flex items-center space-x-2 shadow-lg animate-pulse bg-primary hover:bg-primary/90 text-primary-foreground"
             size="sm"
           >
             <PlayCircle className="w-4 h-4" />
-            <span>🔁 Retomar Tutorial</span>
+            <span className="hidden sm:inline">🔁 Retomar Tutorial</span>
+            <span className="sm:hidden">Tutorial</span>
           </Button>
         </div>
       )}
@@ -88,7 +89,7 @@ export const OnboardingManager: React.FC = () => {
             onClick={showWizard}
             className="flex items-center space-x-2 shadow-lg"
           >
-            <HelpCircle className="w-4 h-4" />
+            <HelpCircle className="w-4 w-4" />
             <span>Tutorial</span>
           </Button>
         </div>
