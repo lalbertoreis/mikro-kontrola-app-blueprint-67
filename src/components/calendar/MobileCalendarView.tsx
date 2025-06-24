@@ -5,7 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Filter, Calendar, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Filter, Calendar, Clock, ChevronLeft, ChevronRight, Ban } from "lucide-react";
 import { AppointmentWithDetails, CalendarViewOptions } from "@/types/calendar";
 import { Employee } from "@/types/employee";
 import {
@@ -30,6 +30,7 @@ import {
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import DetailedCalendarView from "./DetailedCalendarView";
 
 interface MobileCalendarViewProps {
   appointments: AppointmentWithDetails[];
@@ -72,6 +73,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
 }) => {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date>(currentDate);
+  const [showDetailedView, setShowDetailedView] = useState(false);
 
   const todayAppointments = appointments.filter(appointment =>
     isSameDay(new Date(appointment.start), currentDate)
@@ -93,15 +95,12 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const handlePreviousDay = () => {
     const previousDay = subDays(currentDate, 1);
     setSelectedCalendarDate(previousDay);
-    // Simulate the navigation by updating the date through existing props
-    // This will trigger the parent component to update currentDate
     onSelectTimeSlot(previousDay);
   };
 
   const handleNextDay = () => {
     const nextDay = addDays(currentDate, 1);
     setSelectedCalendarDate(nextDay);
-    // Simulate the navigation by updating the date through existing props
     onSelectTimeSlot(nextDay);
   };
 
@@ -109,20 +108,44 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     if (date) {
       setSelectedCalendarDate(date);
       setCalendarOpen(false);
-      // Update the parent component's date
       onSelectTimeSlot(date);
     }
   };
+
+  // Se a visão detalhada está ativa, mostrar o componente DetailedCalendarView
+  if (showDetailedView) {
+    return (
+      <DetailedCalendarView
+        appointments={appointments}
+        currentDate={currentDate}
+        employees={employees}
+        selectedEmployee={selectedEmployee}
+        onSelectAppointment={onSelectAppointment}
+        onSelectTimeSlot={onSelectTimeSlot}
+        onDateChange={onSelectTimeSlot}
+        onBackToSimpleView={() => setShowDetailedView(false)}
+        isEmployeeView={isEmployeeView}
+        isLoading={isLoading}
+      />
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col p-4 space-y-4">
       {/* Action Buttons */}
       <div className="flex gap-2">
         {!isEmployeeView && (
-          <Button onClick={onNewAppointment} className="flex-1" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Agendamento
-          </Button>
+          <>
+            <Button onClick={onNewAppointment} className="flex-1" size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Agendamento
+            </Button>
+            
+            <Button onClick={onBlockTime} variant="outline" size="sm">
+              <Ban className="h-4 w-4 mr-2" />
+              Bloquear
+            </Button>
+          </>
         )}
         
         <Sheet>
@@ -178,12 +201,6 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                 />
                 <Label htmlFor="hide-canceled-mobile">Ocultar Cancelados</Label>
               </div>
-              
-              {!isEmployeeView && (
-                <Button onClick={onBlockTime} variant="outline" className="w-full">
-                  Bloquear Horário
-                </Button>
-              )}
             </div>
           </SheetContent>
         </Sheet>
@@ -233,9 +250,18 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
           </div>
           
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">
-              {format(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">
+                {format(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+              </h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowDetailedView(true)}
+              >
+                Ver Detalhes
+              </Button>
+            </div>
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 {isToday(currentDate) ? "Hoje" : format(currentDate, "yyyy")}
@@ -269,7 +295,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                   size="sm" 
                   className="mt-3"
                 >
-                  Criar Agendamento
+                  Novo Agendamento
                 </Button>
               )}
             </CardContent>
