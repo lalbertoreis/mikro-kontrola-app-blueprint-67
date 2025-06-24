@@ -23,7 +23,7 @@ interface DetailedCalendarViewProps {
   onBackToSimpleView: () => void;
   isEmployeeView?: boolean;
   isLoading: boolean;
-  showBackButton?: boolean; // New prop to control back button visibility
+  showBackButton?: boolean;
 }
 
 const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
@@ -37,15 +37,16 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
   onBackToSimpleView,
   isEmployeeView = false,
   isLoading,
-  showBackButton = true, // Default to true for backward compatibility
+  showBackButton = true,
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(currentDate);
 
-  // Gerar os últimos 7 dias incluindo hoje
+  // Gerar os 7 dias da semana baseado na data atual
   const generateWeekDays = () => {
     const days = [];
-    for (let i = 6; i >= 0; i--) {
-      days.push(subDays(new Date(), i));
+    const startWeek = startOfWeek(currentDate, { weekStartsOn: 0 }); // Domingo como primeiro dia
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(startWeek, i));
     }
     return days;
   };
@@ -152,18 +153,7 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      {/* Header com botão voltar - only show if showBackButton is true */}
-      {showBackButton && (
-        <div className="flex items-center gap-3 p-4 bg-background border-b">
-          <Button variant="ghost" size="sm" onClick={onBackToSimpleView}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <h2 className="text-lg font-semibold">Agenda Detalhada</h2>
-        </div>
-      )}
-
-      {/* Navegação de dias - últimos 7 dias */}
+      {/* Navegação de dias - semana atual */}
       <div className="p-4 bg-background border-b">
         <ScrollArea className="w-full">
           <div className="flex gap-2 pb-2">

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { format, isSameDay, isToday, addDays, subDays, addWeeks, subWeeks } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -62,22 +62,34 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   onToggleHideCanceled,
   onNewAppointment,
   onBlockTime,
+  onNavigatePrevious,
+  onNavigateNext,
   isLoading,
   isEmployeeView = false,
 }) => {
+  const [detailedViewDate, setDetailedViewDate] = useState<Date>(currentDate);
+  
   const selectedEmployee_ = employees.find(emp => emp.id === selectedEmployee);
 
+  // Atualizar a data da visão detalhada quando currentDate mudar
+  useEffect(() => {
+    setDetailedViewDate(currentDate);
+  }, [currentDate]);
+
   const handleNavigatePreviousWeek = () => {
-    const previousWeek = subWeeks(currentDate, 1);
+    const previousWeek = subWeeks(detailedViewDate, 1);
+    setDetailedViewDate(previousWeek);
     onSelectTimeSlot(previousWeek);
   };
 
   const handleNavigateNextWeek = () => {
-    const nextWeek = addWeeks(currentDate, 1);
+    const nextWeek = addWeeks(detailedViewDate, 1);
+    setDetailedViewDate(nextWeek);
     onSelectTimeSlot(nextWeek);
   };
 
   const handleDateChange = (date: Date) => {
+    setDetailedViewDate(date);
     onSelectTimeSlot(date);
   };
 
@@ -160,7 +172,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
           
           <div className="text-center">
             <h3 className="text-sm font-semibold">
-              Semana de {format(currentDate, "dd/MM", { locale: ptBR })}
+              Semana de {format(detailedViewDate, "dd/MM", { locale: ptBR })}
             </h3>
           </div>
           
@@ -178,7 +190,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
       {/* Detailed Calendar View */}
       <DetailedCalendarView
         appointments={appointments}
-        currentDate={currentDate}
+        currentDate={detailedViewDate}
         employees={employees}
         selectedEmployee={selectedEmployee}
         onSelectAppointment={onSelectAppointment}
@@ -187,6 +199,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         onBackToSimpleView={() => {}} // Not used in mobile default view
         isEmployeeView={isEmployeeView}
         isLoading={isLoading}
+        showBackButton={false} // Hide back button in mobile default view
       />
     </div>
   );
