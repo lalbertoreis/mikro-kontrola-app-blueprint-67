@@ -95,27 +95,28 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      {/* Fixed Action Buttons at Top */}
-      <div className="bg-background border-b p-4 space-y-3">
-        {/* Primary Action Buttons */}
+      {/* Fixed Action Buttons at Top - Reorganized */}
+      <div className="bg-background border-b p-3 space-y-2">
+        {/* Primary Action Button - Full Width */}
+        {!isEmployeeView && (
+          <Button onClick={onNewAppointment} className="w-full" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Agendamento
+          </Button>
+        )}
+        
+        {/* Secondary Actions - Side by Side */}
         <div className="flex gap-2">
           {!isEmployeeView && (
-            <>
-              <Button onClick={onNewAppointment} className="flex-1" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Agendamento
-              </Button>
-              
-              <Button onClick={onBlockTime} variant="outline" size="sm">
-                <Ban className="h-4 w-4 mr-2" />
-                Bloquear
-              </Button>
-            </>
+            <Button onClick={onBlockTime} variant="outline" className="flex-1" size="sm">
+              <Ban className="h-4 w-4 mr-1" />
+              Bloquear
+            </Button>
           )}
           
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" className="flex-1" size="sm">
                 <Filter className="h-4 w-4 mr-1" />
                 Filtros
               </Button>
@@ -160,7 +161,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         </div>
 
         {/* Week Navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-1">
           <Button
             variant="outline"
             size="sm"

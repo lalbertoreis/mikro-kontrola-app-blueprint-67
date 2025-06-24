@@ -153,10 +153,10 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      {/* Navegação de dias - semana atual */}
-      <div className="p-4 bg-background border-b">
+      {/* Navegação de dias - semana atual com melhor responsividade */}
+      <div className="p-3 bg-background border-b">
         <ScrollArea className="w-full">
-          <div className="flex gap-2 pb-2">
+          <div className="flex gap-1 pb-2 min-w-max">
             {weekDays.map((day, index) => {
               const isSelected = isSameDay(day, selectedDate);
               const isDayToday = isToday(day);
@@ -166,17 +166,17 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
                   key={index}
                   variant={isSelected ? "default" : "outline"}
                   size="sm"
-                  className={`min-w-[70px] flex-col h-auto py-2 ${isDayToday ? 'ring-2 ring-primary' : ''}`}
+                  className={`min-w-[48px] flex-col h-auto py-2 px-2 text-xs ${isDayToday ? 'ring-2 ring-primary' : ''}`}
                   onClick={() => handleDateSelect(day)}
                 >
-                  <div className="text-xs font-medium">
+                  <div className="font-medium leading-tight">
                     {format(day, "EEE", { locale: ptBR })}
                   </div>
-                  <div className="text-xs">
+                  <div className="leading-tight">
                     {format(day, "dd/MM")}
                   </div>
                   {isDayToday && (
-                    <Badge variant="secondary" className="text-xs mt-1">
+                    <Badge variant="secondary" className="text-[10px] mt-1 px-1 py-0">
                       Hoje
                     </Badge>
                   )}
