@@ -56,10 +56,10 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
   // Hook para buscar feriados do dia selecionado
   const { data: holidays = [] } = useHolidaysByDate(format(selectedDate, "yyyy-MM-dd"));
 
-  // Gerar horários do expediente (8h às 18h)
+  // Gerar horários do expediente (7h às 20h)
   const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 8; hour < 18; hour++) {
+    for (let hour = 7; hour <= 20; hour++) {
       slots.push(hour);
     }
     return slots;
@@ -153,10 +153,10 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      {/* Navegação de dias - semana atual com melhor responsividade */}
-      <div className="p-3 bg-background border-b">
+      {/* Navegação de dias - 7 dias com nomes abreviados */}
+      <div className="p-2 bg-background border-b">
         <ScrollArea className="w-full">
-          <div className="flex gap-1 pb-2 min-w-max">
+          <div className="flex gap-1 pb-2 overflow-x-auto">
             {weekDays.map((day, index) => {
               const isSelected = isSameDay(day, selectedDate);
               const isDayToday = isToday(day);
@@ -166,17 +166,17 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
                   key={index}
                   variant={isSelected ? "default" : "outline"}
                   size="sm"
-                  className={`min-w-[48px] flex-col h-auto py-2 px-2 text-xs ${isDayToday ? 'ring-2 ring-primary' : ''}`}
+                  className={`min-w-[42px] flex-col h-auto py-1.5 px-1 text-xs flex-shrink-0 ${isDayToday ? 'ring-2 ring-primary' : ''}`}
                   onClick={() => handleDateSelect(day)}
                 >
-                  <div className="font-medium leading-tight">
-                    {format(day, "EEE", { locale: ptBR })}
+                  <div className="font-medium leading-tight text-[10px]">
+                    {format(day, "E", { locale: ptBR })}
                   </div>
-                  <div className="leading-tight">
-                    {format(day, "dd/MM")}
+                  <div className="leading-tight text-[11px]">
+                    {format(day, "dd")}
                   </div>
                   {isDayToday && (
-                    <Badge variant="secondary" className="text-[10px] mt-1 px-1 py-0">
+                    <Badge variant="secondary" className="text-[8px] mt-0.5 px-1 py-0 h-3">
                       Hoje
                     </Badge>
                   )}
@@ -206,7 +206,7 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
         </div>
       </div>
 
-      {/* Grade de horários */}
+      {/* Grade de horários - 07:00 às 20:00 */}
       <ScrollArea className="flex-1 p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
