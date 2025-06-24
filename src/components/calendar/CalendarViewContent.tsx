@@ -251,7 +251,7 @@ const CalendarViewContent: React.FC<CalendarViewContentProps> = ({
                 setAppointmentDialogOpen(false);
                 setSelectedTimeSlot(null);
               }}
-              onBlockTimeDialogClose={() => setBlockTimeDialogOpen(false)}
+              onBlockTimeDialogClose={() => setBlockTimeDialogClose(false)}
               onActionsDialogOpenChange={setActionsDialogOpen}
               onEditAppointment={handleEditAppointment}
             />

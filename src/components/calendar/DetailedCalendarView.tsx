@@ -23,6 +23,7 @@ interface DetailedCalendarViewProps {
   onBackToSimpleView: () => void;
   isEmployeeView?: boolean;
   isLoading: boolean;
+  showBackButton?: boolean; // New prop to control back button visibility
 }
 
 const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
@@ -36,6 +37,7 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
   onBackToSimpleView,
   isEmployeeView = false,
   isLoading,
+  showBackButton = true, // Default to true for backward compatibility
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(currentDate);
 
@@ -150,14 +152,16 @@ const DetailedCalendarView: React.FC<DetailedCalendarViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      {/* Header com botão voltar */}
-      <div className="flex items-center gap-3 p-4 bg-background border-b">
-        <Button variant="ghost" size="sm" onClick={onBackToSimpleView}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
-        </Button>
-        <h2 className="text-lg font-semibold">Agenda Detalhada</h2>
-      </div>
+      {/* Header com botão voltar - only show if showBackButton is true */}
+      {showBackButton && (
+        <div className="flex items-center gap-3 p-4 bg-background border-b">
+          <Button variant="ghost" size="sm" onClick={onBackToSimpleView}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <h2 className="text-lg font-semibold">Agenda Detalhada</h2>
+        </div>
+      )}
 
       {/* Navegação de dias - últimos 7 dias */}
       <div className="p-4 bg-background border-b">
