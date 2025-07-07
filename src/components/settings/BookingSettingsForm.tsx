@@ -3,9 +3,8 @@ import React from "react";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Control } from "react-hook-form";
 import { BusinessSettingsFormData } from "@/types/settings";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MobileTooltip from "@/components/ui/mobile-tooltip";
 
 interface BookingSettingsFormProps {
   control: Control<BusinessSettingsFormData>;
@@ -56,16 +55,7 @@ const BookingSettingsForm: React.FC<BookingSettingsFormProps> = ({ control }) =>
           <FormItem>
             <div className="flex items-center">
               <FormLabel>Limite de agendamentos simultâneos</FormLabel>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger type="button" className="ml-1">
-                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p>Quantidade de agendamentos futuros que um cliente pode manter simultaneamente.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <MobileTooltip content="Quantidade de agendamentos futuros que um cliente pode manter simultaneamente." />
             </div>
             <FormControl>
               <Select
@@ -98,16 +88,7 @@ const BookingSettingsForm: React.FC<BookingSettingsFormProps> = ({ control }) =>
           <FormItem>
             <div className="flex items-center">
               <FormLabel>Limite de tempo da agenda</FormLabel>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger type="button" className="ml-1">
-                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p>Número máximo de meses no futuro que um cliente pode agendar um serviço.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <MobileTooltip content="Número máximo de meses no futuro que um cliente pode agendar um serviço." />
             </div>
             <FormControl>
               <Select
@@ -140,16 +121,7 @@ const BookingSettingsForm: React.FC<BookingSettingsFormProps> = ({ control }) =>
           <FormItem>
             <div className="flex items-center">
               <FormLabel>Intervalo de horários</FormLabel>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger type="button" className="ml-1">
-                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p>Intervalo de horários disponíveis que aparecem na tela de horários do cliente.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <MobileTooltip content="Intervalo de horários disponíveis que aparecem na tela de horários do cliente." />
             </div>
             <FormControl>
               <Select
@@ -182,16 +154,7 @@ const BookingSettingsForm: React.FC<BookingSettingsFormProps> = ({ control }) =>
           <FormItem>
             <div className="flex items-center">
               <FormLabel>Tempo mínimo para cancelamento</FormLabel>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger type="button" className="ml-1">
-                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p>Tempo limite antes do horário do agendamento para que o cliente possa realizar o cancelamento.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <MobileTooltip content="Tempo limite antes do horário do agendamento para que o cliente possa realizar o cancelamento." />
             </div>
             <FormControl>
               <Select

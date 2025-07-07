@@ -1,6 +1,6 @@
 
-import React from "react";
-import { Control, useWatch } from "react-hook-form";
+import React, { useState } from "react";
+import { Control, useWatch, useFormContext } from "react-hook-form";
 import { BusinessSettingsFormData } from "@/types/settings";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,10 +12,12 @@ import {
   FormDescription,
   FormMessage,
 } from "@/components/ui/form";
-import { Instagram, MessageSquare, MapPin, Palette, Link, Copy } from "lucide-react";
+import { Instagram, MessageSquare, MapPin, Palette, Link, Copy, Check } from "lucide-react";
 import ColorPicker from "./ColorPicker";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OnlineBookingFormProps {
   control: Control<BusinessSettingsFormData>;
@@ -24,8 +26,19 @@ interface OnlineBookingFormProps {
 const OnlineBookingForm: React.FC<OnlineBookingFormProps> = ({
   control,
 }) => {
+  const { user } = useAuth();
+  const { setValue, getValues } = useFormContext();
   const slug = useWatch({ control, name: "slug" });
   const enableOnlineBooking = useWatch({ control, name: "enableOnlineBooking" });
+  const [slugValue, setSlugValue] = useState(slug || "");
+  const [isValidatingSlug, setIsValidatingSlug] = useState(false);
+  
+  // Sincronizar slug inicial
+  React.useEffect(() => {
+    if (slug && slugValue !== slug) {
+      setSlugValue(slug);
+    }
+  }, [slug]);
 
   const bookingUrl = slug ? `${window.location.origin}/booking/${slug}` : "";
 
@@ -36,40 +49,118 @@ const OnlineBookingForm: React.FC<OnlineBookingFormProps> = ({
     }
   };
 
+  const validateAndSaveSlug = async () => {
+    if (!slugValue.trim()) {
+      toast.error("Por favor, digite um identificador para sua agenda");
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
+
+    setIsValidatingSlug(true);
+
+    try {
+      // Validar formato do slug
+      const cleanSlug = slugValue
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      if (cleanSlug !== slugValue) {
+        setSlugValue(cleanSlug);
+      }
+
+      // Verificar se o slug já existe
+      const { data: existingProfile, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('slug', cleanSlug)
+        .neq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Erro ao validar slug:", error);
+        toast.error("Erro ao validar identificador");
+        return;
+      }
+
+      if (existingProfile) {
+        toast.error("Este identificador já está em uso. Escolha outro nome para sua agenda online.");
+        return;
+      }
+
+      // Salvar no formulário
+      setValue("slug", cleanSlug);
+      toast.success("Identificador validado e salvo com sucesso!");
+      
+    } catch (error) {
+      console.error("Erro ao validar slug:", error);
+      toast.error("Erro ao validar identificador");
+    } finally {
+      setIsValidatingSlug(false);
+    }
+  };
+
   return (
     <>
-      <FormField
-        control={control}
-        name="slug"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>URL da Agenda Online</FormLabel>
-            <FormControl>
-              <div className="flex items-center">
-                <Link className="mr-2 h-4 w-4 text-muted-foreground" />
-                <div className="flex-1 flex items-center border rounded-md focus-within:ring-2 focus-within:ring-ring">
-                  <span className="pl-3 text-muted-foreground">{window.location.origin}/booking/</span>
-                  <Input className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="seu-negocio" {...field} />
-                </div>
-              </div>
-            </FormControl>
-            <FormDescription>
-              Este será o endereço onde seus clientes acessarão sua agenda online
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
+      {/* Campo SLUG */}
+      <div className="space-y-2">
+        <FormLabel>
+          Identificador da Agenda {enableOnlineBooking && <span className="text-destructive">*</span>}
+        </FormLabel>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center border rounded-md focus-within:ring-2 focus-within:ring-ring">
+            <span className="pl-3 text-muted-foreground text-sm">
+              {window.location.origin}/booking/
+            </span>
+            <Input 
+              value={slugValue}
+              onChange={(e) => setSlugValue(e.target.value)}
+              className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" 
+              placeholder="seu-negocio"
+              disabled={isValidatingSlug}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={validateAndSaveSlug}
+            disabled={isValidatingSlug || !slugValue.trim()}
+            className="shrink-0"
+          >
+            {isValidatingSlug ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+        <FormDescription>
+          Digite o identificador único para sua agenda online e clique no botão ✓ para validar
+        </FormDescription>
+        {enableOnlineBooking && !slug && (
+          <p className="text-sm text-destructive">
+            O identificador é obrigatório quando a agenda online está habilitada
+          </p>
         )}
-      />
+      </div>
 
-      {enableOnlineBooking && slug && (
-        <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      {/* Campo LINK Completo (somente leitura) */}
+      {slug && (
+        <div className="space-y-2">
           <FormLabel>Link Completo da Agenda</FormLabel>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2">
             <Link className="h-4 w-4 text-muted-foreground" />
             <Input 
               value={bookingUrl} 
               readOnly 
-              className="flex-1 bg-white dark:bg-slate-700" 
+              className="flex-1 bg-muted cursor-not-allowed" 
             />
             <Button
               type="button"
@@ -81,7 +172,7 @@ const OnlineBookingForm: React.FC<OnlineBookingFormProps> = ({
               <Copy className="h-4 w-4" />
             </Button>
           </div>
-          <FormDescription className="mt-1">
+          <FormDescription>
             Este é o link que seus clientes usarão para fazer agendamentos online
           </FormDescription>
         </div>
