@@ -88,30 +88,6 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
         )}
       />
 
-      {watchEnableOnlineBooking && (
-        <FormField
-          control={control}
-          name="slug"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL da Agenda Online</FormLabel>
-              <FormControl>
-                <div className="flex items-center">
-                  <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <div className="flex-1 flex items-center border rounded-md focus-within:ring-2 focus-within:ring-ring">
-                    <span className="pl-3 text-muted-foreground">/booking/</span>
-                    <Input className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="seu-negocio" {...field} />
-                  </div>
-                </div>
-              </FormControl>
-              <FormDescription>
-                Este será o endereço onde seus clientes acessarão sua agenda online
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
     </>
   );
 };

@@ -38,9 +38,32 @@ const OnlineBookingForm: React.FC<OnlineBookingFormProps> = ({
 
   return (
     <>
+      <FormField
+        control={control}
+        name="slug"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>URL da Agenda Online</FormLabel>
+            <FormControl>
+              <div className="flex items-center">
+                <Link className="mr-2 h-4 w-4 text-muted-foreground" />
+                <div className="flex-1 flex items-center border rounded-md focus-within:ring-2 focus-within:ring-ring">
+                  <span className="pl-3 text-muted-foreground">{window.location.origin}/booking/</span>
+                  <Input className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="seu-negocio" {...field} />
+                </div>
+              </div>
+            </FormControl>
+            <FormDescription>
+              Este será o endereço onde seus clientes acessarão sua agenda online
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
       {enableOnlineBooking && slug && (
         <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <FormLabel>Link da Agenda Online</FormLabel>
+          <FormLabel>Link Completo da Agenda</FormLabel>
           <div className="flex items-center gap-2 mt-2">
             <Link className="h-4 w-4 text-muted-foreground" />
             <Input 

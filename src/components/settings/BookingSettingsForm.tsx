@@ -13,7 +13,7 @@ interface BookingSettingsFormProps {
 
 const BookingSettingsForm: React.FC<BookingSettingsFormProps> = ({ control }) => {
   // Predefined options as per requirements
-  const simultaneousLimitOptions = [1, 2, 3, 4, 5, 10, 15, 20];
+  const simultaneousLimitOptions = [1, 2, 3, 4, 5, 10];
   
   const futureLimitOptions = [
     { value: 0.25, label: '7 dias' },
@@ -61,8 +61,8 @@ const BookingSettingsForm: React.FC<BookingSettingsFormProps> = ({ control }) =>
                   <TooltipTrigger type="button" className="ml-1">
                     <HelpCircle className="h-4 w-4 text-muted-foreground" />
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="w-80">Quantidade de agendamentos futuros que um cliente pode manter simultaneamente.</p>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>Quantidade de agendamentos futuros que um cliente pode manter simultaneamente.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -103,8 +103,8 @@ const BookingSettingsForm: React.FC<BookingSettingsFormProps> = ({ control }) =>
                   <TooltipTrigger type="button" className="ml-1">
                     <HelpCircle className="h-4 w-4 text-muted-foreground" />
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="w-80">Número máximo de meses no futuro que um cliente pode agendar um serviço.</p>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>Número máximo de meses no futuro que um cliente pode agendar um serviço.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -145,8 +145,8 @@ const BookingSettingsForm: React.FC<BookingSettingsFormProps> = ({ control }) =>
                   <TooltipTrigger type="button" className="ml-1">
                     <HelpCircle className="h-4 w-4 text-muted-foreground" />
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="w-80">Intervalo de horários disponíveis que aparecem na tela de horários do cliente.</p>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>Intervalo de horários disponíveis que aparecem na tela de horários do cliente.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -187,8 +187,8 @@ const BookingSettingsForm: React.FC<BookingSettingsFormProps> = ({ control }) =>
                   <TooltipTrigger type="button" className="ml-1">
                     <HelpCircle className="h-4 w-4 text-muted-foreground" />
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="w-80">Tempo limite antes do horário do agendamento para que o cliente possa realizar o cancelamento.</p>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>Tempo limite antes do horário do agendamento para que o cliente possa realizar o cancelamento.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
