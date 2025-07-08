@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { format, parse, addMinutes, isSameDay } from "date-fns";
+import { format, parse, addMinutes, isSameDay, isBefore, startOfDay } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -306,6 +306,15 @@ export default function AppointmentDialog({
 
   const onSubmit = async (data: z.infer<typeof appointmentSchema>) => {
     try {
+      // Check if date is in the past
+      const selectedDate = new Date(data.date);
+      const today = startOfDay(new Date());
+      
+      if (isBefore(selectedDate, today)) {
+        toast.error("Não é possível agendar para uma data no passado.");
+        return;
+      }
+
       // Check for conflicts before creating
       const conflictMessage = checkForConflicts(data);
       if (conflictMessage) {
@@ -470,7 +479,12 @@ export default function AppointmentDialog({
                   <FormItem>
                     <FormLabel>Data *</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} className="w-full" />
+                      <Input 
+                        type="date" 
+                        {...field} 
+                        min={format(new Date(), "yyyy-MM-dd")}
+                        className="w-full" 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
