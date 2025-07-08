@@ -113,19 +113,17 @@ const OnlineBookingForm: React.FC<OnlineBookingFormProps> = ({
         <FormLabel>
           Identificador da Agenda {enableOnlineBooking && <span className="text-destructive">*</span>}
         </FormLabel>
+        <div className="text-sm text-muted-foreground mb-2">
+          Seu link será: {window.location.origin}/booking/<strong>[seu-identificador]</strong>
+        </div>
         <div className="flex items-center gap-2">
-          <div className="flex-1 flex items-center border rounded-md focus-within:ring-2 focus-within:ring-ring">
-            <span className="pl-3 text-muted-foreground text-sm">
-              {window.location.origin}/booking/
-            </span>
-            <Input 
-              value={slugValue}
-              onChange={(e) => setSlugValue(e.target.value)}
-              className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" 
-              placeholder="seu-negocio"
-              disabled={isValidatingSlug}
-            />
-          </div>
+          <Input 
+            value={slugValue}
+            onChange={(e) => setSlugValue(e.target.value)}
+            placeholder="seu-negocio"
+            disabled={isValidatingSlug}
+            className="flex-1"
+          />
           <Button
             type="button"
             variant="outline"
