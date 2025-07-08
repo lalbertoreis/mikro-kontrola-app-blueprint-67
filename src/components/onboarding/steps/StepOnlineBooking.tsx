@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Globe, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOnboardingActions } from '@/hooks/useOnboardingActions';
+import { useProfileSettings } from '@/hooks/useProfileSettings';
 
 export const StepOnlineBooking: React.FC = () => {
   const { navigateAndHideWizard } = useOnboardingActions();
+  const { settings } = useProfileSettings();
 
   return (
     <div className="space-y-6">
@@ -36,7 +38,16 @@ export const StepOnlineBooking: React.FC = () => {
 
         <div className="flex justify-center">
           <Button 
-            onClick={() => navigateAndHideWizard('/dashboard/settings')}
+            onClick={() => {
+              // Verificar se a agenda online está habilitada
+              if (settings?.enableOnlineBooking) {
+                // Se já estiver habilitada, ir direto para a tab online-booking
+                navigateAndHideWizard('/dashboard/settings?tab=online-booking');
+              } else {
+                // Se não estiver habilitada, ir para a tab business para habilitar
+                navigateAndHideWizard('/dashboard/settings?tab=business');
+              }
+            }}
             className="flex items-center space-x-2"
           >
             <Link className="w-4 h-4" />

@@ -15,7 +15,9 @@ const Settings = () => {
         <SettingsContent 
           isLoading={isLoading} 
           settings={settings} 
-          onSubmit={saveSettings}
+          onSubmit={(data, onSuccessCallback) => {
+            saveSettings(data, onSuccessCallback);
+          }}
         />
       </div>
     </DashboardLayout>

@@ -84,7 +84,7 @@ export function useProfileSettings() {
     }
   };
 
-  const saveSettings = async (data: BusinessSettingsFormData) => {
+  const saveSettings = async (data: BusinessSettingsFormData, onSuccessCallback?: () => void) => {
     if (!user) {
       toast.error("Usuário não autenticado");
       return;
@@ -166,6 +166,11 @@ export function useProfileSettings() {
       setSettings(updatedSettings);
       await refreshProfile();
       toast.success("Configurações salvas com sucesso!");
+      
+      // Execute callback if provided
+      if (onSuccessCallback) {
+        onSuccessCallback();
+      }
     } catch (error) {
       console.error("Erro ao salvar configurações:", error);
       toast.error("Erro ao salvar as configurações");
