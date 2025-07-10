@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { TransactionFormData, TransactionType } from "@/types/finance";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTransactions } from "@/hooks/useTransactions";
 
 // Exemplo de transação para edição
 const mockTransaction = {
@@ -60,49 +61,73 @@ interface TransactionFormProps {
 const TransactionForm = ({ transactionId, onSuccess }: TransactionFormProps) => {
   const isEditing = Boolean(transactionId);
   const { user } = useAuth();
+  const { addTransaction, editTransaction, getTransaction } = useTransactions();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialTransaction, setInitialTransaction] = useState(null);
   
-  // Na implementação real, aqui buscaríamos dados da transação se estiver editando
-  // const { data: transaction, isLoading } = useQuery(...);
-  
-  const defaultValues: TransactionFormData = isEditing
-    ? {
-        description: mockTransaction.description,
-        amount: mockTransaction.amount,
-        date: mockTransaction.date,
-        type: mockTransaction.type,
-        category: mockTransaction.category,
-        notes: mockTransaction.notes,
-        user_id: user?.id || ''
-      }
-    : {
-        description: "",
-        amount: 0,
-        date: new Date().toISOString().split('T')[0],
-        type: "income",
-        category: "",
-        notes: "",
-        user_id: user?.id || ''
-      };
+  const defaultValues: TransactionFormData = {
+    description: "",
+    amount: 0,
+    date: new Date().toISOString().split('T')[0],
+    type: "income" as TransactionType,
+    category: "",
+    notes: "",
+    user_id: user?.id || ''
+  };
 
   const form = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues,
   });
 
+  // Load transaction data if editing
+  useEffect(() => {
+    if (isEditing && transactionId) {
+      const loadTransaction = async () => {
+        const transaction = await getTransaction(transactionId);
+        if (transaction) {
+          setInitialTransaction(transaction);
+          form.reset({
+            description: transaction.description,
+            amount: Number(transaction.amount),
+            date: transaction.date,
+            type: transaction.type as TransactionType,
+            category: transaction.category,
+            notes: transaction.notes || "",
+            user_id: user?.id || ''
+          });
+        }
+      };
+      loadTransaction();
+    }
+  }, [isEditing, transactionId, getTransaction, form, user?.id]);
+
   // Obter o tipo atual da transação para mostrar as categorias corretas
   const transactionType = form.watch("type");
   const categories = transactionType === "income" ? incomeCategories : expenseCategories;
 
-  const onSubmit = (data: TransactionFormData) => {
-    console.log("Form submitted:", data);
+  const onSubmit = async (data: TransactionFormData) => {
+    if (isSubmitting) return;
     
-    // Na implementação real, aqui enviaríamos os dados para API
-    // isEditing ? updateTransaction(transactionId, data) : createTransaction(data);
-    
-    // Simulando o sucesso após envio
-    setTimeout(() => {
-      onSuccess();
-    }, 1000);
+    setIsSubmitting(true);
+    try {
+      console.log("Form submitted:", data);
+      
+      let result;
+      if (isEditing && transactionId) {
+        result = await editTransaction(transactionId, data);
+      } else {
+        result = await addTransaction(data);
+      }
+      
+      if (result) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error submitting transaction:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -242,8 +267,12 @@ const TransactionForm = ({ transactionId, onSuccess }: TransactionFormProps) => 
               <Button variant="outline" type="button" onClick={() => onSuccess()}>
                 Cancelar
               </Button>
-              <Button type="submit">
-                {isEditing ? "Atualizar" : "Adicionar"} Transação
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting 
+                  ? "Salvando..." 
+                  : isEditing 
+                    ? "Atualizar" 
+                    : "Adicionar"} Transação
               </Button>
             </div>
           </form>
