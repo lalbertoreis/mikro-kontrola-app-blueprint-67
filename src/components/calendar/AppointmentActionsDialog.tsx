@@ -81,8 +81,18 @@ export default function AppointmentActionsDialog({
     
     const encodedMessage = encodeURIComponent(message);
     
-    // Open WhatsApp with pre-filled message
-    const whatsappUrl = `https://web.whatsapp.com/send/?phone=${phone}&text=${encodedMessage}&type=phone_number&app_absent=0`;
+    // Detect if user is on mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    let whatsappUrl;
+    if (isMobile) {
+      // For mobile devices, open WhatsApp app directly
+      whatsappUrl = `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
+    } else {
+      // For desktop, use WhatsApp Web
+      whatsappUrl = `https://web.whatsapp.com/send/?phone=${phone}&text=${encodedMessage}&type=phone_number&app_absent=0`;
+    }
+    
     window.open(whatsappUrl, '_blank');
   };
   
