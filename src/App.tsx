@@ -28,6 +28,7 @@ import FixedCosts from "./pages/FixedCosts";
 import PublicBooking from "./pages/PublicBooking";
 import Business404 from "./pages/Business404";
 import ServicePackages from "./pages/ServicePackages";
+import TransactionForm from "./pages/TransactionForm";
 import EmployeeCalendarView from "./components/calendar/EmployeeCalendarView";
 
 const queryClient = new QueryClient();
@@ -94,6 +95,16 @@ function App() {
                 <Route path="/dashboard/finance" element={
                   <PrivateRoute>
                     <Finance />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/finance/transaction/new" element={
+                  <PrivateRoute>
+                    <TransactionForm />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard/finance/transaction/:id" element={
+                  <PrivateRoute>
+                    <TransactionForm />
                   </PrivateRoute>
                 } />
                 <Route path="/dashboard/holidays" element={

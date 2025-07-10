@@ -25,19 +25,6 @@ import { TransactionFormData, TransactionType } from "@/types/finance";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTransactions } from "@/hooks/useTransactions";
 
-// Exemplo de transação para edição
-const mockTransaction = {
-  id: "1",
-  description: "Pagamento Cliente XYZ",
-  amount: 2500.00,
-  date: "2023-05-15",
-  type: "income" as TransactionType,
-  category: "Serviços",
-  notes: "Pagamento referente ao serviço de consultoria.",
-  createdAt: "2023-05-15T10:30:00Z",
-  updatedAt: "2023-05-15T10:30:00Z"
-};
-
 // Categorias de exemplo
 const incomeCategories = ["Serviços", "Vendas", "Investimentos", "Outros"];
 const expenseCategories = ["Materiais", "Infraestrutura", "Salários", "Marketing", "Impostos", "Outros"];

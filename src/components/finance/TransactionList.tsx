@@ -117,13 +117,11 @@ const TransactionList = ({ startDate, endDate }: TransactionListProps) => {
   );
 
   const handleAddTransaction = () => {
-    setSelectedTransaction(null);
-    setDialogOpen(true);
+    navigate("/dashboard/finance/transaction/new");
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setDialogOpen(true);
+    navigate(`/dashboard/finance/transaction/${transaction.id}`);
   };
 
   const handleDeleteTransaction = (id: string) => {
