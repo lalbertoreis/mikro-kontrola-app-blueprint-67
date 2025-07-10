@@ -147,6 +147,69 @@ export async function handleExistingUserLogin(
   }
 }
 
+// Função para atualizar PIN de cliente existente
+export async function handleUpdateClientPin(
+  phone: string,
+  pin: string,
+  confirmPin: string,
+  existingUserData: ExistingUserData
+): Promise<LoginResult> {
+  try {
+    console.log("Updating PIN for existing client:", phone);
+    
+    // Validate inputs
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 11) {
+      toast.error("Formato de telefone inválido");
+      return { success: false };
+    }
+    
+    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+      toast.error("PIN deve ter exatamente 4 dígitos numéricos");
+      return { success: false };
+    }
+    
+    if (pin !== confirmPin) {
+      toast.error("Confirmação do PIN não confere");
+      return { success: false };
+    }
+    
+    // Update PIN using secure RPC function
+    const { data, error } = await supabase
+      .rpc('update_client_pin', {
+        phone_param: cleanPhone,
+        pin_param: pin
+      });
+    
+    if (error) {
+      console.error("Error updating PIN:", error);
+      toast.error("Erro ao atualizar PIN");
+      return { success: false };
+    }
+    
+    if (!data) {
+      toast.error("Erro ao atualizar PIN");
+      return { success: false };
+    }
+    
+    console.log("PIN updated successfully for client:", existingUserData.name);
+    toast.success("PIN criado com sucesso!");
+    
+    return {
+      success: true,
+      userData: {
+        name: existingUserData.name,
+        phone: cleanPhone
+      }
+    };
+    
+  } catch (error: any) {
+    console.error("Error updating client PIN:", error);
+    toast.error(`Erro inesperado: ${error.message || "Falha ao atualizar PIN"}`);
+    return { success: false };
+  }
+}
+
 export async function handleFormSubmission(
   phone: string,
   name: string,
@@ -167,22 +230,30 @@ export async function handleFormSubmission(
     if (pinMode === 'verify') {
       return await handleExistingUserLogin(phone, pin);
     } else if (pinMode === 'create') {
-      // For PIN creation mode, use existing user's name if available
-      const userName = existingUserData?.name || name;
-      
-      // Get business user ID if business slug is provided
-      let businessUserId: string | null = null;
-      if (businessSlug) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('slug', businessSlug)
-          .single();
+      // Check if this is an existing client creating PIN vs new client
+      if (existingUserData) {
+        // Cliente existente criando PIN - apenas atualizar PIN
+        console.log("Existing client creating PIN, updating PIN only");
+        return await handleUpdateClientPin(phone, pin, confirmPin, existingUserData);
+      } else {
+        // Novo cliente - criar usuário completo
+        console.log("New client, creating full user");
+        const userName = name;
         
-        businessUserId = profileData?.id || null;
+        // Get business user ID if business slug is provided
+        let businessUserId: string | null = null;
+        if (businessSlug) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('slug', businessSlug)
+            .single();
+          
+          businessUserId = profileData?.id || null;
+        }
+        
+        return await handleCreateNewUser(userName, phone, pin, confirmPin, businessUserId);
       }
-      
-      return await handleCreateNewUser(userName, phone, pin, confirmPin, businessUserId);
     }
     
     toast.error("Modo de operação inválido");
