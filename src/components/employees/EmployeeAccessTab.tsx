@@ -12,7 +12,7 @@ interface EmployeeAccessTabProps {
 }
 
 const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => {
-  const { createInvite, isCreating, resendInvite, isResending, getInviteByEmployeeId } = useEmployeeInvites();
+  const { createInvite, isCreating, resendInvite, isResending, disableAccess, isDisabling, getInviteByEmployeeId } = useEmployeeInvites();
   const { data: employee } = useEmployeeById(employeeId);
   const [accessEnabled, setAccessEnabled] = useState(false);
   
@@ -50,13 +50,18 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
     }
   };
 
-  const handleAccessToggle = (enabled: boolean) => {
-    setAccessEnabled(enabled);
-    
-    if (!enabled && existingInvite) {
-      // Se desabilitar o acesso, desativar o convite existente
-      // Isso será implementado quando necessário
-      console.log("Desabilitando acesso para funcionário:", employeeId);
+  const handleAccessToggle = async (enabled: boolean) => {
+    if (!enabled && existingInvite && employeeId) {
+      try {
+        await disableAccess(employeeId);
+        setAccessEnabled(false);
+      } catch (error) {
+        console.error("Erro ao desabilitar acesso:", error);
+        // Reverter o estado se houve erro
+        setAccessEnabled(true);
+      }
+    } else {
+      setAccessEnabled(enabled);
     }
   };
 
@@ -72,6 +77,7 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
         onAccessEnabledChange={handleAccessToggle}
         onResendInvite={() => resendInvite(employeeId)}
         isResending={isResending}
+        isDisabling={isDisabling}
         employeeId={employeeId}
       />
     );

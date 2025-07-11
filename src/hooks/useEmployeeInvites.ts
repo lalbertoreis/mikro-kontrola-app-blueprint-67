@@ -140,27 +140,37 @@ export function useEmployeeInvites() {
       const businessName = profile?.business_name || "Sua Empresa";
       const loginUrl = `${window.location.origin}/login`;
 
-      // Enviar e-mail de convite
-      const emailResponse = await fetch(`https://dehmfbnguglqlptbucdq.supabase.co/functions/v1/send-employee-invite`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.session?.access_token}`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaG1mYm5ndWdscWxwdGJ1Y2RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NjA3OTYsImV4cCI6MjA2MTQzNjc5Nn0.dxlYat64Emh-KznMm_CRtU9_k6SVuwaxwGLCf9YGSKw',
-        },
-        body: JSON.stringify({
-          employeeName: employee.name,
-          employeeEmail: inviteData.email,
-          temporaryPassword: inviteData.temporaryPassword,
-          businessName,
-          loginUrl
-        }),
-      });
+      // Usar sistema de e-mail nativo do Supabase
+      try {
+        // Criar usuário com e-mail de convite
+        const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+          inviteData.email,
+          {
+            redirectTo: loginUrl,
+            data: {
+              employee_name: employee.name,
+              business_name: businessName,
+              temporary_password: inviteData.temporaryPassword,
+              employee_id: inviteData.employeeId
+            }
+          }
+        );
 
-      if (emailResponse.ok) {
-        console.log("Convite enviado por e-mail com sucesso");
-      } else {
-        console.warn("Erro ao enviar e-mail, mas convite foi criado");
+        if (authError) {
+          console.warn("Erro ao enviar convite via Supabase Auth:", authError);
+        } else {
+          console.log("Convite enviado por e-mail com sucesso via Supabase Auth");
+          
+          // Atualizar o convite com o user_id criado
+          if (authData.user?.id) {
+            await supabase
+              .from("employee_invites")
+              .update({ user_id: authData.user.id })
+              .eq("id", inviteId);
+          }
+        }
+      } catch (emailError) {
+        console.warn("Erro ao enviar e-mail:", emailError);
       }
 
       return { id: inviteId, ...result };
@@ -217,25 +227,26 @@ export function useEmployeeInvites() {
       const businessName = profile?.business_name || "Sua Empresa";
       const loginUrl = `${window.location.origin}/login`;
 
-      // Reenviar e-mail
-      const { data: sessionData } = await supabase.auth.getSession();
-      const emailResponse = await fetch(`https://dehmfbnguglqlptbucdq.supabase.co/functions/v1/send-employee-invite`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.session?.access_token}`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaG1mYm5ndWdscWxwdGJ1Y2RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NjA3OTYsImV4cCI6MjA2MTQzNjc5Nn0.dxlYat64Emh-KznMm_CRtU9_k6SVuwaxwGLCf9YGSKw',
-        },
-        body: JSON.stringify({
-          employeeName: employee.name,
-          employeeEmail: invite.email,
-          temporaryPassword: invite.temporary_password,
-          businessName,
-          loginUrl
-        }),
-      });
+      // Reenviar e-mail usando Supabase Auth
+      try {
+        // Reenviar convite via Supabase
+        const { error: emailError } = await supabase.auth.admin.inviteUserByEmail(
+          invite.email,
+          {
+            redirectTo: loginUrl,
+            data: {
+              employee_name: employee.name,
+              business_name: businessName,
+              temporary_password: invite.temporary_password,
+              is_resend: true
+            }
+          }
+        );
 
-      if (!emailResponse.ok) {
+        if (emailError) {
+          throw new Error("Erro ao reenviar e-mail via Supabase Auth");
+        }
+      } catch (emailError) {
         throw new Error("Erro ao reenviar e-mail");
       }
 
@@ -250,6 +261,72 @@ export function useEmployeeInvites() {
     },
   });
 
+  const disableAccessMutation = useMutation({
+    mutationFn: async (employeeId: string) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      if (!userId) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Buscar o convite existente
+      const { data: invite, error: inviteError } = await supabase
+        .from("employee_invites")
+        .select("user_id, email")
+        .eq("employee_id", employeeId)
+        .single();
+
+      if (inviteError) {
+        console.warn("Convite não encontrado:", inviteError);
+        return { success: true };
+      }
+
+      // Desativar o convite
+      const { error: updateError } = await supabase
+        .from("employee_invites")
+        .update({ is_active: false })
+        .eq("employee_id", employeeId);
+
+      if (updateError) {
+        throw new Error("Erro ao desativar convite");
+      }
+
+      // Se o usuário já foi criado no Auth, desabilitar também
+      if (invite.user_id) {
+        try {
+          const { error: deleteUserError } = await supabase.auth.admin.deleteUser(invite.user_id);
+          if (deleteUserError) {
+            console.warn("Erro ao deletar usuário do Auth:", deleteUserError);
+          }
+        } catch (error) {
+          console.warn("Erro ao deletar usuário:", error);
+        }
+      }
+
+      // Remover permissões do funcionário
+      const { error: permissionsError } = await supabase
+        .from("employee_permissions")
+        .delete()
+        .eq("employee_id", employeeId);
+
+      if (permissionsError) {
+        console.warn("Erro ao remover permissões:", permissionsError);
+      }
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee-invites"] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      toast.success("Acesso desabilitado com sucesso!");
+    },
+    onError: (error: any) => {
+      console.error("Erro ao desabilitar acesso:", error);
+      toast.error(error.message || "Erro ao desabilitar acesso. Tente novamente.");
+    },
+  });
+
   const getInviteByEmployeeId = (employeeId: string) => {
     return invites.find(invite => invite.employee_id === employeeId);
   };
@@ -261,6 +338,8 @@ export function useEmployeeInvites() {
     isCreating: createMutation.isPending,
     resendInvite: resendMutation.mutate,
     isResending: resendMutation.isPending,
+    disableAccess: disableAccessMutation.mutate,
+    isDisabling: disableAccessMutation.isPending,
     getInviteByEmployeeId,
   };
 }

@@ -18,6 +18,7 @@ interface ExistingAccessDisplayProps {
   onAccessEnabledChange: (enabled: boolean) => void;
   onResendInvite?: () => void;
   isResending?: boolean;
+  isDisabling?: boolean;
   employeeId: string;
 }
 
@@ -27,6 +28,7 @@ const ExistingAccessDisplay: React.FC<ExistingAccessDisplayProps> = ({
   onAccessEnabledChange,
   onResendInvite,
   isResending = false,
+  isDisabling = false,
   employeeId,
 }) => {
   return (
@@ -49,6 +51,7 @@ const ExistingAccessDisplay: React.FC<ExistingAccessDisplayProps> = ({
           <Switch 
             checked={accessEnabled} 
             onCheckedChange={onAccessEnabledChange}
+            disabled={isDisabling}
           />
         </div>
 
