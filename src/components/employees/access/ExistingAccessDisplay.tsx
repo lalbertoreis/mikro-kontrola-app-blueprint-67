@@ -1,8 +1,9 @@
 
 import React from "react";
-import { CheckCircle, Shield } from "lucide-react";
+import { CheckCircle, Shield, Mail, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import AccessPermissionsInfo from "./AccessPermissionsInfo";
 
@@ -15,12 +16,18 @@ interface ExistingAccessDisplayProps {
   invite: EmployeeInvite;
   accessEnabled: boolean;
   onAccessEnabledChange: (enabled: boolean) => void;
+  onResendInvite?: () => void;
+  isResending?: boolean;
+  employeeId: string;
 }
 
 const ExistingAccessDisplay: React.FC<ExistingAccessDisplayProps> = ({
   invite,
   accessEnabled,
   onAccessEnabledChange,
+  onResendInvite,
+  isResending = false,
+  employeeId,
 }) => {
   return (
     <Card>
@@ -58,6 +65,23 @@ const ExistingAccessDisplay: React.FC<ExistingAccessDisplayProps> = ({
               </Badge>
             </div>
           </div>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onResendInvite}
+            disabled={isResending}
+            className="flex items-center gap-2"
+          >
+            {isResending ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Mail className="h-4 w-4" />
+            )}
+            {isResending ? "Reenviando..." : "Reenviar Convite"}
+          </Button>
         </div>
         
         <AccessPermissionsInfo />

@@ -130,16 +130,123 @@ export function useEmployeeInvites() {
         .update({ email: inviteData.email })
         .eq("id", inviteData.employeeId);
 
+      // Buscar informações do negócio para o e-mail
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("business_name")
+        .eq("id", userId)
+        .single();
+
+      const businessName = profile?.business_name || "Sua Empresa";
+      const loginUrl = `${window.location.origin}/login`;
+
+      // Enviar e-mail de convite
+      const emailResponse = await fetch(`https://dehmfbnguglqlptbucdq.supabase.co/functions/v1/send-employee-invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session?.access_token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaG1mYm5ndWdscWxwdGJ1Y2RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NjA3OTYsImV4cCI6MjA2MTQzNjc5Nn0.dxlYat64Emh-KznMm_CRtU9_k6SVuwaxwGLCf9YGSKw',
+        },
+        body: JSON.stringify({
+          employeeName: employee.name,
+          employeeEmail: inviteData.email,
+          temporaryPassword: inviteData.temporaryPassword,
+          businessName,
+          loginUrl
+        }),
+      });
+
+      if (emailResponse.ok) {
+        console.log("Convite enviado por e-mail com sucesso");
+      } else {
+        console.warn("Erro ao enviar e-mail, mas convite foi criado");
+      }
+
       return { id: inviteId, ...result };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-invites"] });
       queryClient.invalidateQueries({ queryKey: ["employees"] });
-      toast.success("Acesso ao painel configurado com sucesso! O funcionário pode fazer login com as credenciais fornecidas.");
+      toast.success("Convite enviado com sucesso! O funcionário receberá um e-mail com as instruções de acesso.");
     },
     onError: (error: any) => {
       console.error("Erro ao configurar acesso:", error);
       toast.error(error.message || "Erro ao configurar acesso. Tente novamente.");
+    },
+  });
+
+  const resendMutation = useMutation({
+    mutationFn: async (employeeId: string) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      if (!userId) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Buscar o convite existente
+      const { data: invite, error: inviteError } = await supabase
+        .from("employee_invites")
+        .select("email, temporary_password")
+        .eq("employee_id", employeeId)
+        .single();
+
+      if (inviteError) {
+        throw new Error("Convite não encontrado");
+      }
+
+      // Buscar informações do funcionário
+      const { data: employee, error: employeeError } = await supabase
+        .from("employees")
+        .select("name")
+        .eq("id", employeeId)
+        .single();
+
+      if (employeeError) {
+        throw new Error("Funcionário não encontrado");
+      }
+
+      // Buscar informações do negócio
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("business_name")
+        .eq("id", userId)
+        .single();
+
+      const businessName = profile?.business_name || "Sua Empresa";
+      const loginUrl = `${window.location.origin}/login`;
+
+      // Reenviar e-mail
+      const { data: sessionData } = await supabase.auth.getSession();
+      const emailResponse = await fetch(`https://dehmfbnguglqlptbucdq.supabase.co/functions/v1/send-employee-invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session?.access_token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaG1mYm5ndWdscWxwdGJ1Y2RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NjA3OTYsImV4cCI6MjA2MTQzNjc5Nn0.dxlYat64Emh-KznMm_CRtU9_k6SVuwaxwGLCf9YGSKw',
+        },
+        body: JSON.stringify({
+          employeeName: employee.name,
+          employeeEmail: invite.email,
+          temporaryPassword: invite.temporary_password,
+          businessName,
+          loginUrl
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error("Erro ao reenviar e-mail");
+      }
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast.success("Convite reenviado com sucesso!");
+    },
+    onError: (error: any) => {
+      console.error("Erro ao reenviar convite:", error);
+      toast.error(error.message || "Erro ao reenviar convite. Tente novamente.");
     },
   });
 
@@ -152,6 +259,8 @@ export function useEmployeeInvites() {
     isLoading,
     createInvite: createMutation.mutate,
     isCreating: createMutation.isPending,
+    resendInvite: resendMutation.mutate,
+    isResending: resendMutation.isPending,
     getInviteByEmployeeId,
   };
 }

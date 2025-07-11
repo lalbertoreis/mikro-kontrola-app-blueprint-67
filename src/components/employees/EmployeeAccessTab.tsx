@@ -12,7 +12,7 @@ interface EmployeeAccessTabProps {
 }
 
 const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => {
-  const { createInvite, isCreating, getInviteByEmployeeId } = useEmployeeInvites();
+  const { createInvite, isCreating, resendInvite, isResending, getInviteByEmployeeId } = useEmployeeInvites();
   const { data: employee } = useEmployeeById(employeeId);
   const [accessEnabled, setAccessEnabled] = useState(false);
   
@@ -70,6 +70,9 @@ const EmployeeAccessTab: React.FC<EmployeeAccessTabProps> = ({ employeeId }) => 
         invite={existingInvite}
         accessEnabled={accessEnabled}
         onAccessEnabledChange={handleAccessToggle}
+        onResendInvite={() => resendInvite(employeeId)}
+        isResending={isResending}
+        employeeId={employeeId}
       />
     );
   }
