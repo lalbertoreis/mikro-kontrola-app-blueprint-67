@@ -34,6 +34,7 @@ import { TransactionFormData, TransactionType } from "@/types/finance";
 import { useClients } from "@/hooks/useClients";
 import { useServices } from "@/hooks/useServices";
 import { useServicePackages } from "@/hooks/useServicePackages";
+import { useTransactions } from "@/hooks/useTransactions";
 import { fetchPaymentMethods } from "@/services/transactionService";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -82,6 +83,7 @@ export function TransactionDialog({
   const [serviceTab, setServiceTab] = useState<"service" | "package">("service");
   const [isServiceSelected, setIsServiceSelected] = useState(false);
   const { user } = useAuth();
+  const { addTransaction, editTransaction } = useTransactions();
   
   const defaultValues: TransactionFormData = {
     description: initialData?.description || "",
@@ -184,22 +186,37 @@ export function TransactionDialog({
     }
   }, [open, initialData, form]);
 
-  const onSubmit = (data: TransactionFormData) => {
-    // Ensure user_id is set
-    const finalData: TransactionFormData = {
-      ...data,
-      user_id: user?.id || ""
-    };
-    
-    // Keep only service_id or package_id based on the selected tab
-    if (serviceTab === "service") {
-      finalData.package_id = undefined;
-    } else {
-      finalData.service_id = undefined;
+  const onSubmit = async (data: TransactionFormData) => {
+    try {
+      // Ensure user_id is set
+      const finalData: TransactionFormData = {
+        ...data,
+        user_id: user?.id || ""
+      };
+      
+      // Keep only service_id or package_id based on the selected tab
+      if (serviceTab === "service") {
+        finalData.package_id = undefined;
+      } else {
+        finalData.service_id = undefined;
+      }
+      
+      console.log("Submitting transaction data:", finalData);
+      
+      let result;
+      if (isEditing && transactionId) {
+        result = await editTransaction(transactionId, finalData);
+      } else {
+        result = await addTransaction(finalData);
+      }
+      
+      if (result) {
+        onSuccess();
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error("Error saving transaction:", error);
     }
-    
-    onSuccess();
-    onOpenChange(false);
   };
 
   return (
