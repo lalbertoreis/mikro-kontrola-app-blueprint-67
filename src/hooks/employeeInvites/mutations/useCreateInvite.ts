@@ -70,7 +70,10 @@ export function useCreateInvite() {
         inviteId = data.id;
       }
 
-      // Criar usuário no Supabase Auth usando signUp
+      // Verificar se o usuário já existe no Auth
+      console.log("Verificando se usuário já existe:", inviteData.email);
+      
+      // Primeiro, tentar criar o usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: inviteData.email,
         password: inviteData.temporaryPassword,
@@ -83,8 +86,30 @@ export function useCreateInvite() {
         }
       });
 
+      console.log("Resultado do signUp:", { authData, authError });
+
       if (authError) {
-        throw new Error(`Erro ao criar usuário: ${authError.message}`);
+        // Se o usuário já existe, tentar enviar reset password
+        if (authError.message.includes("already registered") || authError.message.includes("já cadastrado")) {
+          console.log("Usuário já existe, enviando reset password");
+          const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+            inviteData.email,
+            {
+              redirectTo: `${window.location.origin}/login`
+            }
+          );
+          
+          if (resetError) {
+            console.error("Erro ao enviar reset password:", resetError);
+            throw new Error(`Erro ao enviar convite: ${resetError.message}`);
+          }
+          
+          console.log("Reset password enviado com sucesso");
+        } else {
+          throw new Error(`Erro ao criar usuário: ${authError.message}`);
+        }
+      } else {
+        console.log("Usuário criado com sucesso, e-mail de confirmação enviado");
       }
 
       // Atualizar o email na tabela employees

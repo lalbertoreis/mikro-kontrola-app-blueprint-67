@@ -34,6 +34,8 @@ export function useResendInvite() {
         throw new Error("Funcionário não encontrado");
       }
 
+      console.log("Reenviando convite para:", invite.email);
+
       // Reenviar usando reset password do Supabase
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         invite.email,
@@ -42,9 +44,14 @@ export function useResendInvite() {
         }
       );
 
+      console.log("Resultado do resetPasswordForEmail:", { resetError });
+
       if (resetError) {
+        console.error("Erro ao reenviar convite:", resetError);
         throw new Error(`Erro ao reenviar convite: ${resetError.message}`);
       }
+
+      console.log("Convite reenviado com sucesso para:", invite.email);
 
       return { success: true };
     },
