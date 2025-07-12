@@ -100,80 +100,38 @@ export function useEmployeeInvites() {
         inviteId = data.id;
       }
 
-      // Chamar a edge function para criar o usuário no Supabase Auth
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      const response = await fetch(`https://dehmfbnguglqlptbucdq.supabase.co/functions/v1/create-employee-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.session?.access_token}`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaG1mYm5ndWdscWxwdGJ1Y2RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NjA3OTYsImV4cCI6MjA2MTQzNjc5Nn0.dxlYat64Emh-KznMm_CRtU9_k6SVuwaxwGLCf9YGSKw',
-        },
-        body: JSON.stringify({
-          email: inviteData.email,
-          temporaryPassword: inviteData.temporaryPassword,
-          employeeId: inviteData.employeeId,
-          employeeName: employee.name
-        }),
+      // Criar usuário no Supabase Auth usando signUp
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: inviteData.email,
+        password: inviteData.temporaryPassword,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+          data: {
+            employee_name: employee.name,
+            employee_id: inviteData.employeeId
+          }
+        }
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || "Erro ao criar usuário do funcionário");
+      if (authError) {
+        throw new Error(`Erro ao criar usuário: ${authError.message}`);
       }
 
-      // Também atualizar o email na tabela employees
+      // Atualizar o email na tabela employees
       await supabase
         .from("employees")
         .update({ email: inviteData.email })
         .eq("id", inviteData.employeeId);
 
-      // Buscar informações do negócio para o e-mail
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("business_name")
-        .eq("id", userId)
-        .single();
-
-      const businessName = profile?.business_name || "Sua Empresa";
-      const loginUrl = `${window.location.origin}/login`;
-
-      // Usar sistema de e-mail nativo do Supabase
-      try {
-        // Criar usuário com e-mail de convite
-        const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
-          inviteData.email,
-          {
-            redirectTo: loginUrl,
-            data: {
-              employee_name: employee.name,
-              business_name: businessName,
-              temporary_password: inviteData.temporaryPassword,
-              employee_id: inviteData.employeeId
-            }
-          }
-        );
-
-        if (authError) {
-          console.warn("Erro ao enviar convite via Supabase Auth:", authError);
-        } else {
-          console.log("Convite enviado por e-mail com sucesso via Supabase Auth");
-          
-          // Atualizar o convite com o user_id criado
-          if (authData.user?.id) {
-            await supabase
-              .from("employee_invites")
-              .update({ user_id: authData.user.id })
-              .eq("id", inviteId);
-          }
-        }
-      } catch (emailError) {
-        console.warn("Erro ao enviar e-mail:", emailError);
+      // Atualizar o convite com o user_id criado
+      if (authData.user?.id) {
+        await supabase
+          .from("employee_invites")
+          .update({ user_id: authData.user.id })
+          .eq("id", inviteId);
       }
 
-      return { id: inviteId, ...result };
+      return { id: inviteId, user_id: authData.user?.id };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-invites"] });
@@ -217,37 +175,16 @@ export function useEmployeeInvites() {
         throw new Error("Funcionário não encontrado");
       }
 
-      // Buscar informações do negócio
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("business_name")
-        .eq("id", userId)
-        .single();
-
-      const businessName = profile?.business_name || "Sua Empresa";
-      const loginUrl = `${window.location.origin}/login`;
-
-      // Reenviar e-mail usando Supabase Auth
-      try {
-        // Reenviar convite via Supabase
-        const { error: emailError } = await supabase.auth.admin.inviteUserByEmail(
-          invite.email,
-          {
-            redirectTo: loginUrl,
-            data: {
-              employee_name: employee.name,
-              business_name: businessName,
-              temporary_password: invite.temporary_password,
-              is_resend: true
-            }
-          }
-        );
-
-        if (emailError) {
-          throw new Error("Erro ao reenviar e-mail via Supabase Auth");
+      // Reenviar usando reset password do Supabase
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        invite.email,
+        {
+          redirectTo: `${window.location.origin}/login`
         }
-      } catch (emailError) {
-        throw new Error("Erro ao reenviar e-mail");
+      );
+
+      if (resetError) {
+        throw new Error(`Erro ao reenviar convite: ${resetError.message}`);
       }
 
       return { success: true };
