@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useEmployeeInvites } from "@/hooks/useEmployeeInvites";
+import { useEmployeeInvites } from "@/hooks/employeeInvites";
 import { useEmployeeById } from "@/hooks/useEmployees";
 import NoEmployeeMessage from "./access/NoEmployeeMessage";
 import ExistingAccessDisplay from "./access/ExistingAccessDisplay";
