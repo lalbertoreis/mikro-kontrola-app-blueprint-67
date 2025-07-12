@@ -70,10 +70,9 @@ export function useCreateInvite() {
         inviteId = data.id;
       }
 
-      // Verificar se o usuário já existe no Auth
-      console.log("Verificando se usuário já existe:", inviteData.email);
+      // Criar usuário no Supabase Auth
+      console.log("Criando usuário no Auth:", inviteData.email);
       
-      // Primeiro, tentar criar o usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: inviteData.email,
         password: inviteData.temporaryPassword,
@@ -86,30 +85,52 @@ export function useCreateInvite() {
         }
       });
 
-      console.log("Resultado do signUp:", { authData, authError });
-
       if (authError) {
-        // Se o usuário já existe, tentar enviar reset password
-        if (authError.message.includes("already registered") || authError.message.includes("já cadastrado")) {
-          console.log("Usuário já existe, enviando reset password");
-          const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-            inviteData.email,
-            {
-              redirectTo: `${window.location.origin}/login`
-            }
-          );
-          
-          if (resetError) {
-            console.error("Erro ao enviar reset password:", resetError);
-            throw new Error(`Erro ao enviar convite: ${resetError.message}`);
-          }
-          
-          console.log("Reset password enviado com sucesso");
+        console.error("Erro ao criar usuário:", authError);
+        throw new Error(`Erro ao criar usuário: ${authError.message}`);
+      }
+
+      console.log("Usuário criado com sucesso:", authData.user?.id);
+
+      // Buscar informações do negócio para o e-mail
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("business_name")
+        .eq("id", userId)
+        .single();
+
+      const businessName = profile?.business_name || "Sua Empresa";
+      const loginUrl = `${window.location.origin}/login`;
+
+      // Enviar e-mail com credenciais usando Edge Function
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        const response = await fetch(`https://dehmfbnguglqlptbucdq.supabase.co/functions/v1/send-employee-credentials`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionData.session?.access_token}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaG1mYm5ndWdscWxwdGJ1Y2RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NjA3OTYsImV4cCI6MjA2MTQzNjc5Nn0.dxlYat64Emh-KznMm_CRtU9_k6SVuwaxwGLCf9YGSKw',
+          },
+          body: JSON.stringify({
+            employeeName: employee.name,
+            employeeEmail: inviteData.email,
+            temporaryPassword: inviteData.temporaryPassword,
+            businessName,
+            loginUrl
+          }),
+        });
+
+        const emailResult = await response.json();
+        
+        if (!response.ok || !emailResult.success) {
+          console.warn("Erro ao enviar e-mail de credenciais:", emailResult.error);
         } else {
-          throw new Error(`Erro ao criar usuário: ${authError.message}`);
+          console.log("E-mail de credenciais enviado com sucesso!");
         }
-      } else {
-        console.log("Usuário criado com sucesso, e-mail de confirmação enviado");
+      } catch (emailError) {
+        console.warn("Erro ao enviar e-mail de credenciais:", emailError);
       }
 
       // Atualizar o email na tabela employees

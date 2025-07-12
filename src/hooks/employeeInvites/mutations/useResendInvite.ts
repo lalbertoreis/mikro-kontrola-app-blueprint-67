@@ -34,24 +34,49 @@ export function useResendInvite() {
         throw new Error("Funcionário não encontrado");
       }
 
-      console.log("Reenviando convite para:", invite.email);
+      // Buscar informações do negócio para o e-mail
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("business_name")
+        .eq("id", userId)
+        .single();
 
-      // Reenviar usando reset password do Supabase
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        invite.email,
-        {
-          redirectTo: `${window.location.origin}/login`
+      const businessName = profile?.business_name || "Sua Empresa";
+      const loginUrl = `${window.location.origin}/login`;
+
+      console.log("Reenviando credenciais para:", invite.email);
+
+      // Reenviar credenciais usando Edge Function
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        const response = await fetch(`https://dehmfbnguglqlptbucdq.supabase.co/functions/v1/send-employee-credentials`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionData.session?.access_token}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaG1mYm5ndWdscWxwdGJ1Y2RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NjA3OTYsImV4cCI6MjA2MTQzNjc5Nn0.dxlYat64Emh-KznMm_CRtU9_k6SVuwaxwGLCf9YGSKw',
+          },
+          body: JSON.stringify({
+            employeeName: employee.name,
+            employeeEmail: invite.email,
+            temporaryPassword: invite.temporary_password,
+            businessName,
+            loginUrl
+          }),
+        });
+
+        const emailResult = await response.json();
+        
+        if (!response.ok || !emailResult.success) {
+          throw new Error(emailResult.error || "Erro ao enviar e-mail de credenciais");
         }
-      );
-
-      console.log("Resultado do resetPasswordForEmail:", { resetError });
-
-      if (resetError) {
-        console.error("Erro ao reenviar convite:", resetError);
-        throw new Error(`Erro ao reenviar convite: ${resetError.message}`);
+        
+        console.log("Credenciais reenviadas com sucesso para:", invite.email);
+      } catch (emailError) {
+        console.error("Erro ao reenviar credenciais:", emailError);
+        throw new Error("Erro ao reenviar credenciais por e-mail");
       }
-
-      console.log("Convite reenviado com sucesso para:", invite.email);
 
       return { success: true };
     },
