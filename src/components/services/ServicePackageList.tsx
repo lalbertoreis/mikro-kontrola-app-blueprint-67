@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Package, Plus, Trash, Clock, Loader2, Check, X } from "lucide-react";
 import { ServicePackage } from "@/types/service";
@@ -108,120 +109,122 @@ const ServicePackageList: React.FC<ServicePackageListProps> = ({ onNewPackage })
       </div>
 
       <Card>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead className="hidden md:table-cell">Serviços Incluídos</TableHead>
-                <TableHead>Desconto</TableHead>
-                <TableHead>Preço Original</TableHead>
-                <TableHead>Preço com Desconto</TableHead>
-                <TableHead className="hidden md:table-cell">Duração</TableHead>
-                <TableHead className="hidden md:table-cell">Agenda Online</TableHead>
-                <TableHead className="w-24"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {packages.length > 0 ? (
-                packages.map((pkg) => {
-                  const totalWithoutDiscount = calculateTotalWithoutDiscount(pkg);
-                  const serviceCount = pkg.services.length;
-                  
-                  // Get service names for display
-                  const serviceNames = pkg.services
-                    .map(id => services.find(s => s.id === id)?.name || "")
-                    .filter(name => name !== "")
-                    .join(", ");
-                  
-                  return (
-                    <TableRow key={pkg.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4" />
-                          <div>
-                            <div>{pkg.name}</div>
-                            <div className="text-xs text-muted-foreground">{pkg.description}</div>
+        <ScrollArea className="h-[500px] w-full">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="hidden md:table-cell">Serviços Incluídos</TableHead>
+                  <TableHead>Desconto</TableHead>
+                  <TableHead>Preço Original</TableHead>
+                  <TableHead>Preço com Desconto</TableHead>
+                  <TableHead className="hidden md:table-cell">Duração</TableHead>
+                  <TableHead className="hidden md:table-cell">Agenda Online</TableHead>
+                  <TableHead className="w-24"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {packages.length > 0 ? (
+                  packages.map((pkg) => {
+                    const totalWithoutDiscount = calculateTotalWithoutDiscount(pkg);
+                    const serviceCount = pkg.services.length;
+                    
+                    // Get service names for display
+                    const serviceNames = pkg.services
+                      .map(id => services.find(s => s.id === id)?.name || "")
+                      .filter(name => name !== "")
+                      .join(", ");
+                    
+                    return (
+                      <TableRow key={pkg.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            <div>
+                              <div>{pkg.name}</div>
+                              <div className="text-xs text-muted-foreground">{pkg.description}</div>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {serviceCount > 0 ? (
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {serviceCount > 0 ? (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <span>{serviceCount} serviços</span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-80">
+                                <p className="text-sm">{serviceNames}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">Sem serviços</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{pkg.discount.toFixed(2)}%</TableCell>
+                        <TableCell>R$ {totalWithoutDiscount.toFixed(2)}</TableCell>
+                        <TableCell>R$ {pkg.price.toFixed(2)}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span>{formatDuration(pkg.totalDuration)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <Tooltip>
                             <TooltipTrigger>
-                              <span>{serviceCount} serviços</span>
+                              {pkg.showInOnlineBooking !== false ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <X className="h-4 w-4 text-destructive" />
+                              )}
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-80">
-                              <p className="text-sm">{serviceNames}</p>
+                            <TooltipContent>
+                              {pkg.showInOnlineBooking !== false ? 
+                                "Visível na agenda online" : 
+                                "Não visível na agenda online"}
                             </TooltipContent>
                           </Tooltip>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">Sem serviços</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{pkg.discount.toFixed(2)}%</TableCell>
-                      <TableCell>R$ {totalWithoutDiscount.toFixed(2)}</TableCell>
-                      <TableCell>R$ {pkg.price.toFixed(2)}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{formatDuration(pkg.totalDuration)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Tooltip>
-                          <TooltipTrigger>
-                            {pkg.showInOnlineBooking !== false ? (
-                              <Check className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <X className="h-4 w-4 text-destructive" />
-                            )}
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {pkg.showInOnlineBooking !== false ? 
-                              "Visível na agenda online" : 
-                              "Não visível na agenda online"}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-1">
-                          <Button variant="ghost" size="sm" onClick={() => handleEditPackage(pkg.id)}>
-                            Editar
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-destructive hover:text-destructive" 
-                            onClick={() => handleDeleteClick(pkg)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    <div className="flex flex-col items-center justify-center text-muted-foreground">
-                      <Package className="h-8 w-8 mb-2" />
-                      <p>Nenhum pacote cadastrado.</p>
-                      <Button
-                        variant="link" 
-                        className="mt-2"
-                        onClick={handleNewPackage}
-                      >
-                        Adicionar pacote
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditPackage(pkg.id)}>
+                              Editar
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-destructive hover:text-destructive" 
+                              onClick={() => handleDeleteClick(pkg)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <Package className="h-8 w-8 mb-2" />
+                        <p>Nenhum pacote cadastrado.</p>
+                        <Button
+                          variant="link" 
+                          className="mt-2"
+                          onClick={handleNewPackage}
+                        >
+                          Adicionar pacote
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </ScrollArea>
       </Card>
 
       <ServicePackageDialog
