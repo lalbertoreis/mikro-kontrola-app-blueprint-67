@@ -952,6 +952,10 @@ export type Database = {
           error_message: string
         }[]
       }
+      delete_user_everything: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       find_clients_by_phone: {
         Args: { phone_param: string }
         Returns: {

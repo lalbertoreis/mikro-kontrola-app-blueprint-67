@@ -70,10 +70,14 @@ export function useCreateInvite() {
         inviteId = data.id;
       }
 
-      // Criar usuário no Supabase Auth
-      console.log("Criando usuário no Auth:", inviteData.email);
+      // Tentar criar usuário ou resetar senha se já existir
+      console.log("Tentando criar usuário no Auth:", inviteData.email);
       
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      let authData = null;
+      let userExists = false;
+      
+      // Primeiro, tentar criar o usuário
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: inviteData.email,
         password: inviteData.temporaryPassword,
         options: {
@@ -85,12 +89,33 @@ export function useCreateInvite() {
         }
       });
 
-      if (authError) {
-        console.error("Erro ao criar usuário:", authError);
-        throw new Error(`Erro ao criar usuário: ${authError.message}`);
+      if (signUpError) {
+        if (signUpError.message.includes("already been registered")) {
+          console.log("Usuário já existe, resetando senha:", inviteData.email);
+          userExists = true;
+          
+          // Resetar senha para usuário existente
+          const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+            inviteData.email,
+            {
+              redirectTo: `${window.location.origin}/login`,
+            }
+          );
+          
+          if (resetError) {
+            console.error("Erro ao resetar senha:", resetError);
+            throw new Error(`Erro ao resetar senha: ${resetError.message}`);
+          }
+          
+          console.log("Solicitação de reset de senha enviada com sucesso");
+        } else {
+          console.error("Erro ao criar usuário:", signUpError);
+          throw new Error(`Erro ao criar usuário: ${signUpError.message}`);
+        }
+      } else {
+        authData = signUpData;
+        console.log("Usuário criado com sucesso:", authData.user?.id);
       }
-
-      console.log("Usuário criado com sucesso:", authData.user?.id);
 
       // Buscar informações do negócio para o e-mail
       const { data: profile } = await supabase
@@ -139,15 +164,15 @@ export function useCreateInvite() {
         .update({ email: inviteData.email })
         .eq("id", inviteData.employeeId);
 
-      // Atualizar o convite com o user_id criado
-      if (authData.user?.id) {
+      // Atualizar o convite com o user_id criado (se houver)
+      if (authData?.user?.id) {
         await supabase
           .from("employee_invites")
           .update({ user_id: authData.user.id })
           .eq("id", inviteId);
       }
 
-      return { id: inviteId, user_id: authData.user?.id };
+      return { id: inviteId, user_id: authData?.user?.id || null };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-invites"] });

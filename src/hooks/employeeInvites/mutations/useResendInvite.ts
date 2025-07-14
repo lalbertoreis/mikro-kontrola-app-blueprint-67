@@ -46,6 +46,19 @@ export function useResendInvite() {
 
       console.log("Reenviando credenciais para:", invite.email);
 
+      // Primeiro, resetar a senha do usuário
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        invite.email,
+        {
+          redirectTo: `${window.location.origin}/login`,
+        }
+      );
+
+      if (resetError) {
+        console.error("Erro ao resetar senha:", resetError);
+        throw new Error(`Erro ao resetar senha: ${resetError.message}`);
+      }
+
       // Reenviar credenciais usando Edge Function
       try {
         const { data: sessionData } = await supabase.auth.getSession();
