@@ -22,7 +22,8 @@ export type Database = {
           end_time: string
           id: string
           notes: string | null
-          service_id: string
+          package_id: string | null
+          service_id: string | null
           start_time: string
           status: string
           updated_at: string | null
@@ -35,7 +36,8 @@ export type Database = {
           end_time: string
           id?: string
           notes?: string | null
-          service_id: string
+          package_id?: string | null
+          service_id?: string | null
           start_time: string
           status?: string
           updated_at?: string | null
@@ -48,7 +50,8 @@ export type Database = {
           end_time?: string
           id?: string
           notes?: string | null
-          service_id?: string
+          package_id?: string | null
+          service_id?: string | null
           start_time?: string
           status?: string
           updated_at?: string | null
@@ -82,6 +85,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employees_shifts_view"
             referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "appointments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "service_packages"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "appointments_service_id_fkey"
