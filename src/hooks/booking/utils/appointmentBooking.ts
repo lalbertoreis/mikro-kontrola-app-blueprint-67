@@ -197,8 +197,11 @@ export async function processBooking({
     }
     
     // Create appointment directly in the appointments table
+    // For packages, extract the UUID from the "package:uuid" format
+    const serviceId = service.id.startsWith('package:') ? service.id.replace('package:', '') : service.id;
+    
     const appointmentData = {
-      service_id: service.id,
+      service_id: serviceId,
       employee_id: employee.id,
       client_id: clientId,
       status: 'scheduled',

@@ -34,7 +34,7 @@ export function useBookingHandlers(
 
   // Handle click on a package
   const handlePackageClick = (pkg: any) => {
-    toast.info("Agendamento de pacotes em breve!");
+    setIsBookingDialogOpen(true);
   };
 
   // Handle booking confirmation
